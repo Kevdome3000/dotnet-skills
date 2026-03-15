@@ -1,0 +1,4 @@
+interface:
+  display_name: ".NET Entry Skill"
+  short_description: "Route .NET work to the right platform skill"
+  default_prompt: "Use $dotnet to handle this .NET Entry Skill task with current .NET-specific guidance."

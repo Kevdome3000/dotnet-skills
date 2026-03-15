@@ -1,0 +1,4 @@
+interface:
+  display_name: "ReportGenerator for .NET"
+  short_description: "Turn coverage data into readable reports"
+  default_prompt: "Use $dotnet-reportgenerator to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

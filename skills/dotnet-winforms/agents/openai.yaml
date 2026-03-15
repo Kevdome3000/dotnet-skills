@@ -1,0 +1,4 @@
+interface:
+  display_name: "Windows Forms"
+  short_description: "Build and modernize Windows Forms apps"
+  default_prompt: "Use $dotnet-winforms to handle this Windows Forms task with current .NET-specific guidance."

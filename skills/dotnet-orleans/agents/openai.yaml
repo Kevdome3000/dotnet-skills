@@ -1,0 +1,4 @@
+interface:
+  display_name: "Microsoft Orleans"
+  short_description: "Use Orleans for distributed actor-style systems"
+  default_prompt: "Use $dotnet-orleans to handle this Microsoft Orleans task with current .NET-specific guidance."

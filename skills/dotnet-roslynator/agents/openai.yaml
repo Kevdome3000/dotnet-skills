@@ -1,0 +1,4 @@
+interface:
+  display_name: "Roslynator"
+  short_description: "Add Roslynator without overlapping analyzer drift"
+  default_prompt: "Use $dotnet-roslynator to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

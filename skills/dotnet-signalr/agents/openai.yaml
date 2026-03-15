@@ -1,0 +1,4 @@
+interface:
+  display_name: "SignalR"
+  short_description: "Add real-time messaging with SignalR"
+  default_prompt: "Use $dotnet-signalr to handle this SignalR task with current .NET-specific guidance."

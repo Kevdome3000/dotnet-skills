@@ -1,0 +1,211 @@
+{
+  "watches": {
+    "agent-framework-docs": {
+      "etag": "\"5qCNvOLIG3mAcJnRexUXqY+8cd0=\"",
+      "human": "Microsoft Agent Framework Overview | Microsoft Learn | ETag \"5qCNvOLIG3mAcJnRexUXqY+8cd0=\"",
+      "kind": "http_document",
+      "last_modified": "Fri, 20 Feb 2026 16:00:19 GMT",
+      "source_url": "https://learn.microsoft.com/agent-framework/overview/",
+      "title": "Microsoft Agent Framework Overview | Microsoft Learn",
+      "value": "\"5qCNvOLIG3mAcJnRexUXqY+8cd0=\""
+    },
+    "agent-framework-release": {
+      "human": "dotnet-1.0.0-rc4 (2026-03-11T22:58:44Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-11T22:58:44Z",
+      "source_url": "https://github.com/microsoft/agent-framework/releases/tag/dotnet-1.0.0-rc4",
+      "value": "dotnet-1.0.0-rc4"
+    },
+    "aspire-docs": {
+      "etag": "\"5INB4fMu3soDq8lk5/2DnrkV0PhAY1EzGjyOSItuHe8=\"",
+      "human": "Aspire \u2014 Your stack, streamlined | ETag \"5INB4fMu3soDq8lk5/2DnrkV0PhAY1EzGjyOSItuHe8=\"",
+      "kind": "http_document",
+      "last_modified": "Thu, 12 Mar 2026 15:12:58 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/aspire/",
+      "title": "Aspire \u2014 Your stack, streamlined",
+      "value": "\"5INB4fMu3soDq8lk5/2DnrkV0PhAY1EzGjyOSItuHe8=\""
+    },
+    "aspnetcore-overview-docs": {
+      "etag": "\"QBbAT4Gwr0wG+tCjtpoIFnRS5CU=\"",
+      "human": "Overview of ASP.NET Core | Microsoft Learn | ETag \"QBbAT4Gwr0wG+tCjtpoIFnRS5CU=\"",
+      "kind": "http_document",
+      "last_modified": "Thu, 22 Jan 2026 23:58:06 GMT",
+      "source_url": "https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0",
+      "title": "Overview of ASP.NET Core | Microsoft Learn",
+      "value": "\"QBbAT4Gwr0wG+tCjtpoIFnRS5CU=\""
+    },
+    "aspnetcore-release": {
+      "human": "v9.0.14 (2026-03-10T20:18:56Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-10T20:18:56Z",
+      "source_url": "https://github.com/dotnet/aspnetcore/releases/tag/v9.0.14",
+      "value": "v9.0.14"
+    },
+    "azure-functions-dotnet-worker-release": {
+      "human": "2.51.0 (2025-11-14T21:22:43Z)",
+      "kind": "github_release",
+      "published_at": "2025-11-14T21:22:43Z",
+      "source_url": "https://github.com/Azure/azure-functions-dotnet-worker/releases/tag/2.51.0",
+      "value": "2.51.0"
+    },
+    "dotnet-core-apps-docs": {
+      "etag": "\"3Bo2MW783OAq9RPlyDAcD4vLbtw=\"",
+      "human": "Build apps with .NET - .NET | Microsoft Learn | ETag \"3Bo2MW783OAq9RPlyDAcD4vLbtw=\"",
+      "kind": "http_document",
+      "last_modified": "Wed, 04 Mar 2026 23:12:14 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/core/apps",
+      "title": "Build apps with .NET - .NET | Microsoft Learn",
+      "value": "\"3Bo2MW783OAq9RPlyDAcD4vLbtw=\""
+    },
+    "dotnet-maui-release": {
+      "human": "10.0.50 (2026-03-10T21:53:16Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-10T21:53:16Z",
+      "source_url": "https://github.com/dotnet/maui/releases/tag/10.0.50",
+      "value": "10.0.50"
+    },
+    "dotnet-runtime-release": {
+      "human": "v9.0.14 (2026-03-10T20:19:23Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-10T20:19:23Z",
+      "source_url": "https://github.com/dotnet/runtime/releases/tag/v9.0.14",
+      "value": "v9.0.14"
+    },
+    "dotnet-sdk-release": {
+      "human": "v10.0.200 (2026-03-10T20:24:56Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-10T20:24:56Z",
+      "source_url": "https://github.com/dotnet/sdk/releases/tag/v10.0.200",
+      "value": "v10.0.200"
+    },
+    "ef-compare-docs": {
+      "etag": "\"Bl/JBJ7Y3zeMjOXbKzAiKhfYSAY=\"",
+      "human": "Compare EF6 and EF Core | Microsoft Learn | ETag \"Bl/JBJ7Y3zeMjOXbKzAiKhfYSAY=\"",
+      "kind": "http_document",
+      "last_modified": "Thu, 30 Oct 2025 18:26:01 GMT",
+      "source_url": "https://learn.microsoft.com/ef/efcore-and-ef6/",
+      "title": "Compare EF6 and EF Core | Microsoft Learn",
+      "value": "\"Bl/JBJ7Y3zeMjOXbKzAiKhfYSAY=\""
+    },
+    "efcore-release": {
+      "human": "v9.0.14 (2026-03-10T20:19:18Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-10T20:19:18Z",
+      "source_url": "https://github.com/dotnet/efcore/releases/tag/v9.0.14",
+      "value": "v9.0.14"
+    },
+    "extensions-ai-docs": {
+      "etag": "\"CEWlSq+VKmmFp9cS90VMsqSadcw=\"",
+      "human": "Microsoft.Extensions.AI libraries - .NET | Microsoft Learn | ETag \"CEWlSq+VKmmFp9cS90VMsqSadcw=\"",
+      "kind": "http_document",
+      "last_modified": "Mon, 23 Feb 2026 19:56:05 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai",
+      "title": "Microsoft.Extensions.AI libraries - .NET | Microsoft Learn",
+      "value": "\"CEWlSq+VKmmFp9cS90VMsqSadcw=\""
+    },
+    "extensions-release": {
+      "human": "v10.4.0 (2026-03-12T06:03:24Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-12T06:03:24Z",
+      "source_url": "https://github.com/dotnet/extensions/releases/tag/v10.4.0",
+      "value": "v10.4.0"
+    },
+    "managedcode-communication-release": {
+      "human": "v10.0.1 (2026-02-07T14:27:37Z)",
+      "kind": "github_release",
+      "published_at": "2026-02-07T14:27:37Z",
+      "source_url": "https://github.com/managedcode/Communication/releases/tag/v10.0.1",
+      "value": "v10.0.1"
+    },
+    "managedcode-markitdown-release": {
+      "human": "v10.0.6 (2026-02-23T20:05:04Z)",
+      "kind": "github_release",
+      "published_at": "2026-02-23T20:05:04Z",
+      "source_url": "https://github.com/managedcode/markitdown/releases/tag/v10.0.6",
+      "value": "v10.0.6"
+    },
+    "managedcode-mimetypes-release": {
+      "human": "v10.0.1 (2025-11-18T11:43:00Z)",
+      "kind": "github_release",
+      "published_at": "2025-11-18T11:43:00Z",
+      "source_url": "https://github.com/managedcode/MimeTypes/releases/tag/v10.0.1",
+      "value": "v10.0.1"
+    },
+    "managedcode-orleans-graph-release": {
+      "human": "v9.0.0 (2025-11-01T21:15:23Z)",
+      "kind": "github_release",
+      "published_at": "2025-11-01T21:15:23Z",
+      "source_url": "https://github.com/managedcode/Orleans.Graph/releases/tag/v9.0.0",
+      "value": "v9.0.0"
+    },
+    "managedcode-orleans-signalr-release": {
+      "human": "v10.0.5 (2026-02-10T14:04:37Z)",
+      "kind": "github_release",
+      "published_at": "2026-02-10T14:04:37Z",
+      "source_url": "https://github.com/managedcode/Orleans.SignalR/releases/tag/v10.0.5",
+      "value": "v10.0.5"
+    },
+    "managedcode-storage-release": {
+      "human": "v10.0.3 (2026-03-13T20:36:19Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-13T20:36:19Z",
+      "source_url": "https://github.com/managedcode/Storage/releases/tag/v10.0.3",
+      "value": "v10.0.3"
+    },
+    "maui-overview-docs": {
+      "etag": "\"R6nzaMagGKfw7iiCH6OFtBapq3M=\"",
+      "human": "What is .NET MAUI? - .NET MAUI | Microsoft Learn | ETag \"R6nzaMagGKfw7iiCH6OFtBapq3M=\"",
+      "kind": "http_document",
+      "last_modified": "Tue, 06 Jan 2026 08:14:09 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/maui/what-is-maui?view=net-maui-10.0",
+      "title": "What is .NET MAUI? - .NET MAUI | Microsoft Learn",
+      "value": "\"R6nzaMagGKfw7iiCH6OFtBapq3M=\""
+    },
+    "mlnet-release": {
+      "human": "v5.0.0 (2025-11-11T08:14:26Z)",
+      "kind": "github_release",
+      "published_at": "2025-11-11T08:14:26Z",
+      "source_url": "https://github.com/dotnet/machinelearning/releases/tag/v5.0.0",
+      "value": "v5.0.0"
+    },
+    "orleans-release": {
+      "human": "v10.0.1 (2026-02-07T00:45:00Z)",
+      "kind": "github_release",
+      "published_at": "2026-02-07T00:45:00Z",
+      "source_url": "https://github.com/dotnet/orleans/releases/tag/v10.0.1",
+      "value": "v10.0.1"
+    },
+    "semantic-kernel-release": {
+      "human": "dotnet-1.73.0 (2026-03-04T16:16:44Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-04T16:16:44Z",
+      "source_url": "https://github.com/microsoft/semantic-kernel/releases/tag/dotnet-1.73.0",
+      "value": "dotnet-1.73.0"
+    },
+    "windows-app-sdk-release": {
+      "human": "v1.7.9 (2026-03-11T03:44:11Z)",
+      "kind": "github_release",
+      "published_at": "2026-03-11T03:44:11Z",
+      "source_url": "https://github.com/microsoft/WindowsAppSDK/releases/tag/v1.7.9",
+      "value": "v1.7.9"
+    },
+    "winforms-overview-docs": {
+      "etag": "\"/1cwTZVWs8IdTL09g3YoZMnu1PY=\"",
+      "human": "What is Windows Forms - Windows Forms | Microsoft Learn | ETag \"/1cwTZVWs8IdTL09g3YoZMnu1PY=\"",
+      "kind": "http_document",
+      "last_modified": "Wed, 27 Aug 2025 09:10:11 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/desktop/winforms/overview/",
+      "title": "What is Windows Forms - Windows Forms | Microsoft Learn",
+      "value": "\"/1cwTZVWs8IdTL09g3YoZMnu1PY=\""
+    },
+    "wpf-overview-docs": {
+      "etag": "\"6wz1a7En5w8pkXRyMkCk63Bsfpw=\"",
+      "human": "What is Windows Presentation Foundation - WPF | Microsoft Learn | ETag \"6wz1a7En5w8pkXRyMkCk63Bsfpw=\"",
+      "kind": "http_document",
+      "last_modified": "Wed, 27 Aug 2025 09:10:10 GMT",
+      "source_url": "https://learn.microsoft.com/dotnet/desktop/wpf/overview/",
+      "title": "What is Windows Presentation Foundation - WPF | Microsoft Learn",
+      "value": "\"6wz1a7En5w8pkXRyMkCk63Bsfpw=\""
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "watches": [
+    {
+      "id": "dotnet-sdk-release",
+      "kind": "github_release",
+      "name": ".NET SDK release",
+      "owner": "dotnet",
+      "repo": "sdk",
+      "notes": "Review project setup, SDK assumptions, and C# guidance when a new SDK release ships.",
+      "skills": [
+        "dotnet",
+        "dotnet-project-setup",
+        "dotnet-modern-csharp"
+      ]
+    },
+    {
+      "id": "dotnet-runtime-release",
+      "kind": "github_release",
+      "name": ".NET runtime release",
+      "owner": "dotnet",
+      "repo": "runtime",
+      "notes": "Review general .NET guidance, worker behavior, and runtime compatibility notes.",
+      "skills": [
+        "dotnet",
+        "dotnet-worker-services",
+        "dotnet-modern-csharp"
+      ]
+    },
+    {
+      "id": "aspnetcore-release",
+      "kind": "github_release",
+      "name": "ASP.NET Core release",
+      "owner": "dotnet",
+      "repo": "aspnetcore",
+      "notes": "Review web-stack skills when ASP.NET Core ships platform changes or release notes.",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-minimal-apis",
+        "dotnet-web-api",
+        "dotnet-blazor",
+        "dotnet-signalr",
+        "dotnet-grpc"
+      ]
+    },
+    {
+      "id": "dotnet-maui-release",
+      "kind": "github_release",
+      "name": ".NET MAUI release",
+      "owner": "dotnet",
+      "repo": "maui",
+      "notes": "Review cross-platform UI guidance when MAUI ships new features or platform notes.",
+      "skills": [
+        "dotnet-maui"
+      ]
+    },
+    {
+      "id": "windows-app-sdk-release",
+      "kind": "github_release",
+      "name": "Windows App SDK release",
+      "owner": "microsoft",
+      "repo": "WindowsAppSDK",
+      "notes": "Review WinUI and Windows-specific guidance when the Windows App SDK changes.",
+      "skills": [
+        "dotnet-winui"
+      ]
+    },
+    {
+      "id": "efcore-release",
+      "kind": "github_release",
+      "name": "Entity Framework Core release",
+      "owner": "dotnet",
+      "repo": "efcore",
+      "notes": "Review EF Core behavior, migration guidance, and provider assumptions.",
+      "skills": [
+        "dotnet-entity-framework-core",
+        "dotnet-entity-framework6"
+      ]
+    },
+    {
+      "id": "orleans-release",
+      "kind": "github_release",
+      "name": "Microsoft Orleans release",
+      "owner": "dotnet",
+      "repo": "orleans",
+      "notes": "Review Orleans guidance when grain runtime, hosting, or provider support changes.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-aspire"
+      ]
+    },
+    {
+      "id": "extensions-release",
+      "kind": "github_release",
+      "name": "dotnet/extensions release",
+      "owner": "dotnet",
+      "repo": "extensions",
+      "notes": "Review Microsoft.Extensions guidance and AI-related extensions integration notes.",
+      "skills": [
+        "dotnet-microsoft-extensions",
+        "dotnet-microsoft-extensions-ai"
+      ]
+    },
+    {
+      "id": "azure-functions-dotnet-worker-release",
+      "kind": "github_release",
+      "name": "Azure Functions .NET worker release",
+      "owner": "Azure",
+      "repo": "azure-functions-dotnet-worker",
+      "match_tag_regex": "^\\d+\\.\\d+\\.\\d+$",
+      "notes": "Review isolated worker guidance and package version baselines when the worker runtime changes.",
+      "skills": [
+        "dotnet-azure-functions"
+      ]
+    },
+    {
+      "id": "mlnet-release",
+      "kind": "github_release",
+      "name": "ML.NET release",
+      "owner": "dotnet",
+      "repo": "machinelearning",
+      "notes": "Review ML.NET guidance when the training, inference, or CLI toolchain changes.",
+      "skills": [
+        "dotnet-mlnet"
+      ]
+    },
+    {
+      "id": "semantic-kernel-release",
+      "kind": "github_release",
+      "name": "Semantic Kernel release",
+      "owner": "microsoft",
+      "repo": "semantic-kernel",
+      "match_tag_regex": "^dotnet-",
+      "notes": "Review Semantic Kernel guidance because APIs and orchestration patterns evolve quickly.",
+      "skills": [
+        "dotnet-semantic-kernel"
+      ]
+    },
+    {
+      "id": "agent-framework-release",
+      "kind": "github_release",
+      "name": "Microsoft Agent Framework release",
+      "owner": "microsoft",
+      "repo": "agent-framework",
+      "match_tag_regex": "^dotnet-",
+      "notes": "Review agent orchestration guidance and package maturity when Agent Framework releases change.",
+      "skills": [
+        "dotnet-microsoft-agent-framework"
+      ]
+    }
+  ]
+}

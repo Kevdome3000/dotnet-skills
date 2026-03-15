@@ -1,0 +1,4 @@
+interface:
+  display_name: "gRPC for .NET"
+  short_description: "Build contract-first gRPC services in .NET"
+  default_prompt: "Use $dotnet-grpc to handle this gRPC for .NET task with current .NET-specific guidance."

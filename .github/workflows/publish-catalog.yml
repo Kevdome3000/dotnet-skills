@@ -1,0 +1,87 @@
+name: Publish Catalog Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      catalog_version:
+        description: "Catalog version to publish, for example 1.0.0 or 1.2.3-preview.1"
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+env:
+  CATALOG_TAG_PREFIX: "catalog-v"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate catalog version
+        id: version
+        shell: bash
+        run: |
+          version='${{ inputs.catalog_version }}'
+
+          if [[ -z "$version" ]]; then
+            echo "Catalog version is required." >&2
+            exit 1
+          fi
+
+          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
+            echo "Catalog version must be SemVer-compatible. Got: $version" >&2
+            exit 1
+          fi
+
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "tag=${{ env.CATALOG_TAG_PREFIX }}$version" >> "$GITHUB_OUTPUT"
+
+      - name: Generate catalog outputs in CI
+        run: python3 scripts/generate_catalog.py
+
+      - name: Package catalog release assets
+        shell: bash
+        run: |
+          rm -rf artifacts/catalog-release artifacts/catalog-payload
+          mkdir -p artifacts/catalog-release artifacts/catalog-payload/catalog
+          cp -R skills artifacts/catalog-payload/skills
+          cp catalog/skills.json artifacts/catalog-payload/catalog/skills.json
+          cp catalog/skills.json artifacts/catalog-release/dotnet-skills-manifest.json
+          (
+            cd artifacts/catalog-payload
+            zip -r ../catalog-release/dotnet-skills-catalog.zip skills catalog
+          )
+
+      - name: Upload packaged catalog artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-skills-catalog-${{ steps.version.outputs.version }}
+          path: artifacts/catalog-release/*
+          if-no-files-found: error
+
+      - name: Create or update catalog release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          tag='${{ steps.version.outputs.tag }}'
+          title="Catalog ${{ steps.version.outputs.version }}"
+          notes="Catalog release for dotnet-skills content. Assets: dotnet-skills-manifest.json and dotnet-skills-catalog.zip."
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            gh release edit "$tag" --title "$title" --notes "$notes"
+          else
+            gh release create "$tag" --title "$title" --notes "$notes"
+          fi
+
+          gh release upload "$tag" artifacts/catalog-release/dotnet-skills-manifest.json artifacts/catalog-release/dotnet-skills-catalog.zip --clobber

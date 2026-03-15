@@ -1,0 +1,4 @@
+interface:
+  display_name: "Windows Workflow Foundation"
+  short_description: "Maintain Workflow Foundation with realistic scope"
+  default_prompt: "Use $dotnet-workflow-foundation to handle this Windows Workflow Foundation task with current .NET-specific guidance."

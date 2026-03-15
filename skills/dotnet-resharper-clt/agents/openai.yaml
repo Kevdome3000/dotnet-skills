@@ -1,0 +1,4 @@
+interface:
+  display_name: "ReSharper Command Line Tools"
+  short_description: "Use ReSharper CLT with explicit caveats"
+  default_prompt: "Use $dotnet-resharper-clt to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

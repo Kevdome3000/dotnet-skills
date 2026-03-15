@@ -1,0 +1,4 @@
+interface:
+  display_name: ".NET Profiling"
+  short_description: "Profile CPU, memory, and hot paths in .NET"
+  default_prompt: "Use $dotnet-profiling to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

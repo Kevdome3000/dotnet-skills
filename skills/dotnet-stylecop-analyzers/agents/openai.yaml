@@ -1,0 +1,4 @@
+interface:
+  display_name: "StyleCop Analyzers"
+  short_description: "Use StyleCop Analyzers with clear rule ownership"
+  default_prompt: "Use $dotnet-stylecop-analyzers to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

@@ -1,0 +1,4 @@
+interface:
+  display_name: "dotnet format"
+  short_description: "Use dotnet format for CI-safe formatting"
+  default_prompt: "Use $dotnet-format to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

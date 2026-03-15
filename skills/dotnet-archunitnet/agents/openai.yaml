@@ -1,0 +1,4 @@
+interface:
+  display_name: "ArchUnitNET for .NET"
+  short_description: "Enforce architecture rules with ArchUnitNET"
+  default_prompt: "Use $dotnet-archunitnet to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

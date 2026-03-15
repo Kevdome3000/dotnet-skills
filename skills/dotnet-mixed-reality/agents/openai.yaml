@@ -1,0 +1,4 @@
+interface:
+  display_name: "Mixed Reality with .NET"
+  short_description: "Use C# in mixed-reality and HoloLens work"
+  default_prompt: "Use $dotnet-mixed-reality to handle this Mixed Reality with .NET task with current .NET-specific guidance."

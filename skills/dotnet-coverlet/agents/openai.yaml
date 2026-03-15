@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coverlet for .NET"
+  short_description: "Collect code coverage with Coverlet"
+  default_prompt: "Use $dotnet-coverlet to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

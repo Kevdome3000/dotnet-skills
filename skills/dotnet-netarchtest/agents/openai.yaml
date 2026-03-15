@@ -1,0 +1,4 @@
+interface:
+  display_name: "NetArchTest"
+  short_description: "Define architecture tests with NetArchTest"
+  default_prompt: "Use $dotnet-netarchtest to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

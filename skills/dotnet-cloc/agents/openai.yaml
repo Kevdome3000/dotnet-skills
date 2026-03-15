@@ -1,0 +1,4 @@
+interface:
+  display_name: "CLOC for .NET Repositories"
+  short_description: "Measure codebase size and change footprint"
+  default_prompt: "Use $dotnet-cloc to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

@@ -1,0 +1,101 @@
+{
+  "watches": [
+    {
+      "id": "dotnet-core-apps-docs",
+      "kind": "http_document",
+      "name": ".NET app model documentation",
+      "url": "https://learn.microsoft.com/dotnet/core/apps",
+      "notes": "Review the top-level .NET platform catalog when the official app-model page changes.",
+      "skills": [
+        "dotnet",
+        "dotnet-project-setup"
+      ]
+    },
+    {
+      "id": "aspnetcore-overview-docs",
+      "kind": "http_document",
+      "name": "ASP.NET Core overview documentation",
+      "url": "https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0",
+      "notes": "Review the web-stack skills when the official ASP.NET Core overview changes.",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-minimal-apis",
+        "dotnet-web-api",
+        "dotnet-blazor",
+        "dotnet-signalr",
+        "dotnet-grpc"
+      ]
+    },
+    {
+      "id": "maui-overview-docs",
+      "kind": "http_document",
+      "name": ".NET MAUI overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/maui/what-is-maui?view=net-maui-10.0",
+      "notes": "Review MAUI guidance when the main MAUI overview changes.",
+      "skills": [
+        "dotnet-maui"
+      ]
+    },
+    {
+      "id": "wpf-overview-docs",
+      "kind": "http_document",
+      "name": "WPF overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/desktop/wpf/overview/",
+      "notes": "Review WPF guidance when the official WPF overview changes.",
+      "skills": [
+        "dotnet-wpf"
+      ]
+    },
+    {
+      "id": "winforms-overview-docs",
+      "kind": "http_document",
+      "name": "Windows Forms overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/desktop/winforms/overview/",
+      "notes": "Review WinForms guidance when the official WinForms overview changes.",
+      "skills": [
+        "dotnet-winforms"
+      ]
+    },
+    {
+      "id": "ef-compare-docs",
+      "kind": "http_document",
+      "name": "EF Core and EF6 comparison documentation",
+      "url": "https://learn.microsoft.com/ef/efcore-and-ef6/",
+      "notes": "Review EF migration guidance when Microsoft updates the EF Core versus EF6 comparison.",
+      "skills": [
+        "dotnet-entity-framework-core",
+        "dotnet-entity-framework6"
+      ]
+    },
+    {
+      "id": "aspire-docs",
+      "kind": "http_document",
+      "name": ".NET Aspire documentation",
+      "url": "https://learn.microsoft.com/dotnet/aspire/",
+      "notes": "Review Aspire guidance when orchestration, dashboard, or cloud-native guidance changes.",
+      "skills": [
+        "dotnet-aspire"
+      ]
+    },
+    {
+      "id": "extensions-ai-docs",
+      "kind": "http_document",
+      "name": "Microsoft.Extensions.AI documentation",
+      "url": "https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai",
+      "notes": "Review provider-agnostic AI abstractions when Microsoft.Extensions.AI documentation changes.",
+      "skills": [
+        "dotnet-microsoft-extensions-ai"
+      ]
+    },
+    {
+      "id": "agent-framework-docs",
+      "kind": "http_document",
+      "name": "Microsoft Agent Framework documentation",
+      "url": "https://learn.microsoft.com/agent-framework/overview/",
+      "notes": "Review agent guidance when the official Agent Framework overview changes.",
+      "skills": [
+        "dotnet-microsoft-agent-framework"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+interface:
+  display_name: ".NET Code Analysis"
+  short_description: "Use built-in .NET analyzers with explicit policy"
+  default_prompt: "Use $dotnet-code-analysis to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

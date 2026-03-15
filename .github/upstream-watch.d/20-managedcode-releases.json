@@ -1,0 +1,76 @@
+{
+  "watches": [
+    {
+      "id": "managedcode-storage-release",
+      "kind": "github_release",
+      "name": "ManagedCode Storage release",
+      "owner": "managedcode",
+      "repo": "Storage",
+      "notes": "Review storage-related .NET guidance or future catalog coverage when ManagedCode Storage ships a new release.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-communication-release",
+      "kind": "github_release",
+      "name": "ManagedCode Communication release",
+      "owner": "managedcode",
+      "repo": "Communication",
+      "notes": "Review result-pattern, ASP.NET Core integration, and explicit error-handling guidance when ManagedCode Communication changes.",
+      "skills": [
+        "dotnet",
+        "dotnet-aspnet-core"
+      ]
+    },
+    {
+      "id": "managedcode-markitdown-release",
+      "kind": "github_release",
+      "name": "ManagedCode MarkItDown release",
+      "owner": "managedcode",
+      "repo": "markitdown",
+      "notes": "Review document-conversion and content-processing guidance if this ManagedCode MarkItDown package becomes relevant to the catalog.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-orleans-signalr-release",
+      "kind": "github_release",
+      "name": "ManagedCode Orleans.SignalR release",
+      "owner": "managedcode",
+      "repo": "Orleans.SignalR",
+      "notes": "Review Orleans and SignalR integration guidance when ManagedCode Orleans.SignalR ships new releases.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-signalr"
+      ]
+    },
+    {
+      "id": "managedcode-mimetypes-release",
+      "kind": "github_release",
+      "name": "ManagedCode MimeTypes release",
+      "owner": "managedcode",
+      "repo": "MimeTypes",
+      "notes": "Review content-type and file-handling guidance if ManagedCode MimeTypes becomes part of the skill catalog surface.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-orleans-graph-release",
+      "kind": "github_release",
+      "name": "ManagedCode Orleans.Graph release",
+      "owner": "managedcode",
+      "repo": "Orleans.Graph",
+      "notes": "Review graph-oriented Orleans guidance when ManagedCode Orleans.Graph ships a new release.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-architecture"
+      ]
+    }
+  ]
+}

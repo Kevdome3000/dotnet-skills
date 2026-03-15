@@ -1,0 +1,4 @@
+interface:
+  display_name: "Stryker.NET"
+  short_description: "Apply mutation testing with Stryker.NET"
+  default_prompt: "Use $dotnet-stryker to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

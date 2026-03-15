@@ -1,0 +1,333 @@
+{
+  "watch_issue_label": "upstream-update",
+  "labels": [
+    {
+      "name": "upstream-update",
+      "color": "5319E7",
+      "description": "Framework or documentation updates detected by automation"
+    },
+    {
+      "name": "automation",
+      "color": "1D76DB",
+      "description": "Created or maintained by repository automation"
+    }
+  ],
+  "watches": [
+    {
+      "id": "dotnet-sdk-release",
+      "kind": "github_release",
+      "name": ".NET SDK release",
+      "owner": "dotnet",
+      "repo": "sdk",
+      "notes": "Review project setup, SDK assumptions, and C# guidance when a new SDK release ships.",
+      "skills": [
+        "dotnet",
+        "dotnet-project-setup",
+        "dotnet-modern-csharp"
+      ]
+    },
+    {
+      "id": "dotnet-runtime-release",
+      "kind": "github_release",
+      "name": ".NET runtime release",
+      "owner": "dotnet",
+      "repo": "runtime",
+      "notes": "Review general .NET guidance, worker behavior, and runtime compatibility notes.",
+      "skills": [
+        "dotnet",
+        "dotnet-worker-services",
+        "dotnet-modern-csharp"
+      ]
+    },
+    {
+      "id": "aspnetcore-release",
+      "kind": "github_release",
+      "name": "ASP.NET Core release",
+      "owner": "dotnet",
+      "repo": "aspnetcore",
+      "notes": "Review web-stack skills when ASP.NET Core ships platform changes or release notes.",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-minimal-apis",
+        "dotnet-web-api",
+        "dotnet-blazor",
+        "dotnet-signalr",
+        "dotnet-grpc"
+      ]
+    },
+    {
+      "id": "dotnet-maui-release",
+      "kind": "github_release",
+      "name": ".NET MAUI release",
+      "owner": "dotnet",
+      "repo": "maui",
+      "notes": "Review cross-platform UI guidance when MAUI ships new features or platform notes.",
+      "skills": [
+        "dotnet-maui"
+      ]
+    },
+    {
+      "id": "windows-app-sdk-release",
+      "kind": "github_release",
+      "name": "Windows App SDK release",
+      "owner": "microsoft",
+      "repo": "WindowsAppSDK",
+      "notes": "Review WinUI and Windows-specific guidance when the Windows App SDK changes.",
+      "skills": [
+        "dotnet-winui"
+      ]
+    },
+    {
+      "id": "efcore-release",
+      "kind": "github_release",
+      "name": "Entity Framework Core release",
+      "owner": "dotnet",
+      "repo": "efcore",
+      "notes": "Review EF Core behavior, migration guidance, and provider assumptions.",
+      "skills": [
+        "dotnet-entity-framework-core",
+        "dotnet-entity-framework6"
+      ]
+    },
+    {
+      "id": "orleans-release",
+      "kind": "github_release",
+      "name": "Microsoft Orleans release",
+      "owner": "dotnet",
+      "repo": "orleans",
+      "notes": "Review Orleans guidance when grain runtime, hosting, or provider support changes.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-aspire"
+      ]
+    },
+    {
+      "id": "extensions-release",
+      "kind": "github_release",
+      "name": "dotnet/extensions release",
+      "owner": "dotnet",
+      "repo": "extensions",
+      "notes": "Review Microsoft.Extensions guidance and AI-related extensions integration notes.",
+      "skills": [
+        "dotnet-microsoft-extensions",
+        "dotnet-microsoft-extensions-ai"
+      ]
+    },
+    {
+      "id": "azure-functions-dotnet-worker-release",
+      "kind": "github_release",
+      "name": "Azure Functions .NET worker release",
+      "owner": "Azure",
+      "repo": "azure-functions-dotnet-worker",
+      "match_tag_regex": "^\\d+\\.\\d+\\.\\d+$",
+      "notes": "Review isolated worker guidance and package version baselines when the worker runtime changes.",
+      "skills": [
+        "dotnet-azure-functions"
+      ]
+    },
+    {
+      "id": "mlnet-release",
+      "kind": "github_release",
+      "name": "ML.NET release",
+      "owner": "dotnet",
+      "repo": "machinelearning",
+      "notes": "Review ML.NET guidance when the training, inference, or CLI toolchain changes.",
+      "skills": [
+        "dotnet-mlnet"
+      ]
+    },
+    {
+      "id": "semantic-kernel-release",
+      "kind": "github_release",
+      "name": "Semantic Kernel release",
+      "owner": "microsoft",
+      "repo": "semantic-kernel",
+      "match_tag_regex": "^dotnet-",
+      "notes": "Review Semantic Kernel guidance because APIs and orchestration patterns evolve quickly.",
+      "skills": [
+        "dotnet-semantic-kernel"
+      ]
+    },
+    {
+      "id": "agent-framework-release",
+      "kind": "github_release",
+      "name": "Microsoft Agent Framework release",
+      "owner": "microsoft",
+      "repo": "agent-framework",
+      "match_tag_regex": "^dotnet-",
+      "notes": "Review agent orchestration guidance and package maturity when Agent Framework releases change.",
+      "skills": [
+        "dotnet-microsoft-agent-framework"
+      ]
+    },
+    {
+      "id": "managedcode-storage-release",
+      "kind": "github_release",
+      "name": "ManagedCode Storage release",
+      "owner": "managedcode",
+      "repo": "Storage",
+      "notes": "Review storage-related .NET guidance or future catalog coverage when ManagedCode Storage ships a new release.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-communication-release",
+      "kind": "github_release",
+      "name": "ManagedCode Communication release",
+      "owner": "managedcode",
+      "repo": "Communication",
+      "notes": "Review result-pattern, ASP.NET Core integration, and explicit error-handling guidance when ManagedCode Communication changes.",
+      "skills": [
+        "dotnet",
+        "dotnet-aspnet-core"
+      ]
+    },
+    {
+      "id": "managedcode-markitdown-release",
+      "kind": "github_release",
+      "name": "ManagedCode MarkItDown release",
+      "owner": "managedcode",
+      "repo": "markitdown",
+      "notes": "Review document-conversion and content-processing guidance if this ManagedCode MarkItDown package becomes relevant to the catalog.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-orleans-signalr-release",
+      "kind": "github_release",
+      "name": "ManagedCode Orleans.SignalR release",
+      "owner": "managedcode",
+      "repo": "Orleans.SignalR",
+      "notes": "Review Orleans and SignalR integration guidance when ManagedCode Orleans.SignalR ships new releases.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-signalr"
+      ]
+    },
+    {
+      "id": "managedcode-mimetypes-release",
+      "kind": "github_release",
+      "name": "ManagedCode MimeTypes release",
+      "owner": "managedcode",
+      "repo": "MimeTypes",
+      "notes": "Review content-type and file-handling guidance if ManagedCode MimeTypes becomes part of the skill catalog surface.",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "managedcode-orleans-graph-release",
+      "kind": "github_release",
+      "name": "ManagedCode Orleans.Graph release",
+      "owner": "managedcode",
+      "repo": "Orleans.Graph",
+      "notes": "Review graph-oriented Orleans guidance when ManagedCode Orleans.Graph ships a new release.",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-architecture"
+      ]
+    },
+    {
+      "id": "dotnet-core-apps-docs",
+      "kind": "http_document",
+      "name": ".NET app model documentation",
+      "url": "https://learn.microsoft.com/dotnet/core/apps",
+      "notes": "Review the top-level .NET platform catalog when the official app-model page changes.",
+      "skills": [
+        "dotnet",
+        "dotnet-project-setup"
+      ]
+    },
+    {
+      "id": "aspnetcore-overview-docs",
+      "kind": "http_document",
+      "name": "ASP.NET Core overview documentation",
+      "url": "https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0",
+      "notes": "Review the web-stack skills when the official ASP.NET Core overview changes.",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-minimal-apis",
+        "dotnet-web-api",
+        "dotnet-blazor",
+        "dotnet-signalr",
+        "dotnet-grpc"
+      ]
+    },
+    {
+      "id": "maui-overview-docs",
+      "kind": "http_document",
+      "name": ".NET MAUI overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/maui/what-is-maui?view=net-maui-10.0",
+      "notes": "Review MAUI guidance when the main MAUI overview changes.",
+      "skills": [
+        "dotnet-maui"
+      ]
+    },
+    {
+      "id": "wpf-overview-docs",
+      "kind": "http_document",
+      "name": "WPF overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/desktop/wpf/overview/",
+      "notes": "Review WPF guidance when the official WPF overview changes.",
+      "skills": [
+        "dotnet-wpf"
+      ]
+    },
+    {
+      "id": "winforms-overview-docs",
+      "kind": "http_document",
+      "name": "Windows Forms overview documentation",
+      "url": "https://learn.microsoft.com/dotnet/desktop/winforms/overview/",
+      "notes": "Review WinForms guidance when the official WinForms overview changes.",
+      "skills": [
+        "dotnet-winforms"
+      ]
+    },
+    {
+      "id": "ef-compare-docs",
+      "kind": "http_document",
+      "name": "EF Core and EF6 comparison documentation",
+      "url": "https://learn.microsoft.com/ef/efcore-and-ef6/",
+      "notes": "Review EF migration guidance when Microsoft updates the EF Core versus EF6 comparison.",
+      "skills": [
+        "dotnet-entity-framework-core",
+        "dotnet-entity-framework6"
+      ]
+    },
+    {
+      "id": "aspire-docs",
+      "kind": "http_document",
+      "name": ".NET Aspire documentation",
+      "url": "https://learn.microsoft.com/dotnet/aspire/",
+      "notes": "Review Aspire guidance when orchestration, dashboard, or cloud-native guidance changes.",
+      "skills": [
+        "dotnet-aspire"
+      ]
+    },
+    {
+      "id": "extensions-ai-docs",
+      "kind": "http_document",
+      "name": "Microsoft.Extensions.AI documentation",
+      "url": "https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai",
+      "notes": "Review provider-agnostic AI abstractions when Microsoft.Extensions.AI documentation changes.",
+      "skills": [
+        "dotnet-microsoft-extensions-ai"
+      ]
+    },
+    {
+      "id": "agent-framework-docs",
+      "kind": "http_document",
+      "name": "Microsoft Agent Framework documentation",
+      "url": "https://learn.microsoft.com/agent-framework/overview/",
+      "notes": "Review agent guidance when the official Agent Framework overview changes.",
+      "skills": [
+        "dotnet-microsoft-agent-framework"
+      ]
+    }
+  ]
+}

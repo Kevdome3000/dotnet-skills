@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import sys
+from pathlib import Path
+
+
+ROOT = Path(__file__).resolve().parents[1]
+README_PATH = ROOT / "README.md"
+SKILLS_DIR = ROOT / "skills"
+MANIFEST_PATH = ROOT / "catalog" / "skills.json"
+
+BEGIN_MARKER = "<!-- BEGIN GENERATED CATALOG -->"
+END_MARKER = "<!-- END GENERATED CATALOG -->"
+
+CATEGORY_ORDER = [
+    "Core",
+    "Web and Cloud",
+    "Desktop and Mobile",
+    "Data, Distributed, and AI",
+    "Legacy and Compatibility",
+    "Quality, Testing, and Tooling",
+]
+
+
+def unquote(value: str) -> str:
+    value = value.strip()
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+        return value[1:-1]
+    return value
+
+
+def parse_frontmatter(path: Path) -> tuple[dict[str, str], str]:
+    text = path.read_text()
+    if not text.startswith("---\n"):
+        raise ValueError(f"{path} is missing YAML frontmatter")
+
+    match = re.match(r"^---\n(.*?)\n---\n(.*)$", text, flags=re.DOTALL)
+    if not match:
+        raise ValueError(f"{path} has invalid frontmatter")
+
+    raw_frontmatter, body = match.groups()
+    data: dict[str, str] = {}
+    for line in raw_frontmatter.splitlines():
+        if not line.strip():
+            continue
+        if ":" not in line:
+            raise ValueError(f"{path} has malformed frontmatter line: {line}")
+        key, value = line.split(":", 1)
+        data[key.strip()] = unquote(value)
+    return data, body
+
+
+def parse_title(body: str, path: Path) -> str:
+    for line in body.splitlines():
+        if line.startswith("# "):
+            return line[2:].strip()
+    raise ValueError(f"{path} is missing an H1 title")
+
+
+def collect_skills() -> list[dict[str, str]]:
+    skills: list[dict[str, str]] = []
+    for skill_dir in sorted(path for path in SKILLS_DIR.iterdir() if path.is_dir()):
+        skill_path = skill_dir / "SKILL.md"
+        agents_path = skill_dir / "agents" / "openai.yaml"
+        if not skill_path.exists():
+            continue
+        if not agents_path.exists():
+            raise ValueError(f"{skill_dir} is missing agents/openai.yaml")
+
+        metadata, body = parse_frontmatter(skill_path)
+        title = parse_title(body, skill_path)
+
+        required = ["name", "version", "category", "description", "compatibility"]
+        missing = [key for key in required if key not in metadata or not metadata[key].strip()]
+        if missing:
+            raise ValueError(f"{skill_path} is missing required frontmatter keys: {', '.join(missing)}")
+
+        category = metadata["category"]
+        if category not in CATEGORY_ORDER:
+            raise ValueError(f"{skill_path} has unsupported category: {category}")
+
+        skills.append(
+            {
+                "name": metadata["name"],
+                "title": title,
+                "version": metadata["version"],
+                "category": category,
+                "description": metadata["description"],
+                "compatibility": metadata["compatibility"],
+                "path": f"skills/{skill_dir.name}/",
+            }
+        )
+
+    return skills
+
+
+def render_catalog(skills: list[dict[str, str]]) -> str:
+    grouped: dict[str, list[dict[str, str]]] = {category: [] for category in CATEGORY_ORDER}
+    for skill in skills:
+        grouped[skill["category"]].append(skill)
+
+    for category in grouped:
+        grouped[category].sort(key=lambda item: item["name"])
+
+    lines: list[str] = [BEGIN_MARKER, "", f"This catalog currently contains **{len(skills)}** skills.", ""]
+
+    for category in CATEGORY_ORDER:
+        items = grouped[category]
+        if not items:
+            continue
+        lines.extend(
+            [
+                f"### {category}",
+                "",
+                "| Skill | Version | Description | Folder |",
+                "| --- | --- | --- | --- |",
+            ]
+        )
+        for item in items:
+            lines.append(
+                f"| `{item['name']}` | `{item['version']}` | {item['description']} | [`{item['path']}`]({item['path']}) |"
+            )
+        lines.append("")
+
+    lines.append(END_MARKER)
+    return "\n".join(lines)
+
+
+def update_readme(rendered_catalog: str) -> bool:
+    readme = README_PATH.read_text()
+    pattern = re.compile(
+        rf"{re.escape(BEGIN_MARKER)}.*?{re.escape(END_MARKER)}",
+        flags=re.DOTALL,
+    )
+    if not pattern.search(readme):
+        raise ValueError("README.md is missing generated catalog markers")
+
+    updated = pattern.sub(rendered_catalog, readme)
+    changed = updated != readme
+    README_PATH.write_text(updated)
+    return changed
+
+
+def check_readme(rendered_catalog: str) -> bool:
+    readme = README_PATH.read_text()
+    pattern = re.compile(
+        rf"{re.escape(BEGIN_MARKER)}.*?{re.escape(END_MARKER)}",
+        flags=re.DOTALL,
+    )
+    match = pattern.search(readme)
+    if not match:
+        raise ValueError("README.md is missing generated catalog markers")
+    return match.group(0) == rendered_catalog
+
+
+def write_manifest(skills: list[dict[str, str]]) -> None:
+    write_manifest_to_path(MANIFEST_PATH, skills)
+
+
+def write_manifest_to_path(path: Path, skills: list[dict[str, str]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps({"skills": skills}, indent=2, sort_keys=False) + "\n")
+
+
+def check_manifest(skills: list[dict[str, str]]) -> bool:
+    if not MANIFEST_PATH.exists():
+        return False
+    current = json.loads(MANIFEST_PATH.read_text())
+    return current == {"skills": skills}
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Generate the README catalog and skills manifest from skill metadata.")
+    parser.add_argument("--check", action="store_true", help="Fail if generated files are out of date.")
+    parser.add_argument(
+        "--validate-only",
+        action="store_true",
+        help="Validate skill metadata and catalog rendering without writing or checking generated files.",
+    )
+    parser.add_argument(
+        "--manifest-output",
+        type=Path,
+        help="Write only the machine-readable manifest to a custom path without mutating README.md.",
+    )
+    return parser.parse_args()
+
+
+def main() -> int:
+    args = parse_args()
+    if sum(1 for value in [args.check, args.validate_only, args.manifest_output is not None] if value) > 1:
+        print("--check, --validate-only, and --manifest-output are mutually exclusive.", file=sys.stderr)
+        return 2
+
+    skills = collect_skills()
+    rendered_catalog = render_catalog(skills)
+
+    if args.manifest_output is not None:
+        write_manifest_to_path(args.manifest_output, skills)
+        print(f"Wrote manifest to {args.manifest_output}")
+        return 0
+
+    if args.validate_only:
+        print(f"Catalog metadata is valid for {len(skills)} skills.")
+        return 0
+
+    if args.check:
+        readme_ok = check_readme(rendered_catalog)
+        manifest_ok = check_manifest(skills)
+        if not readme_ok or not manifest_ok:
+            if not readme_ok:
+                print("README.md catalog section is out of date.", file=sys.stderr)
+            if not manifest_ok:
+                print("catalog/skills.json is out of date.", file=sys.stderr)
+            return 1
+        print("Catalog is up to date.")
+        return 0
+
+    update_readme(rendered_catalog)
+    write_manifest(skills)
+    print(f"Generated catalog for {len(skills)} skills.")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

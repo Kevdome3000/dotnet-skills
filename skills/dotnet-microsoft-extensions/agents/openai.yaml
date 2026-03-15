@@ -1,0 +1,4 @@
+interface:
+  display_name: "Microsoft.Extensions for .NET"
+  short_description: "Use Generic Host, DI, config, and logging well"
+  default_prompt: "Use $dotnet-microsoft-extensions to handle this Microsoft.Extensions for .NET task with current .NET-specific guidance."
