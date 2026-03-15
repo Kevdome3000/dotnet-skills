@@ -336,6 +336,9 @@ Every watch entry should make these points clear:
 - `notes`: why a change matters
 - `skills`: which `dotnet-*` skills should be reviewed
 
+For project-specific libraries, the `skills` list must point to the dedicated project skill.
+Do not use umbrella skills such as `dotnet`, `dotnet-architecture`, or `dotnet-orleans` as placeholders for a concrete library watch.
+
 ### Commands To Run After Editing Watches
 
 After editing [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d):

@@ -106,7 +106,7 @@ skills/<skill-name>/
 
 <!-- BEGIN GENERATED CATALOG -->
 
-This catalog currently contains **56** skills.
+This catalog currently contains **62** skills.
 
 ### Core
 
@@ -143,6 +143,18 @@ This catalog currently contains **56** skills.
       <td><code>1.0.0</code></td>
       <td>Review .NET changes for bugs, regressions, architectural drift, missing tests, incorrect async or disposal behavior, and platform-specific pitfalls before you approve or merge them.</td>
       <td><a href="skills/dotnet-code-review/"><code>skills/dotnet-code-review/</code></a></td>
+    </tr>
+    <tr>
+      <td><a href="skills/dotnet-managedcode-communication/"><code>dotnet&#8209;managedcode&#8209;communication</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.Communication when a .NET application needs explicit result objects, structured errors, and predictable service or API boundaries instead of exception-driven control flow.</td>
+      <td><a href="skills/dotnet-managedcode-communication/"><code>skills/dotnet-managedcode-communication/</code></a></td>
+    </tr>
+    <tr>
+      <td><a href="skills/dotnet-managedcode-mimetypes/"><code>dotnet&#8209;managedcode&#8209;mimetypes</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.MimeTypes when a .NET application needs consistent MIME type detection, extension mapping, and content-type decisions for uploads, downloads, or HTTP responses.</td>
+      <td><a href="skills/dotnet-managedcode-mimetypes/"><code>skills/dotnet-managedcode-mimetypes/</code></a></td>
     </tr>
     <tr>
       <td><a href="skills/dotnet-microsoft-extensions/"><code>dotnet&#8209;microsoft&#8209;extensions</code></a></td>
@@ -268,6 +280,18 @@ This catalog currently contains **56** skills.
   </thead>
   <tbody>
     <tr>
+      <td><a href="skills/dotnet-managedcode-orleans-graph/"><code>dotnet&#8209;managedcode&#8209;orleans&#8209;graph</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.Orleans.Graph when a distributed .NET application models graph-oriented relationships or traversal logic on top of Orleans grains and graph-aware integration patterns.</td>
+      <td><a href="skills/dotnet-managedcode-orleans-graph/"><code>skills/dotnet-managedcode-orleans-graph/</code></a></td>
+    </tr>
+    <tr>
+      <td><a href="skills/dotnet-managedcode-orleans-signalr/"><code>dotnet&#8209;managedcode&#8209;orleans&#8209;signalr</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.Orleans.SignalR when a distributed .NET application needs Orleans-based coordination of SignalR real-time messaging, hub delivery, and grain-driven push flows.</td>
+      <td><a href="skills/dotnet-managedcode-orleans-signalr/"><code>skills/dotnet-managedcode-orleans-signalr/</code></a></td>
+    </tr>
+    <tr>
       <td><a href="skills/dotnet-orleans/"><code>dotnet&#8209;orleans</code></a></td>
       <td><code>1.0.0</code></td>
       <td>Build or review distributed .NET applications with Orleans grains, silos, streams, persistence, versioning, and cloud-native hosting patterns.</td>
@@ -389,6 +413,18 @@ This catalog currently contains **56** skills.
       <td><code>1.0.0</code></td>
       <td>Maintain or migrate EF6-based applications with realistic guidance on what to keep, what to modernize, and when EF Core is or is not the right next step.</td>
       <td><a href="skills/dotnet-entity-framework6/"><code>skills/dotnet-entity-framework6/</code></a></td>
+    </tr>
+    <tr>
+      <td><a href="skills/dotnet-managedcode-markitdown/"><code>dotnet&#8209;managedcode&#8209;markitdown</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.MarkItDown when a .NET application needs deterministic document-to-Markdown conversion for ingestion, indexing, summarization, or content-processing workflows.</td>
+      <td><a href="skills/dotnet-managedcode-markitdown/"><code>skills/dotnet-managedcode-markitdown/</code></a></td>
+    </tr>
+    <tr>
+      <td><a href="skills/dotnet-managedcode-storage/"><code>dotnet&#8209;managedcode&#8209;storage</code></a></td>
+      <td><code>1.0.0</code></td>
+      <td>Use ManagedCode.Storage when a .NET application needs a provider-agnostic storage abstraction with explicit configuration, container selection, upload and download flows, and backend-specific integration kept behind one library contract.</td>
+      <td><a href="skills/dotnet-managedcode-storage/"><code>skills/dotnet-managedcode-storage/</code></a></td>
     </tr>
   </tbody>
 </table>

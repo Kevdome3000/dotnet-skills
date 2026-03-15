@@ -63,6 +63,9 @@ Use `http_document` for stable docs pages:
 
 Add `match_tag_regex` when a repo publishes multiple release streams and you only want one of them.
 
+If the watch is for a specific library or project, map it to the dedicated project skill.
+Do not point a concrete library watch at umbrella skills such as `dotnet` or `dotnet-architecture` just because the dedicated skill does not exist yet.
+
 ## Required Follow-Up Commands
 
 After editing fragments:

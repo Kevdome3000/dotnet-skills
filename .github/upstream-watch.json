@@ -166,10 +166,9 @@
       "name": "ManagedCode Storage release",
       "owner": "managedcode",
       "repo": "Storage",
-      "notes": "Review storage-related .NET guidance or future catalog coverage when ManagedCode Storage ships a new release.",
+      "notes": "Review the dedicated ManagedCode.Storage skill when the library ships a new release.",
       "skills": [
-        "dotnet",
-        "dotnet-architecture"
+        "dotnet-managedcode-storage"
       ]
     },
     {
@@ -178,10 +177,9 @@
       "name": "ManagedCode Communication release",
       "owner": "managedcode",
       "repo": "Communication",
-      "notes": "Review result-pattern, ASP.NET Core integration, and explicit error-handling guidance when ManagedCode Communication changes.",
+      "notes": "Review the dedicated ManagedCode.Communication skill when the library changes result patterns or integration guidance.",
       "skills": [
-        "dotnet",
-        "dotnet-aspnet-core"
+        "dotnet-managedcode-communication"
       ]
     },
     {
@@ -190,10 +188,9 @@
       "name": "ManagedCode MarkItDown release",
       "owner": "managedcode",
       "repo": "markitdown",
-      "notes": "Review document-conversion and content-processing guidance if this ManagedCode MarkItDown package becomes relevant to the catalog.",
+      "notes": "Review the dedicated ManagedCode.MarkItDown skill when document-conversion behavior or integration guidance changes.",
       "skills": [
-        "dotnet",
-        "dotnet-architecture"
+        "dotnet-managedcode-markitdown"
       ]
     },
     {
@@ -202,10 +199,9 @@
       "name": "ManagedCode Orleans.SignalR release",
       "owner": "managedcode",
       "repo": "Orleans.SignalR",
-      "notes": "Review Orleans and SignalR integration guidance when ManagedCode Orleans.SignalR ships new releases.",
+      "notes": "Review the dedicated ManagedCode.Orleans.SignalR skill when the integration library ships a new release.",
       "skills": [
-        "dotnet-orleans",
-        "dotnet-signalr"
+        "dotnet-managedcode-orleans-signalr"
       ]
     },
     {
@@ -214,10 +210,9 @@
       "name": "ManagedCode MimeTypes release",
       "owner": "managedcode",
       "repo": "MimeTypes",
-      "notes": "Review content-type and file-handling guidance if ManagedCode MimeTypes becomes part of the skill catalog surface.",
+      "notes": "Review the dedicated ManagedCode.MimeTypes skill when MIME mapping or content-type guidance changes.",
       "skills": [
-        "dotnet",
-        "dotnet-architecture"
+        "dotnet-managedcode-mimetypes"
       ]
     },
     {
@@ -226,10 +221,9 @@
       "name": "ManagedCode Orleans.Graph release",
       "owner": "managedcode",
       "repo": "Orleans.Graph",
-      "notes": "Review graph-oriented Orleans guidance when ManagedCode Orleans.Graph ships a new release.",
+      "notes": "Review the dedicated ManagedCode.Orleans.Graph skill when graph-oriented Orleans guidance changes.",
       "skills": [
-        "dotnet-orleans",
-        "dotnet-architecture"
+        "dotnet-managedcode-orleans-graph"
       ]
     },
     {

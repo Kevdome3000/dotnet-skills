@@ -181,6 +181,60 @@
       "path": "skills/dotnet-legacy-aspnet/"
     },
     {
+      "name": "dotnet-managedcode-communication",
+      "title": "ManagedCode.Communication",
+      "version": "1.0.0",
+      "category": "Core",
+      "description": "Use ManagedCode.Communication when a .NET application needs explicit result objects, structured errors, and predictable service or API boundaries instead of exception-driven control flow.",
+      "compatibility": "Requires a .NET application, service layer, or API boundary that integrates ManagedCode.Communication.",
+      "path": "skills/dotnet-managedcode-communication/"
+    },
+    {
+      "name": "dotnet-managedcode-markitdown",
+      "title": "ManagedCode.MarkItDown",
+      "version": "1.0.0",
+      "category": "Data",
+      "description": "Use ManagedCode.MarkItDown when a .NET application needs deterministic document-to-Markdown conversion for ingestion, indexing, summarization, or content-processing workflows.",
+      "compatibility": "Requires a .NET application that integrates ManagedCode.MarkItDown or evaluates document conversion into Markdown.",
+      "path": "skills/dotnet-managedcode-markitdown/"
+    },
+    {
+      "name": "dotnet-managedcode-mimetypes",
+      "title": "ManagedCode.MimeTypes",
+      "version": "1.0.0",
+      "category": "Core",
+      "description": "Use ManagedCode.MimeTypes when a .NET application needs consistent MIME type detection, extension mapping, and content-type decisions for uploads, downloads, or HTTP responses.",
+      "compatibility": "Requires a .NET application that integrates ManagedCode.MimeTypes or evaluates MIME type mapping behavior.",
+      "path": "skills/dotnet-managedcode-mimetypes/"
+    },
+    {
+      "name": "dotnet-managedcode-orleans-graph",
+      "title": "ManagedCode.Orleans.Graph",
+      "version": "1.0.0",
+      "category": "Distributed",
+      "description": "Use ManagedCode.Orleans.Graph when a distributed .NET application models graph-oriented relationships or traversal logic on top of Orleans grains and graph-aware integration patterns.",
+      "compatibility": "Requires a .NET application that integrates ManagedCode.Orleans.Graph or evaluates graph-style modeling with Orleans.",
+      "path": "skills/dotnet-managedcode-orleans-graph/"
+    },
+    {
+      "name": "dotnet-managedcode-orleans-signalr",
+      "title": "ManagedCode.Orleans.SignalR",
+      "version": "1.0.0",
+      "category": "Distributed",
+      "description": "Use ManagedCode.Orleans.SignalR when a distributed .NET application needs Orleans-based coordination of SignalR real-time messaging, hub delivery, and grain-driven push flows.",
+      "compatibility": "Requires a .NET application that combines Orleans and SignalR through ManagedCode.Orleans.SignalR.",
+      "path": "skills/dotnet-managedcode-orleans-signalr/"
+    },
+    {
+      "name": "dotnet-managedcode-storage",
+      "title": "ManagedCode.Storage",
+      "version": "1.0.0",
+      "category": "Data",
+      "description": "Use ManagedCode.Storage when a .NET application needs a provider-agnostic storage abstraction with explicit configuration, container selection, upload and download flows, and backend-specific integration kept behind one library contract.",
+      "compatibility": "Requires a .NET application that integrates ManagedCode.Storage or evaluates it as a storage abstraction.",
+      "path": "skills/dotnet-managedcode-storage/"
+    },
+    {
       "name": "dotnet-maui",
       "title": ".NET MAUI",
       "version": "1.0.0",

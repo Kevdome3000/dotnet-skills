@@ -299,6 +299,7 @@ When adding a GitHub release watch:
 - Prefer the repository that actually signals the .NET-facing release stream.
 - If the repository publishes multiple language or package streams, add `match_tag_regex`.
 - Use `match_tag_regex` for mixed repos such as Semantic Kernel or Agent Framework, where the latest release may otherwise point to Python or another stream.
+- Project-specific watches must point to project-specific skills. Do not map a library watch for a concrete repository to generic umbrella skills such as `dotnet`, `dotnet-architecture`, or `dotnet-orleans` as a substitute for a missing dedicated skill.
 
 When adding a documentation watch:
 
