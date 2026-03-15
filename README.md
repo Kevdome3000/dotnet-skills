@@ -2,17 +2,18 @@
 
 A curated catalog of reusable agent skills for modern and legacy .NET development.
 
-The canonical skill catalog lives in [`skills/`](skills/). Each skill has its own folder, a `SKILL.md` file, and an `agents/openai.yaml` file for OpenAI or Codex adapter metadata.
+The canonical skill catalog lives in [`skills/`](skills/). Each skill is centered on `SKILL.md`, which follows the Agent Skills style used by Gemini CLI and fits the packaging model used by GitHub Copilot skills. Vendor-specific files such as `agents/openai.yaml` are optional adapters, not the canonical format.
 
 This repository is designed to help an AI coding agent work effectively across the main .NET platforms and frameworks: ASP.NET Core, Blazor, Minimal APIs, MAUI, WPF, Windows Forms, WinUI, Azure Functions, Worker Services, Aspire, Entity Framework, Orleans, ML.NET, Semantic Kernel, Microsoft.Extensions.AI, Microsoft Agent Framework, and the major legacy stacks that still exist in real companies.
 
 ## What Is In This Repo
 
-- A canonical `skills/` catalog using clean `dotnet-*` names instead of the older `mcaf-*` prefix.
+- A canonical `skills/` catalog using clean `dotnet-*` names.
 - Platform skills for the major .NET app models and Microsoft frameworks.
 - Architecture and code-review skills that help with solution design, migration, and engineering quality.
 - Quality, testing, and tooling skills for analyzers, coverage, mutation testing, architecture rules, and formatting.
-- `agents/openai.yaml` metadata for every skill as the repository's OpenAI or Codex adapter layer.
+- Optional `agents/openai.yaml` metadata when an OpenAI or Codex adapter file is useful.
+- Root adapter files for the major agent families: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md`.
 - A contributor guide in [`CONTRIBUTING.md`](CONTRIBUTING.md) that tells library authors how to add their projects and document correct usage.
 - A generated catalog flow where release CI builds the machine-readable catalog from skill frontmatter.
 - A publishable `.NET` tool package that installs the catalog through `dotnet skills ...`.
@@ -55,17 +56,18 @@ Agent-aware install targets:
 
 - `--agent codex` with `--scope global`: `~/.codex/skills` or `$CODEX_HOME/skills`
 - `--agent codex` with `--scope project`: `<repo>/.codex/skills`
-- `--agent claude` or `--agent anthropic` with `--scope global`: skill payloads in `~/.claude/skills` plus generated subagent adapters in `~/.claude/agents`
-- `--agent claude` or `--agent anthropic` with `--scope project`: skill payloads in `<repo>/.claude/skills` plus generated subagent adapters in `<repo>/.claude/agents`
+- `--agent claude` or `--agent anthropic` with `--scope global`: generated subagent adapters in `~/.claude/agents`
+- `--agent claude` or `--agent anthropic` with `--scope project`: generated subagent adapters in `<repo>/.claude/agents`
 - `--agent copilot` with `--scope global`: `~/.copilot/skills`
 - `--agent copilot` with `--scope project`: `<repo>/.github/skills`
-- `--agent gemini` with `--scope global`: `~/.gemini/skills`
-- `--agent gemini` with `--scope project`: `<repo>/.gemini/skills`
+- `--agent gemini` with `--scope global`: `~/.agents/skills`
+- `--agent gemini` with `--scope project`: `<repo>/.agents/skills`
 
 Notes:
 
-- Claude Code does not consume the raw skill folders directly the same way Codex, Copilot, and Gemini do, so the tool generates `.claude/agents/<skill>.md` adapters that point Claude at the installed skill payload.
-- Gemini CLI also supports the Open Code `./.agents/skills` convention, but this tool uses the vendor-specific `.gemini/skills` path as the default install target.
+- Claude Code does not use the `SKILL.md` package format directly, so the tool generates standard `.claude/agents/<skill>.md` subagents from the source skill.
+- Gemini CLI documents both `.gemini/skills` and `.agents/skills`; the tool prefers the `.agents/skills` alias because Gemini gives it precedence and it aligns better with the shared Agent Skills convention.
+- `agents/openai.yaml` is not treated as a universal standard in this repository.
 
 ## Publish The Tool
 
@@ -122,11 +124,14 @@ Every skill is intentionally small and predictable:
 ```text
 skills/<skill-name>/
 ├── SKILL.md
-└── agents/
+├── scripts/       # optional
+├── references/    # optional
+├── assets/        # optional
+└── agents/        # optional vendor adapter metadata
     └── openai.yaml
 ```
 
-Some migrated tooling skills also include a `references/` folder copied from the original material when that extra detail is useful.
+Some tooling skills also include a `references/` folder when extra detail is useful.
 
 ## Catalog
 
@@ -236,39 +241,6 @@ Contributors should add both knowledge and ownership:
 
 Start with [`CONTRIBUTING.md`](CONTRIBUTING.md).
 
-## Migration From `mcaf-*` Names
-
-The older `skills/mcaf-*` material was treated as source input. The curated catalog is now the lowercase `skills/` tree with clean `dotnet-*` names.
-
-| Old name | New name | Note |
-| --- | --- | --- |
-| `mcaf-dotnet` | `dotnet` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-analyzer-config` | `dotnet-analyzer-config` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-archunitnet` | `dotnet-archunitnet` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-cloc` | `dotnet-cloc` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-code-analysis` | `dotnet-code-analysis` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-codeql` | `dotnet-codeql` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-complexity` | `dotnet-complexity` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-coverlet` | `dotnet-coverlet` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-csharpier` | `dotnet-csharpier` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-features` | `dotnet-modern-csharp` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-format` | `dotnet-format` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-meziantou-analyzer` | `dotnet-meziantou-analyzer` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-mstest` | `dotnet-mstest` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-netarchtest` | `dotnet-netarchtest` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-profiling` | `dotnet-profiling` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-quality-ci` | `dotnet-quality-ci` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-quickdup` | `dotnet-quickdup` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-reportgenerator` | `dotnet-reportgenerator` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-resharper-clt` | `dotnet-resharper-clt` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-roslynator` | `dotnet-roslynator` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-stryker` | `dotnet-stryker` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-stylecop-analyzers` | `dotnet-stylecop-analyzers` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-tunit` | `dotnet-tunit` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-dotnet-xunit` | `dotnet-xunit` | Migrated into the canonical `skills/` catalog. |
-| `mcaf-solid-maintainability` | `dotnet-architecture` | Referenced in legacy skills; now covered by a real skill in `skills/`. |
-| `mcaf-architecture-overview` | `dotnet-architecture` | Referenced in legacy skills; now covered by a real skill in `skills/`. |
-
 ## Coverage Baseline
 
 The platform and framework list was refreshed against official Microsoft documentation on **2026-03-15**. The goal was to cover the major .NET development surfaces that matter in practice, not only the narrow tooling skills that already existed.
@@ -354,5 +326,4 @@ To add a new source:
 ## Notes
 
 - `skills/` is the canonical catalog to use going forward.
-- The original `mcaf-*` drafts were migrated into `skills/` and renamed to clean `dotnet-*` skill names.
 - There is no duplicate uppercase skill tree anymore; the repository now uses the lowercase `skills/` path as the single source of truth.
