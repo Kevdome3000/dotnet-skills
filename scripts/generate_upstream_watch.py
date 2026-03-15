@@ -37,11 +37,28 @@ def parse_github_repo_reference(reference: str) -> tuple[str, str]:
     else:
         parts = [part for part in cleaned.split("/") if part]
 
-    if len(parts) != 2:
+    if len(parts) < 2:
         raise ValueError(f"GitHub repository reference must be owner/repo or a GitHub repo URL: {reference}")
 
-    owner, repo = parts
+    owner, repo = parts[:2]
     return owner, repo
+
+
+def is_http_url(reference: str) -> bool:
+    return reference.startswith("https://") or reference.startswith("http://")
+
+
+def classify_source(reference: str) -> str:
+    if not is_http_url(reference):
+        return "github_release"
+
+    parsed = urlparse(reference)
+    if parsed.netloc.lower() == "github.com":
+        parts = [part for part in parsed.path.split("/") if part]
+        if len(parts) >= 2:
+            return "github_release"
+
+    return "http_document"
 
 
 def default_http_watch_id(url: str) -> str:
@@ -58,9 +75,9 @@ def default_http_watch_name(url: str) -> str:
 
 
 def normalize_github_release_watch(watch: dict[str, Any]) -> dict[str, Any]:
-    repo_reference = watch.get("repo")
+    repo_reference = watch.get("source") or watch.get("repo")
     if not isinstance(repo_reference, str) or not repo_reference.strip():
-        raise ValueError("github_release watch requires a non-empty repo field")
+        raise ValueError("github_release watch requires a non-empty source or repo field")
 
     owner, repo = parse_github_repo_reference(repo_reference)
     watch_id = watch.get("id") or f"{slugify(owner)}-{slugify(repo)}-release"
@@ -83,9 +100,9 @@ def normalize_github_release_watch(watch: dict[str, Any]) -> dict[str, Any]:
 
 
 def normalize_http_document_watch(watch: dict[str, Any]) -> dict[str, Any]:
-    url = watch.get("url")
+    url = watch.get("source") or watch.get("url")
     if not isinstance(url, str) or not url.strip():
-        raise ValueError("http_document watch requires a non-empty url field")
+        raise ValueError("http_document watch requires a non-empty source or url field")
 
     normalized: dict[str, Any] = {
         "id": watch.get("id") or default_http_watch_id(url),
@@ -105,12 +122,21 @@ def normalize_watch(watch: dict[str, Any], path: Path) -> dict[str, Any]:
         normalized = normalize_github_release_watch(watch)
     elif kind == "http_document":
         normalized = normalize_http_document_watch(watch)
+    elif "source" in watch:
+        source = watch.get("source")
+        if not isinstance(source, str) or not source.strip():
+            raise ValueError(f"Watch in {path} must define a non-empty source field")
+        inferred_kind = classify_source(source.strip())
+        if inferred_kind == "github_release":
+            normalized = normalize_github_release_watch(watch)
+        else:
+            normalized = normalize_http_document_watch(watch)
     elif "repo" in watch:
         normalized = normalize_github_release_watch(watch)
     elif "url" in watch:
         normalized = normalize_http_document_watch(watch)
     else:
-        raise ValueError(f"Watch in {path} must define either repo or url")
+        raise ValueError(f"Watch in {path} must define source, repo, or url")
 
     skills = normalized.get("skills")
     if not isinstance(skills, list) or not skills or not all(isinstance(skill, str) and skill for skill in skills):

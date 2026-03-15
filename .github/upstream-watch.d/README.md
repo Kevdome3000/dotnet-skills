@@ -30,11 +30,11 @@ If an existing fragment does not fit, create a new vendor-specific one instead o
 
 ## Watch Types
 
-For GitHub release feeds, keep the human-authored fragment minimal:
+Use one preferred universal field in fragment files:
 
 ```json
 {
-  "repo": "https://github.com/myvendor/MyProject",
+  "source": "https://github.com/myvendor/MyProject",
   "skills": [
     "dotnet-myproject"
   ]
@@ -42,7 +42,12 @@ For GitHub release feeds, keep the human-authored fragment minimal:
 ```
 
 That is enough for automation.
-`scripts/generate_upstream_watch.py` derives `id`, `kind`, `name`, `owner`, `repo`, and a default `notes` value.
+`scripts/generate_upstream_watch.py` derives `kind`, `id`, source coordinates, `name`, and a default `notes` value.
+
+Use `source` for both:
+
+- a GitHub repository URL or `owner/repo` when you want a release watch
+- a documentation URL when you want a docs watch
 
 Add extra fields only when needed:
 
@@ -51,18 +56,18 @@ Add extra fields only when needed:
 - `include_prereleases`
 - `notes`
 
-Use `http_document` or a simple `url` entry for stable docs pages:
+For docs pages, the shape stays the same:
 
 ```json
 {
-  "url": "https://learn.microsoft.com/example/myproject/overview",
+  "source": "https://learn.microsoft.com/example/myproject/overview",
   "skills": [
     "dotnet-myproject"
   ]
 }
 ```
 
-For documentation watches, the generator can derive `id`, `kind`, `name`, and default `notes` too.
+For documentation watches, the generator can derive `kind`, `id`, `name`, and default `notes` too.
 Keep explicit `name` or `notes` only when the default wording would be unclear.
 
 Add `match_tag_regex` when a repo publishes multiple release streams and you only want one of them.

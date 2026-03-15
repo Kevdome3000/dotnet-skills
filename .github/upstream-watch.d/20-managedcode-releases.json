@@ -1,37 +1,37 @@
 {
   "watches": [
     {
-      "repo": "https://github.com/managedcode/Storage",
+      "source": "https://github.com/managedcode/Storage",
       "skills": [
         "dotnet-managedcode-storage"
       ]
     },
     {
-      "repo": "https://github.com/managedcode/Communication",
+      "source": "https://github.com/managedcode/Communication",
       "skills": [
         "dotnet-managedcode-communication"
       ]
     },
     {
-      "repo": "https://github.com/managedcode/markitdown",
+      "source": "https://github.com/managedcode/markitdown",
       "skills": [
         "dotnet-managedcode-markitdown"
       ]
     },
     {
-      "repo": "https://github.com/managedcode/Orleans.SignalR",
+      "source": "https://github.com/managedcode/Orleans.SignalR",
       "skills": [
         "dotnet-managedcode-orleans-signalr"
       ]
     },
     {
-      "repo": "https://github.com/managedcode/MimeTypes",
+      "source": "https://github.com/managedcode/MimeTypes",
       "skills": [
         "dotnet-managedcode-mimetypes"
       ]
     },
     {
-      "repo": "https://github.com/managedcode/Orleans.Graph",
+      "source": "https://github.com/managedcode/Orleans.Graph",
       "skills": [
         "dotnet-managedcode-orleans-graph"
       ]

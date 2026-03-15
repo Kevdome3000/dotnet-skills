@@ -229,9 +229,9 @@
     {
       "id": "dotnet-core-apps-docs",
       "kind": "http_document",
-      "name": ".NET app model documentation",
+      "name": "learn.microsoft.comdotnet/core/apps documentation",
       "url": "https://learn.microsoft.com/dotnet/core/apps",
-      "notes": "Review the top-level .NET platform catalog when the official app-model page changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/core/apps changes.",
       "skills": [
         "dotnet",
         "dotnet-project-setup"
@@ -240,9 +240,9 @@
     {
       "id": "aspnetcore-overview-docs",
       "kind": "http_document",
-      "name": "ASP.NET Core overview documentation",
+      "name": "learn.microsoft.comaspnet/core/overview documentation",
       "url": "https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0",
-      "notes": "Review the web-stack skills when the official ASP.NET Core overview changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/aspnet/core/overview?view=aspnetcore-10.0 changes.",
       "skills": [
         "dotnet-aspnet-core",
         "dotnet-minimal-apis",
@@ -255,9 +255,9 @@
     {
       "id": "maui-overview-docs",
       "kind": "http_document",
-      "name": ".NET MAUI overview documentation",
+      "name": "learn.microsoft.comdotnet/maui/what-is-maui documentation",
       "url": "https://learn.microsoft.com/dotnet/maui/what-is-maui?view=net-maui-10.0",
-      "notes": "Review MAUI guidance when the main MAUI overview changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/maui/what-is-maui?view=net-maui-10.0 changes.",
       "skills": [
         "dotnet-maui"
       ]
@@ -265,9 +265,9 @@
     {
       "id": "wpf-overview-docs",
       "kind": "http_document",
-      "name": "WPF overview documentation",
+      "name": "learn.microsoft.comdotnet/desktop/wpf/overview documentation",
       "url": "https://learn.microsoft.com/dotnet/desktop/wpf/overview/",
-      "notes": "Review WPF guidance when the official WPF overview changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/desktop/wpf/overview/ changes.",
       "skills": [
         "dotnet-wpf"
       ]
@@ -275,9 +275,9 @@
     {
       "id": "winforms-overview-docs",
       "kind": "http_document",
-      "name": "Windows Forms overview documentation",
+      "name": "learn.microsoft.comdotnet/desktop/winforms/overview documentation",
       "url": "https://learn.microsoft.com/dotnet/desktop/winforms/overview/",
-      "notes": "Review WinForms guidance when the official WinForms overview changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/desktop/winforms/overview/ changes.",
       "skills": [
         "dotnet-winforms"
       ]
@@ -285,9 +285,9 @@
     {
       "id": "ef-compare-docs",
       "kind": "http_document",
-      "name": "EF Core and EF6 comparison documentation",
+      "name": "learn.microsoft.comef/efcore-and-ef6 documentation",
       "url": "https://learn.microsoft.com/ef/efcore-and-ef6/",
-      "notes": "Review EF migration guidance when Microsoft updates the EF Core versus EF6 comparison.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/ef/efcore-and-ef6/ changes.",
       "skills": [
         "dotnet-entity-framework-core",
         "dotnet-entity-framework6"
@@ -296,9 +296,9 @@
     {
       "id": "aspire-docs",
       "kind": "http_document",
-      "name": ".NET Aspire documentation",
+      "name": "learn.microsoft.comdotnet/aspire documentation",
       "url": "https://learn.microsoft.com/dotnet/aspire/",
-      "notes": "Review Aspire guidance when orchestration, dashboard, or cloud-native guidance changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/aspire/ changes.",
       "skills": [
         "dotnet-aspire"
       ]
@@ -306,9 +306,9 @@
     {
       "id": "extensions-ai-docs",
       "kind": "http_document",
-      "name": "Microsoft.Extensions.AI documentation",
+      "name": "learn.microsoft.comdotnet/ai/microsoft-extensions-ai documentation",
       "url": "https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai",
-      "notes": "Review provider-agnostic AI abstractions when Microsoft.Extensions.AI documentation changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai changes.",
       "skills": [
         "dotnet-microsoft-extensions-ai"
       ]
@@ -316,9 +316,9 @@
     {
       "id": "agent-framework-docs",
       "kind": "http_document",
-      "name": "Microsoft Agent Framework documentation",
+      "name": "learn.microsoft.comagent-framework/overview documentation",
       "url": "https://learn.microsoft.com/agent-framework/overview/",
-      "notes": "Review agent guidance when the official Agent Framework overview changes.",
+      "notes": "Review the linked skills when https://learn.microsoft.com/agent-framework/overview/ changes.",
       "skills": [
         "dotnet-microsoft-agent-framework"
       ]

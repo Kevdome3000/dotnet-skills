@@ -36,11 +36,11 @@ The skill must be understandable by someone who has never used your project befo
 For upstream watch configuration, do not append everything to one huge root JSON file.
 Add the watch to the right fragment under [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d), then regenerate [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
 
-For GitHub release monitoring, the normal fragment entry is intentionally tiny:
+For upstream watch configuration, use one universal fragment shape:
 
 ```json
 {
-  "repo": "https://github.com/managedcode/Storage",
+  "source": "https://github.com/managedcode/Storage",
   "skills": [
     "dotnet-managedcode-storage"
   ]
@@ -48,7 +48,8 @@ For GitHub release monitoring, the normal fragment entry is intentionally tiny:
 ```
 
 That is enough for automation.
-The generator derives the watch id, kind, owner, repo name, display name, and default notes.
+The generator derives the watch id, watch kind, source coordinates, display name, and default notes.
+Use the same `source` field for documentation pages too; only the URL changes.
 Only add extra fields such as `match_tag_regex` when the repository publishes multiple release streams.
 
 ## Required Skill Metadata
@@ -288,11 +289,12 @@ flowchart LR
 
 ### GitHub Release Watch Example
 
-Use a GitHub repository link plus the related skills when you want automation to watch GitHub releases for a repository:
+Use the same `source` field for every watch.
+Point it at a GitHub repository when you want automation to watch releases:
 
 ```json
 {
-  "repo": "https://github.com/myvendor/MyProject",
+  "source": "https://github.com/myvendor/MyProject",
   "skills": [
     "dotnet-myproject"
   ]
@@ -304,7 +306,7 @@ Add `match_tag_regex` only when the repo publishes multiple streams and you need
 
 ```json
 {
-  "repo": "https://github.com/myvendor/MyProject",
+  "source": "https://github.com/myvendor/MyProject",
   "match_tag_regex": "^dotnet-",
   "skills": [
     "dotnet-myproject"
@@ -314,11 +316,11 @@ Add `match_tag_regex` only when the repo publishes multiple streams and you need
 
 ### Documentation Watch Example
 
-Use a URL plus related skills when you want automation to watch a stable documentation page:
+Point `source` at a documentation page when you want automation to watch docs:
 
 ```json
 {
-  "url": "https://learn.microsoft.com/example/myproject/overview",
+  "source": "https://learn.microsoft.com/example/myproject/overview",
   "skills": [
     "dotnet-myproject"
   ]
@@ -329,10 +331,10 @@ Use a URL plus related skills when you want automation to watch a stable documen
 
 For human-authored fragments, every watch entry must define:
 
-- `repo` plus `skills` for a GitHub release watch
-- `url` plus `skills` for a documentation watch
+- `source`
+- `skills`
 
-The generator derives `id`, `kind`, `name`, and default `notes`.
+The generator derives `kind`, `id`, `name`, source coordinates, and default `notes`.
 You can still override those fields explicitly, but do it only when the default output would be unclear.
 
 For project-specific libraries, the `skills` list must point to the dedicated project skill.

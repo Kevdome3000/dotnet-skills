@@ -2,7 +2,7 @@
   "watches": [
     {
       "id": "dotnet-sdk-release",
-      "repo": "https://github.com/dotnet/sdk",
+      "source": "https://github.com/dotnet/sdk",
       "skills": [
         "dotnet",
         "dotnet-project-setup",
@@ -11,7 +11,7 @@
     },
     {
       "id": "dotnet-runtime-release",
-      "repo": "https://github.com/dotnet/runtime",
+      "source": "https://github.com/dotnet/runtime",
       "skills": [
         "dotnet",
         "dotnet-worker-services",
@@ -20,7 +20,7 @@
     },
     {
       "id": "aspnetcore-release",
-      "repo": "https://github.com/dotnet/aspnetcore",
+      "source": "https://github.com/dotnet/aspnetcore",
       "skills": [
         "dotnet-aspnet-core",
         "dotnet-minimal-apis",
@@ -32,21 +32,21 @@
     },
     {
       "id": "dotnet-maui-release",
-      "repo": "https://github.com/dotnet/maui",
+      "source": "https://github.com/dotnet/maui",
       "skills": [
         "dotnet-maui"
       ]
     },
     {
       "id": "windows-app-sdk-release",
-      "repo": "https://github.com/microsoft/WindowsAppSDK",
+      "source": "https://github.com/microsoft/WindowsAppSDK",
       "skills": [
         "dotnet-winui"
       ]
     },
     {
       "id": "efcore-release",
-      "repo": "https://github.com/dotnet/efcore",
+      "source": "https://github.com/dotnet/efcore",
       "skills": [
         "dotnet-entity-framework-core",
         "dotnet-entity-framework6"
@@ -54,7 +54,7 @@
     },
     {
       "id": "orleans-release",
-      "repo": "https://github.com/dotnet/orleans",
+      "source": "https://github.com/dotnet/orleans",
       "skills": [
         "dotnet-orleans",
         "dotnet-aspire"
@@ -62,7 +62,7 @@
     },
     {
       "id": "extensions-release",
-      "repo": "https://github.com/dotnet/extensions",
+      "source": "https://github.com/dotnet/extensions",
       "skills": [
         "dotnet-microsoft-extensions",
         "dotnet-microsoft-extensions-ai"
@@ -70,7 +70,7 @@
     },
     {
       "id": "azure-functions-dotnet-worker-release",
-      "repo": "https://github.com/Azure/azure-functions-dotnet-worker",
+      "source": "https://github.com/Azure/azure-functions-dotnet-worker",
       "match_tag_regex": "^\\d+\\.\\d+\\.\\d+$",
       "skills": [
         "dotnet-azure-functions"
@@ -78,14 +78,14 @@
     },
     {
       "id": "mlnet-release",
-      "repo": "https://github.com/dotnet/machinelearning",
+      "source": "https://github.com/dotnet/machinelearning",
       "skills": [
         "dotnet-mlnet"
       ]
     },
     {
       "id": "semantic-kernel-release",
-      "repo": "https://github.com/microsoft/semantic-kernel",
+      "source": "https://github.com/microsoft/semantic-kernel",
       "match_tag_regex": "^dotnet-",
       "skills": [
         "dotnet-semantic-kernel"
@@ -93,7 +93,7 @@
     },
     {
       "id": "agent-framework-release",
-      "repo": "https://github.com/microsoft/agent-framework",
+      "source": "https://github.com/microsoft/agent-framework",
       "match_tag_regex": "^dotnet-",
       "skills": [
         "dotnet-microsoft-agent-framework"
