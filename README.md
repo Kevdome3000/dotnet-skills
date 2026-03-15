@@ -42,64 +42,6 @@ Use `--agent` to target a specific agent, `--scope` to choose global or project 
 
 Catalog releases are published automatically from `main` when `skills/` or catalog-generation inputs change. Automatic catalog versions use a numeric calendar-plus-run format such as `2026.3.15.42`. The tool reads the newest non-draft `catalog-v*` release by default, and `--catalog-version` is only for intentional pinning.
 
-## How Updates Are Tracked
-
-This repository does not guess what to monitor.
-
-It watches only the sources explicitly listed in [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json). That file is the human-maintained source of truth for:
-
-- GitHub release streams that should trigger skill review
-- documentation pages that should trigger skill review
-- which `dotnet-*` skills are affected by each upstream change
-
-The file has exactly two lists:
-
-- `github_releases`
-- `documentation`
-
-High-level flow:
-
-```mermaid
-flowchart LR
-  A["Edit .github/upstream-watch.json"] --> B["Run scripts/upstream_watch.py --validate-config"]
-  B --> C["Run dry-run and sync-state-only once"]
-  C --> D["Scheduled upstream-watch.yml runs upstream_watch.py daily"]
-  D --> E["GitHub release or documentation change is detected"]
-  E --> F["Automation opens or updates an upstream issue"]
-  F --> G["A human or agent updates skills/ and docs"]
-  G --> H["Changes merge to main"]
-  H --> I["publish-catalog.yml releases a new catalog-v..."]
-```
-
-Use this shape:
-
-```json
-{
-  "github_releases": [
-    {
-      "source": "https://github.com/managedcode/Storage",
-      "skills": [
-        "dotnet-managedcode-storage"
-      ]
-    }
-  ],
-  "documentation": [
-    {
-      "source": "https://learn.microsoft.com/dotnet/aspire/",
-      "skills": [
-        "dotnet-aspire"
-      ]
-    }
-  ]
-}
-```
-
-That is enough for normal maintenance.
-`scripts/upstream_watch.py` derives the watch kind, ids, source coordinates, display names, and default notes at runtime.
-Use optional fields only when you really need them, for example `match_tag_regex` for mixed release streams or `id` for a stable legacy key.
-
-If you add a new library or framework and want this repo to keep watching it, the actual how-to is in [CONTRIBUTING.md](/Users/ksemenenko/Developer/dotnet-skills/CONTRIBUTING.md#upstream-watch-entries).
-
 ## Agent Support
 
 | Agent | Global | Project |
@@ -773,6 +715,64 @@ This catalog currently contains **62** skills.
 </table>
 
 <!-- END GENERATED CATALOG -->
+
+## How Updates Are Tracked
+
+This repository does not guess what to monitor.
+
+It watches only the sources explicitly listed in [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json). That file is the human-maintained source of truth for:
+
+- GitHub release streams that should trigger skill review
+- documentation pages that should trigger skill review
+- which `dotnet-*` skills are affected by each upstream change
+
+The file has exactly two lists:
+
+- `github_releases`
+- `documentation`
+
+High-level flow:
+
+```mermaid
+flowchart LR
+  A["Edit .github/upstream-watch.json"] --> B["Run scripts/upstream_watch.py --validate-config"]
+  B --> C["Run dry-run and sync-state-only once"]
+  C --> D["Scheduled upstream-watch.yml runs upstream_watch.py daily"]
+  D --> E["GitHub release or documentation change is detected"]
+  E --> F["Automation opens or updates an upstream issue"]
+  F --> G["A human or agent updates skills/ and docs"]
+  G --> H["Changes merge to main"]
+  H --> I["publish-catalog.yml releases a new catalog-v..."]
+```
+
+Use this shape:
+
+```json
+{
+  "github_releases": [
+    {
+      "source": "https://github.com/managedcode/Storage",
+      "skills": [
+        "dotnet-managedcode-storage"
+      ]
+    }
+  ],
+  "documentation": [
+    {
+      "source": "https://learn.microsoft.com/dotnet/aspire/",
+      "skills": [
+        "dotnet-aspire"
+      ]
+    }
+  ]
+}
+```
+
+That is enough for normal maintenance.
+`scripts/upstream_watch.py` derives the watch kind, ids, source coordinates, display names, and default notes at runtime.
+Use optional fields only when you really need them, for example `match_tag_regex` for mixed release streams or `id` for a stable legacy key.
+
+If you add a new library or framework and want this repo to keep watching it, the actual how-to is in [CONTRIBUTING.md](/Users/ksemenenko/Developer/dotnet-skills/CONTRIBUTING.md#upstream-watch-entries).
 
 ## Contributing
 
