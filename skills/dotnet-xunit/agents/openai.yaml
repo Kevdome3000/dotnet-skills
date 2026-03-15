@@ -1,4 +1,0 @@
-interface:
-  display_name: "xUnit.net"
-  short_description: "Write and run xUnit suites correctly"
-  default_prompt: "Use $dotnet-xunit to add, fix, or run xUnit tests with the correct runner and package guidance for this repository."

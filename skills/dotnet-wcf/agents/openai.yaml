@@ -1,4 +1,0 @@
-interface:
-  display_name: "Windows Communication Foundation"
-  short_description: "Maintain WCF services and migration paths"
-  default_prompt: "Use $dotnet-wcf to handle this Windows Communication Foundation task with current .NET-specific guidance."

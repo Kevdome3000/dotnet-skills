@@ -1,4 +1,0 @@
-interface:
-  display_name: "MSTest"
-  short_description: "Write and run MSTest suites correctly"
-  default_prompt: "Use $dotnet-mstest to add, fix, or run MSTest tests with commands and configuration that match this repository."

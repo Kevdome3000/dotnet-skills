@@ -1,4 +1,0 @@
-interface:
-  display_name: "Azure Functions for .NET"
-  short_description: "Build Azure Functions with the right .NET model"
-  default_prompt: "Use $dotnet-azure-functions to handle this Azure Functions for .NET task with current .NET-specific guidance."

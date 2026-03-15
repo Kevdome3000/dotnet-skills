@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Analyzer Configuration"
-  short_description: "Own analyzer severity in .editorconfig and MSBuild"
-  default_prompt: "Use $dotnet-analyzer-config to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET MAUI"
-  short_description: "Build cross-platform MAUI apps cleanly"
-  default_prompt: "Use $dotnet-maui to handle this .NET MAUI task with current .NET-specific guidance."

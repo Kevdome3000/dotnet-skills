@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Worker Services"
-  short_description: "Build reliable background workers on .NET"
-  default_prompt: "Use $dotnet-worker-services to handle this .NET Worker Services task with current .NET-specific guidance."

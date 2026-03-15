@@ -1,4 +1,0 @@
-interface:
-  display_name: "Microsoft.Extensions.AI"
-  short_description: "Use provider-agnostic AI abstractions in .NET"
-  default_prompt: "Use $dotnet-microsoft-extensions-ai to handle this Microsoft.Extensions.AI task with current .NET-specific guidance."

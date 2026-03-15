@@ -1,4 +1,0 @@
-interface:
-  display_name: "ML.NET"
-  short_description: "Train and ship ML.NET models from .NET"
-  default_prompt: "Use $dotnet-mlnet to handle this ML.NET task with current .NET-specific guidance."

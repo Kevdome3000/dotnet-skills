@@ -1,4 +1,0 @@
-interface:
-  display_name: "ASP.NET Core Web API"
-  short_description: "Use controller-based ASP.NET Core APIs well"
-  default_prompt: "Use $dotnet-web-api to handle this ASP.NET Core Web API task with current .NET-specific guidance."

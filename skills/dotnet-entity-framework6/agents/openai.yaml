@@ -1,4 +1,0 @@
-interface:
-  display_name: "Entity Framework 6"
-  short_description: "Maintain EF6 or plan a clean migration path"
-  default_prompt: "Use $dotnet-entity-framework6 to handle this Entity Framework 6 task with current .NET-specific guidance."

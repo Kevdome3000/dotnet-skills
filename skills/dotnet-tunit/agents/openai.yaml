@@ -1,4 +1,0 @@
-interface:
-  display_name: "TUnit"
-  short_description: "Write and run TUnit tests on modern .NET"
-  default_prompt: "Use $dotnet-tunit to add, fix, or run TUnit tests with commands and configuration that match this repository."

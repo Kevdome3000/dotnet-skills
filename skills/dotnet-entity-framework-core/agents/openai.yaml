@@ -1,4 +1,0 @@
-interface:
-  display_name: "Entity Framework Core"
-  short_description: "Use EF Core safely and efficiently"
-  default_prompt: "Use $dotnet-entity-framework-core to handle this Entity Framework Core task with current .NET-specific guidance."

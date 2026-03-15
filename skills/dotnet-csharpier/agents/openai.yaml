@@ -1,4 +1,0 @@
-interface:
-  display_name: "CSharpier for .NET"
-  short_description: "Format C# with CSharpier without ambiguity"
-  default_prompt: "Use $dotnet-csharpier to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

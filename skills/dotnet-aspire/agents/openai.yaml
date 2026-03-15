@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Aspire"
-  short_description: "Use Aspire for local distributed app orchestration"
-  default_prompt: "Use $dotnet-aspire to handle this .NET Aspire task with current .NET-specific guidance."

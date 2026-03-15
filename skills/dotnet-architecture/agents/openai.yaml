@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Architecture"
-  short_description: "Shape .NET architectures without over-design"
-  default_prompt: "Use $dotnet-architecture to handle this .NET Architecture task with current .NET-specific guidance."

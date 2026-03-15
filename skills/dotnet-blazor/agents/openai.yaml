@@ -1,4 +1,0 @@
-interface:
-  display_name: "Blazor"
-  short_description: "Build Blazor components and hosting cleanly"
-  default_prompt: "Use $dotnet-blazor to handle this Blazor task with current .NET-specific guidance."

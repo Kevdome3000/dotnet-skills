@@ -1,4 +1,0 @@
-interface:
-  display_name: "Legacy ASP.NET"
-  short_description: "Maintain classic ASP.NET and modernize safely"
-  default_prompt: "Use $dotnet-legacy-aspnet to handle this Legacy ASP.NET task with current .NET-specific guidance."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "WPF"
-  short_description: "Build and modernize WPF applications"
-  default_prompt: "Use $dotnet-wpf to handle this WPF task with current .NET-specific guidance."

@@ -1,4 +1,0 @@
-interface:
-  display_name: "QuickDup for .NET"
-  short_description: "Detect duplicate code in .NET solutions"
-  default_prompt: "Use $dotnet-quickdup to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

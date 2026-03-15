@@ -1,4 +1,0 @@
-interface:
-  display_name: "Meziantou.Analyzer"
-  short_description: "Add Meziantou.Analyzer with clear ownership"
-  default_prompt: "Use $dotnet-meziantou-analyzer to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

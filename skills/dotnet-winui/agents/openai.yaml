@@ -1,4 +1,0 @@
-interface:
-  display_name: "WinUI 3 and Windows App SDK"
-  short_description: "Use WinUI 3 and Windows App SDK correctly"
-  default_prompt: "Use $dotnet-winui to handle this WinUI 3 and Windows App SDK task with current .NET-specific guidance."

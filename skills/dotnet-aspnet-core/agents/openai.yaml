@@ -1,4 +1,0 @@
-interface:
-  display_name: "ASP.NET Core"
-  short_description: "Build and review modern ASP.NET Core apps"
-  default_prompt: "Use $dotnet-aspnet-core to handle this ASP.NET Core task with current .NET-specific guidance."

@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Complexity Review"
-  short_description: "Find risky complexity and maintainability drift"
-  default_prompt: "Use $dotnet-complexity to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

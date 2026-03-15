@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import sys
@@ -120,15 +121,41 @@ def render_catalog(skills: list[dict[str, str]]) -> str:
             [
                 f"### {category}",
                 "",
-                "| Skill | Version | Description | Folder |",
-                "| --- | --- | --- | --- |",
+                "<table>",
+                "  <colgroup>",
+                '    <col width="24%" />',
+                '    <col width="9%" />',
+                '    <col width="49%" />',
+                '    <col width="18%" />',
+                "  </colgroup>",
+                "  <thead>",
+                "    <tr>",
+                '      <th align="left">Skill</th>',
+                '      <th align="left">Version</th>',
+                '      <th align="left">Description</th>',
+                '      <th align="left">Folder</th>',
+                "    </tr>",
+                "  </thead>",
+                "  <tbody>",
             ]
         )
         for item in items:
-            lines.append(
-                f"| `{item['name']}` | `{item['version']}` | {item['description']} | [`{item['path']}`]({item['path']}) |"
+            skill_name = html.escape(item["name"]).replace("-", "&#8209;")
+            version = html.escape(item["version"])
+            description = html.escape(item["description"])
+            path = html.escape(item["path"])
+
+            lines.extend(
+                [
+                    "    <tr>",
+                    f'      <td><a href="{path}"><code>{skill_name}</code></a></td>',
+                    f"      <td><code>{version}</code></td>",
+                    f"      <td>{description}</td>",
+                    f'      <td><a href="{path}"><code>{path}</code></a></td>',
+                    "    </tr>",
+                ]
             )
-        lines.append("")
+        lines.extend(["  </tbody>", "</table>", ""])
 
     lines.append(END_MARKER)
     return "\n".join(lines)

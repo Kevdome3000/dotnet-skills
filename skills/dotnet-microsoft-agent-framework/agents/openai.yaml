@@ -1,4 +1,0 @@
-interface:
-  display_name: "Microsoft Agent Framework"
-  short_description: "Build agentic .NET systems with Agent Framework"
-  default_prompt: "Use $dotnet-microsoft-agent-framework to handle this Microsoft Agent Framework task with current .NET-specific guidance."

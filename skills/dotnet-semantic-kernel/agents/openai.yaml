@@ -1,4 +1,0 @@
-interface:
-  display_name: "Semantic Kernel for .NET"
-  short_description: "Build AI features with Semantic Kernel"
-  default_prompt: "Use $dotnet-semantic-kernel to handle this Semantic Kernel for .NET task with current .NET-specific guidance."

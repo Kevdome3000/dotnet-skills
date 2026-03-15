@@ -1,4 +1,0 @@
-interface:
-  display_name: "CodeQL for .NET"
-  short_description: "Run CodeQL for .NET security scanning"
-  default_prompt: "Use $dotnet-codeql to configure, debug, or review this .NET tool or testing workflow with repo-safe commands."

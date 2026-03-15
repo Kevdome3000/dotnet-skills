@@ -1,4 +1,0 @@
-interface:
-  display_name: "Minimal APIs"
-  short_description: "Build concise handler-first ASP.NET Core APIs"
-  default_prompt: "Use $dotnet-minimal-apis to handle this Minimal APIs task with current .NET-specific guidance."

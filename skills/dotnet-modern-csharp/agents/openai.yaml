@@ -1,4 +1,0 @@
-interface:
-  display_name: "Modern C# for .NET"
-  short_description: "Choose safe modern C# features per repo version"
-  default_prompt: "Use $dotnet-modern-csharp to modernize this C# code while staying compatible with the repo runtime and language version."

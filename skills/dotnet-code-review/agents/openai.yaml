@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Code Review"
-  short_description: "Review .NET changes for bugs and regressions"
-  default_prompt: "Use $dotnet-code-review to handle this .NET Code Review task with current .NET-specific guidance."

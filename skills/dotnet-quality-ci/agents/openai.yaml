@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Quality CI"
-  short_description: "Design a complete .NET quality gate stack"
-  default_prompt: "Use $dotnet-quality-ci to define or tighten the .NET quality gates, CI commands, and analyzer ownership for this repository."

@@ -93,9 +93,7 @@ skills/<skill-slug>/
 ├── SKILL.md
 ├── scripts/            # optional
 ├── references/         # optional
-├── assets/             # optional
-└── agents/             # optional vendor adapter metadata
-    └── openai.yaml
+└── assets/             # optional
 ```
 
 Other important repository files:
@@ -149,10 +147,9 @@ When creating a new skill:
 
 1. Create `skills/<skill-slug>/`.
 2. Add `SKILL.md`.
-3. Add `agents/openai.yaml` only when the OpenAI or Codex adapter metadata is actually useful.
-4. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
-5. Update any related [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) notes and regenerate the catalog outputs.
-6. If the skill tracks a major framework or Microsoft surface, update the right fragment under [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d) and regenerate [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
+3. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
+4. Update any related [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) notes and regenerate the catalog outputs.
+5. If the skill tracks a major framework or Microsoft surface, update the right fragment under [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d) and regenerate [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
 
 ## `SKILL.md` Requirements
 
@@ -195,27 +192,6 @@ Rules:
 - Do not rely on text-only explanations when a Mermaid diagram would make the implementation or flow materially clearer.
 - Keep diagrams concrete and implementation-oriented; prefer real repo terms, commands, artifacts, and paths over generic boxes.
 - Update the Mermaid diagram when the surrounding implementation guidance changes, so the diagram and prose stay in sync.
-
-## `agents/openai.yaml` Adapter Metadata
-
-`agents/openai.yaml` is optional.
-Treat it as OpenAI or Codex adapter metadata, not as a universal multi-agent standard.
-
-Minimum shape:
-
-```yaml
-interface:
-  display_name: "Human readable title"
-  short_description: "Short UI description"
-  default_prompt: "Use $skill-name to handle this task."
-```
-
-Rules:
-
-- Use quoted strings.
-- `default_prompt` must explicitly mention the skill as `$skill-name`.
-- Keep `short_description` concise and UI-friendly.
-- Do not block a skill from existing just because this adapter file is absent.
 
 ## README Maintenance Rules
 
@@ -272,6 +248,7 @@ Rules:
 - The tool publish workflow should run automatically on `main` for tool-source changes; keep `workflow_dispatch` only as a fallback rerun path, not the primary publish path.
 - Remote skill content should be published separately from the tool through `publish-catalog.yml` as `catalog-v*` GitHub releases with `dotnet-skills-manifest.json` and `dotnet-skills-catalog.zip` assets.
 - Catalog releases must be published automatically from `main` when `skills/*/SKILL.md` or other catalog-source inputs change; manual dispatch may exist only as a fallback or backfill path, not as the primary workflow.
+- Automatic catalog versions should use the numeric calendar-plus-run format `<year>.<month>.<day>.<run>`; do not add letter prefixes such as `r` or `ci` in release tags or titles.
 - The NuGet tool publish workflow must ignore `catalog-v*` releases so catalog content publishes never trigger package pushes by accident.
 - The tool should use the newest non-draft `catalog-v*` GitHub release by default and fall back to bundled content only when the remote catalog is unavailable.
 - Local `dotnet build` and `dotnet pack` for the tool may generate a temporary manifest in `obj/` from `skills/*/SKILL.md`; release CI remains the canonical place that generates checked catalog outputs and release assets.
@@ -367,7 +344,6 @@ For skill and docs changes:
 
 - Verify the new skill folder exists under `skills/`.
 - Verify `SKILL.md` exists.
-- Verify optional adapter files such as `agents/openai.yaml` are present only when they are intentional.
 - Verify README links and catalog entries are correct.
 - `python3 -m py_compile scripts/generate_catalog.py`
 - `python3 scripts/generate_catalog.py --validate-only`
@@ -428,14 +404,12 @@ This repository should behave like a maintainable documentation-and-automation s
 - User-facing command examples that require the `dotnet-` prefix when the CLI can resolve a short alias.
 - Local contributor workflows built around `dotnet tool install --add-source artifacts/nuget`.
 - Treating checked-in `catalog/skills.json` as the source of truth instead of `skills/*/SKILL.md`.
-- Presenting `agents/openai.yaml` as if it were the universal agent standard.
 
 ## Anti-Patterns
 
 Do not do these:
 
 - Create duplicate skill trees.
-- Block a skill just because `agents/openai.yaml` is missing.
 - Add frameworks without updating the generated catalog inputs and regenerating README.
 - Add watch entries without mapping them to affected skills.
 - Hand-edit the state file instead of syncing it.

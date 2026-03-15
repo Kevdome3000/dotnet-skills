@@ -1,4 +1,0 @@
-interface:
-  display_name: ".NET Project Setup"
-  short_description: "Set up clean .NET solutions and repos"
-  default_prompt: "Use $dotnet-project-setup to handle this .NET Project Setup task with current .NET-specific guidance."
