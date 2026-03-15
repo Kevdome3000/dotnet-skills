@@ -1,7 +1,7 @@
 ---
 name: dotnet-meziantou-analyzer
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use the open-source free `Meziantou.Analyzer` package for design, usage, security, performance, and style rules in .NET. Use when a repo wants broader analyzer coverage with a single NuGet package."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -96,6 +96,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 ## Load References
 
 - read `references/meziantou-analyzer.md` first
+- read `references/rules.md` for commonly used rules and their categories
+- read `references/config.md` for .editorconfig configuration patterns
 
 ## Example Requests
 

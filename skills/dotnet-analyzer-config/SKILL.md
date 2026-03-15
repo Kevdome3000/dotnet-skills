@@ -1,7 +1,7 @@
 ---
 name: dotnet-analyzer-config
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use a repo-root `.editorconfig` to configure free .NET analyzer and style rules. Use when a .NET repo needs rule severity, code-style options, section layout, or analyzer ownership made explicit. Nested `.editorconfig` files are allowed when they serve a clear subtree-specific purpose."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -103,7 +103,9 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/analyzer-config.md` first
+- read `references/analyzer-config.md` first for file format and layout guidance
+- read `references/template.md` for complete `.editorconfig` templates
+- read `references/rules.md` for common rule categories and severity configuration
 
 ## Example Requests
 

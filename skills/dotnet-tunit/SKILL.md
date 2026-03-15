@@ -1,7 +1,7 @@
 ---
 name: dotnet-tunit
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Testing"
 description: "Write, run, or repair .NET tests that use TUnit. Use when a repo uses `TUnit`, `[Test]`, `[Arguments]`, source-generated test projects, or Microsoft.Testing.Platform-based execution."
 compatibility: "Requires a .NET solution or project with TUnit packages; respects the repo's `AGENTS.md` commands first."
 ---
@@ -108,7 +108,28 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/tunit.md` first
+- read `references/patterns.md` for TUnit patterns including source generators, parallel testing, and assertions
+- read `references/migration.md` when migrating from xUnit or NUnit
+
+## Running Tests
+
+TUnit uses Microsoft.Testing.Platform. Use `--treenode-filter` for filtering (not `--filter`).
+
+```bash
+# Run all tests
+dotnet run --project Tests.csproj
+
+# Filter by class
+dotnet run --project Tests.csproj -- --treenode-filter "/*/*/CalculatorTests/*"
+
+# Filter by category
+dotnet run --project Tests.csproj -- --treenode-filter "/*/*/*/*[Category=Unit]"
+
+# Exclude category
+dotnet run --project Tests.csproj -- --treenode-filter "/*/*/*/*[Category!=Slow]"
+```
+
+Filter syntax: `/<Assembly>/<Namespace>/<Class>/<Test>` with `*` wildcards. See `references/patterns.md` for full examples.
 
 ## Example Requests
 

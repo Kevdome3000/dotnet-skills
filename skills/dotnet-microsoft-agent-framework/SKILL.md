@@ -1,7 +1,7 @@
 ---
 name: dotnet-microsoft-agent-framework
 version: "1.0.0"
-category: "Data, Distributed, and AI"
+category: "AI"
 description: "Build agentic .NET applications with Microsoft Agent Framework using modern agent orchestration, provider abstractions, telemetry, and enterprise integration patterns."
 compatibility: "Requires a .NET AI application that truly needs agent orchestration."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires a .NET AI application that truly needs agent orchestrat
 - agent complexity is justified
 - orchestration logic is inspectable and testable
 - version maturity is checked against current docs
+
+## References
+
+- [patterns.md](references/patterns.md) - Agent patterns, multi-agent orchestration, provider patterns, telemetry, and error handling
+- [examples.md](references/examples.md) - Practical agent implementations including customer support, code review, document processing, RAG, shopping, and workflow automation

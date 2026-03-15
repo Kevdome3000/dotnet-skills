@@ -1,7 +1,7 @@
 ---
 name: dotnet-reportgenerator
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Testing"
 description: "Use the open-source free `ReportGenerator` tool for turning .NET coverage outputs into HTML, Markdown, Cobertura, badges, and merged reports. Use when raw coverage files are not readable enough for CI or human review."
 compatibility: "Requires coverage artifacts such as Cobertura, OpenCover, or lcov; respects the repo's `AGENTS.md` commands first."
 ---
@@ -104,6 +104,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 ## Load References
 
 - read `references/reportgenerator.md` first
+- read `references/commands.md` for CLI command syntax and examples
+- read `references/formats.md` for output format options and combinations
 
 ## Example Requests
 

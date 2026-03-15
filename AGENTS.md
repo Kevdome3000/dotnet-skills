@@ -21,13 +21,14 @@ If this repository contains executable code, it must exist only to distribute or
 Do not turn this repository into a general application or unrelated tooling codebase.
 
 All repository-facing documentation and skill content should be written in English.
+Follow official or documented agent standards where they exist; do not present a repo-local adapter as if it were a universal standard.
 
 ## Solution Topology
 
 - Solution root: `.`
 - Areas with specialized responsibilities:
   - `skills/`: canonical skill catalog
-  - `tools/DotnetSkills.Tooling/`: publishable `dotnet-skills` installer tool
+  - `tools/ManagedCode.DotnetSkills/`: publishable `dotnet-skills` installer tool
   - `scripts/`: catalog generation and upstream-watch automation
   - `.github/workflows/`: CI, release, and scheduled automation
 - Local `AGENTS.md` files currently present: none
@@ -83,23 +84,25 @@ If work touches `.NET` code in this repository:
 
 ## Canonical Layout
 
-The only canonical skill tree is the lowercase [`skills/`](/Users/ksemenenko/Developer/dotnet-skills/skills) directory.
-
-Do not create or reintroduce an uppercase `Skills/` tree.
+The canonical skill tree is [`skills/`](/Users/ksemenenko/Developer/dotnet-skills/skills).
 
 Expected layout:
 
 ```text
 skills/<skill-slug>/
 ├── SKILL.md
-├── agents/
-│   └── openai.yaml
-└── references/         # optional
+├── scripts/            # optional
+├── references/         # optional
+├── assets/             # optional
+└── agents/             # optional vendor adapter metadata
+    └── openai.yaml
 ```
 
 Other important repository files:
 
 - [`CLAUDE.md`](/Users/ksemenenko/Developer/dotnet-skills/CLAUDE.md): Claude adapter that points Claude to the root repository instructions.
+- [`GEMINI.md`](/Users/ksemenenko/Developer/dotnet-skills/GEMINI.md): Gemini adapter that imports the root repository instructions.
+- [`.github/copilot-instructions.md`](/Users/ksemenenko/Developer/dotnet-skills/.github/copilot-instructions.md): Copilot adapter that points GitHub Copilot to the repository-wide rules.
 - [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md): public catalog and repository overview.
 - [`CONTRIBUTING.md`](/Users/ksemenenko/Developer/dotnet-skills/CONTRIBUTING.md): contributor workflow for skills, versions, descriptions, and watch entries.
 - [`catalog/skills.json`](/Users/ksemenenko/Developer/dotnet-skills/catalog/skills.json): machine-readable generated skill manifest used for release packaging and tool fallback content.
@@ -110,22 +113,20 @@ Other important repository files:
 - [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json): watch configuration for upstream releases and documentation.
 - [`.github/upstream-watch-state.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch-state.json): machine-maintained baseline state.
 - [`.github/workflows/upstream-watch.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/upstream-watch.yml): scheduled workflow.
-- [`tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj`](/Users/ksemenenko/Developer/dotnet-skills/tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj): publishable `.NET` tool that installs the catalog through `dotnet skills ...`.
+- [`tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj`](/Users/ksemenenko/Developer/dotnet-skills/tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj): publishable `.NET` tool that installs the catalog through `dotnet skills ...`.
+- [`dotnet-skills.slnx`](/Users/ksemenenko/Developer/dotnet-skills/dotnet-skills.slnx): canonical solution entry point for repository-level `dotnet build` and `dotnet pack` commands.
 - [`scripts/generate_catalog.py`](/Users/ksemenenko/Developer/dotnet-skills/scripts/generate_catalog.py): catalog generator and checker.
 - [`scripts/smoke_test_tool.sh`](/Users/ksemenenko/Developer/dotnet-skills/scripts/smoke_test_tool.sh): CI smoke test for the installable tool package.
 - [`scripts/upstream_watch.py`](/Users/ksemenenko/Developer/dotnet-skills/scripts/upstream_watch.py): watch runner.
 
 ## Skill Naming Rules
 
-Use clean, lowercase, prefix-free `.NET` skill names:
+Use clean `.NET` skill names:
 
 - Good: `dotnet-aspnet-core`
 - Good: `dotnet-aspire`
 - Good: `dotnet-entity-framework-core`
 - Good: `dotnet-microsoft-agent-framework`
-- Bad: `mcaf-dotnet-aspnet-core`
-- Bad: `dotnet-core-aspnet-skill`
-- Bad: `AspNetSkill`
 
 Rules:
 
@@ -148,7 +149,7 @@ When creating a new skill:
 
 1. Create `skills/<skill-slug>/`.
 2. Add `SKILL.md`.
-3. Add `agents/openai.yaml`.
+3. Add `agents/openai.yaml` only when the OpenAI or Codex adapter metadata is actually useful.
 4. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
 5. Update any related [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) notes and regenerate the catalog outputs.
 6. If the skill tracks a major framework or Microsoft surface, update the right fragment under [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d) and regenerate [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
@@ -182,11 +183,23 @@ Content rules:
 - `description` must be an exact, reusable one-line description of what the skill is for, because the README catalog copies it directly.
 - `version` must use semantic versioning and must be bumped when the skill guidance materially changes.
 - `category` must match the supported README catalog categories.
+- When a skill explains non-trivial implementation details, integration flow, component boundaries, or decision logic, add at least one Mermaid diagram instead of leaving the explanation text-only.
 
-## `agents/openai.yaml` Requirements
+## Diagramming Rules
 
-Every skill must have an `agents/openai.yaml` file.
-Treat it as repository-required OpenAI or Codex adapter metadata, not as a universal multi-agent standard.
+Use Mermaid diagrams to explain non-trivial implementation details across repository-facing content.
+
+Rules:
+
+- Add Mermaid diagrams to skills, contributor docs, plans, and other durable technical notes when they describe workflows, architecture, integration steps, installer behavior, release flow, or branching decision logic.
+- Do not rely on text-only explanations when a Mermaid diagram would make the implementation or flow materially clearer.
+- Keep diagrams concrete and implementation-oriented; prefer real repo terms, commands, artifacts, and paths over generic boxes.
+- Update the Mermaid diagram when the surrounding implementation guidance changes, so the diagram and prose stay in sync.
+
+## `agents/openai.yaml` Adapter Metadata
+
+`agents/openai.yaml` is optional.
+Treat it as OpenAI or Codex adapter metadata, not as a universal multi-agent standard.
 
 Minimum shape:
 
@@ -202,6 +215,7 @@ Rules:
 - Use quoted strings.
 - `default_prompt` must explicitly mention the skill as `$skill-name`.
 - Keep `short_description` concise and UI-friendly.
+- Do not block a skill from existing just because this adapter file is absent.
 
 ## README Maintenance Rules
 
@@ -211,9 +225,8 @@ Whenever you add, rename, split, merge, or remove a skill:
 
 1. Update the skill frontmatter first.
 2. Update the skill count if it is listed.
-3. Update migration notes if legacy naming changes.
-4. Update automation notes if watch coverage changes.
-5. Let the release workflows generate fresh catalog outputs in CI; run `python3 scripts/generate_catalog.py` locally only when you need a preview.
+3. Update automation notes if watch coverage changes.
+4. Let the release workflows generate fresh catalog outputs in CI; run `python3 scripts/generate_catalog.py` locally only when you need a preview.
 
 The source of truth is `skills/*/SKILL.md`, not checked-in generated artifacts.
 Do not hand-edit the generated catalog section between `<!-- BEGIN GENERATED CATALOG -->` and `<!-- END GENERATED CATALOG -->`.
@@ -232,7 +245,7 @@ Canonical generation point:
 
 The only allowed repository-owned executable project is the publishable catalog installer tool:
 
-- package id: `ManagedCode.DotnetSkills.Tool`
+- package id: `dotnet-skills`
 - command name: `dotnet-skills`
 - usage shape: `dotnet skills ...`
 
@@ -241,14 +254,25 @@ Rules:
 - Keep the tool focused on listing, syncing, and installing the skill catalog.
 - Do not expand it into a general repo-maintenance application.
 - Repo maintenance automation may stay in GitHub Actions scripts and does not need to be moved into the tool.
+- Use a clean canonical tool name; avoid redundant public package names with a trailing `.Tool` when the command shape already makes the tool purpose obvious.
+- Prefer the public NuGet package ID `dotnet-skills` so installation stays `dotnet tool install --global dotnet-skills`.
+- Keep only the manual base version in the project file; CI must derive the publish version automatically by appending the GitHub run number as the numeric patch segment.
 - Do not require or document local `dotnet tool install --add-source ...` smoke tests for contributors; validate installability in CI instead and keep user-facing docs focused on the public NuGet install flow.
 - Keep canonical skill IDs namespaced as `dotnet-*` in the repository, but let the CLI accept short aliases such as `aspire` or `orleans` in commands.
 - The installer must account for Codex, Claude, Copilot, and Gemini target layouts instead of assuming only one global skills directory.
-- For Claude, prefer a Claude-native adapter model: install reusable skill payloads plus generated `.claude/agents` subagent files instead of pretending Claude consumes the raw skill folder directly.
-- Prefer vendor-native default paths for each agent family, even when an alternative shared convention also exists.
-- Prefer NuGet Trusted Publishing for public releases of `ManagedCode.DotnetSkills.Tool`; use the `release` GitHub environment and the `publish-tool.yml` workflow as the canonical publish path.
-- Release-driven publishes should derive the package version from a `v*` Git tag; manual publishes should pass an explicit `package_version` input to the workflow.
+- `SKILL.md` is the canonical skill contract; vendor-specific files are adapters.
+- For Copilot, use the native `SKILL.md` layout in `.github/skills` or `~/.copilot/skills`.
+- For Gemini, use `.gemini/skills` for explicit Gemini installs, but keep compatibility with shared `.agents/skills` layouts when auto-detect finds them.
+- For Claude, generate native `.claude/agents` subagent files instead of pretending Claude consumes raw `SKILL.md` skill folders directly.
+- For Codex, keep compatibility with the Codex runtime skill folder layout, but do not describe repo-local adapters as public universal standards.
+- When `--agent` is omitted, the tool must auto-detect project layouts in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; if none exist, fall back to a root `skills/` folder in the current project.
+- Use the same NuGet publish pattern as other ManagedCode repositories: publish from `publish-tool.yml` with `dotnet nuget push` and the `NUGET_API_KEY` secret inside the shell step.
+- Do not reference `secrets.*` in GitHub Actions `if:` expressions for NuGet publish branching; keep secret-dependent logic inside the shell step instead.
+- Publish workflows should derive the package version from the checked-in base version plus the CI run number instead of relying on a manually typed patch version.
+- The tool publish workflow should run automatically on `main` for tool-source changes; keep `workflow_dispatch` only as a fallback rerun path, not the primary publish path.
 - Remote skill content should be published separately from the tool through `publish-catalog.yml` as `catalog-v*` GitHub releases with `dotnet-skills-manifest.json` and `dotnet-skills-catalog.zip` assets.
+- Catalog releases must be published automatically from `main` when `skills/*/SKILL.md` or other catalog-source inputs change; manual dispatch may exist only as a fallback or backfill path, not as the primary workflow.
+- The NuGet tool publish workflow must ignore `catalog-v*` releases so catalog content publishes never trigger package pushes by accident.
 - The tool should use the newest non-draft `catalog-v*` GitHub release by default and fall back to bundled content only when the remote catalog is unavailable.
 - Local `dotnet build` and `dotnet pack` for the tool may generate a temporary manifest in `obj/` from `skills/*/SKILL.md`; release CI remains the canonical place that generates checked catalog outputs and release assets.
 
@@ -343,7 +367,7 @@ For skill and docs changes:
 
 - Verify the new skill folder exists under `skills/`.
 - Verify `SKILL.md` exists.
-- Verify `agents/openai.yaml` exists.
+- Verify optional adapter files such as `agents/openai.yaml` are present only when they are intentional.
 - Verify README links and catalog entries are correct.
 - `python3 -m py_compile scripts/generate_catalog.py`
 - `python3 scripts/generate_catalog.py --validate-only`
@@ -351,8 +375,8 @@ For skill and docs changes:
 
 For dotnet tool changes:
 
-- `dotnet build tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj`
-- `dotnet pack tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj -c Release`
+- `dotnet build dotnet-skills.slnx`
+- `dotnet pack dotnet-skills.slnx -c Release`
 - validate installability through CI workflow smoke tests, not a documented local `dotnet tool install --add-source ...` loop
 
 For catalog release changes:
@@ -393,25 +417,25 @@ This repository should behave like a maintainable documentation-and-automation s
 - Public NuGet distribution and CI-verified installability for the tool instead of contributor-local `--add-source` install loops.
 - Canonical `dotnet-*` skill IDs in the repository, with short aliases in CLI commands.
 - Agent-aware install flows that understand Codex, Claude, Copilot, and Gemini instead of assuming one shared folder layout.
+- Official agent standards and native agent layouts instead of repo-local pseudo-standards.
 - Fragmented upstream-watch config under [`.github/upstream-watch.d/`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.d) instead of one giant hand-maintained file.
 - English-only durable docs and skill content.
 - Catalog manifest generation in CI release workflows instead of relying on contributor-local regeneration.
 
 ### Dislikes
 
-- Reintroducing uppercase `Skills/` or old `mcaf-*` names inside this repository catalog.
 - Monolithic watch configuration files that become unreviewable as custom libraries grow.
 - User-facing command examples that require the `dotnet-` prefix when the CLI can resolve a short alias.
 - Local contributor workflows built around `dotnet tool install --add-source artifacts/nuget`.
 - Treating checked-in `catalog/skills.json` as the source of truth instead of `skills/*/SKILL.md`.
+- Presenting `agents/openai.yaml` as if it were the universal agent standard.
 
 ## Anti-Patterns
 
 Do not do these:
 
-- Reintroduce `mcaf-*` skill names.
 - Create duplicate skill trees.
-- Add skills without `agents/openai.yaml`.
+- Block a skill just because `agents/openai.yaml` is missing.
 - Add frameworks without updating the generated catalog inputs and regenerating README.
 - Add watch entries without mapping them to affected skills.
 - Hand-edit the state file instead of syncing it.

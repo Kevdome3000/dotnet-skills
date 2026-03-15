@@ -1,7 +1,7 @@
 ---
 name: dotnet-quality-ci
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Set up or refine open-source .NET code-quality gates for CI: formatting, `.editorconfig`, SDK analyzers, third-party analyzers, coverage, mutation testing, architecture tests, and security scanning. Use when a .NET repo needs an explicit quality stack in `AGENTS.md`, docs, or pipeline YAML."
 compatibility: "Requires a .NET solution or project; may update `AGENTS.md`, CI workflows, a repo-root `.editorconfig`, `Directory.Build.props`, or analyzer package references."
 ---
@@ -143,8 +143,10 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/editorconfig-and-ci.md` first
+- read `references/editorconfig-and-ci.md` first for ownership and config rules
 - open `references/quality-toolchain.md` for the curated OSS tool list
+- open `references/workflows.md` for GitHub Actions workflow examples
+- open `references/checklist.md` for a comprehensive CI quality checklist
 - use the dedicated tool skill when you are installing, configuring, or debugging one specific tool
 
 ## Example Requests

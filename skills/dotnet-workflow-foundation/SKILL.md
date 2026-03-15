@@ -1,7 +1,7 @@
 ---
 name: dotnet-workflow-foundation
 version: "1.0.0"
-category: "Legacy and Compatibility"
+category: "Legacy"
 description: "Maintain or assess Workflow Foundation-based solutions on .NET Framework, especially where long-lived process logic or legacy designer artifacts still matter."
 compatibility: "Requires WF or a migration plan away from it."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires WF or a migration plan away from it."
 - business-critical workflow behavior is identified before change
 - migration work preserves state and audit expectations
 - designer artifacts are treated carefully
+
+## References
+
+- [Migration Guidance](references/migration.md) - decision framework for keeping, replacing, or isolating WF; migration targets and steps; common pitfalls
+- [Maintenance Patterns](references/patterns.md) - host management, persistence, activity design, testing, and operational patterns for WF systems

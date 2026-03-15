@@ -1,7 +1,7 @@
 ---
 name: dotnet-modern-csharp
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Write modern, version-aware C# for .NET repositories. Use when choosing language features across C# versions, especially C# 13 and C# 14, while staying compatible with the repo's target framework and `LangVersion`."
 compatibility: "Requires a C# or .NET repository; respects explicit `LangVersion` and target framework settings."
 ---
@@ -110,7 +110,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/csharp-modern-features.md` first
+- read `references/patterns.md` for modern C# patterns (primary constructors, records, pattern matching, collection expressions, and more)
+- read `references/migration.md` for guidance on upgrading from older C# versions
 
 ## Example Requests
 

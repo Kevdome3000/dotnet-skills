@@ -1,7 +1,7 @@
 ---
 name: dotnet-microsoft-extensions-ai
 version: "1.0.0"
-category: "Data, Distributed, and AI"
+category: "AI"
 description: "Use Microsoft.Extensions.AI abstractions such as `IChatClient` and embeddings cleanly in .NET applications, libraries, and provider integrations."
 compatibility: "Requires `Microsoft.Extensions.AI` or a plan to standardize AI provider integration."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires `Microsoft.Extensions.AI` or a plan to standardize AI p
 - the abstraction is solving a real portability or integration problem
 - DI wiring stays explicit
 - agentic requirements are not underspecified as simple chat-client work
+
+## References
+
+- [patterns.md](references/patterns.md) - IChatClient patterns, embedding patterns, provider integration, and testing patterns
+- [examples.md](references/examples.md) - Practical AI integration examples including RAG, semantic caching, content moderation, structured output extraction, and API integration

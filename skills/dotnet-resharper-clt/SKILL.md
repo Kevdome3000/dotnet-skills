@@ -1,7 +1,7 @@
 ---
 name: dotnet-resharper-clt
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use the free official JetBrains ReSharper Command Line Tools for .NET repositories. Use when a repo wants powerful `jb inspectcode` inspections, `jb cleanupcode` cleanup profiles, solution-level `.DotSettings` enforcement, or a stronger CLI quality gate for C# than the default SDK analyzers alone."
 compatibility: "Requires a .NET solution or project; works best when the repo keeps shared ReSharper settings in solution `.DotSettings` files and records exact commands in `AGENTS.md`."
 ---
@@ -122,6 +122,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 ## Load References
 
 - read `references/resharper-clt.md` first
+- read `references/commands.md` for `jb inspectcode` and `jb cleanupcode` command details
+- read `references/config.md` for `.DotSettings` configuration guidance
 
 ## Example Requests
 

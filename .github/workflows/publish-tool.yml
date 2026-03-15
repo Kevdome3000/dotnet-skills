@@ -2,22 +2,24 @@ name: Publish Dotnet Tool
 
 on:
   workflow_dispatch:
-    inputs:
-      package_version:
-        description: "NuGet package version to publish, for example 1.2.3"
-        required: true
-        type: string
-  release:
-    types:
-      - published
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-tool.yml"
+      - "README.md"
+      - "dotnet-skills.slnx"
+      - "scripts/generate_catalog.py"
+      - "scripts/smoke_test_tool.sh"
+      - "tools/ManagedCode.DotnetSkills/**"
 
 permissions:
   contents: read
-  id-token: write
 
 env:
   DOTNET_VERSION: "10.0.x"
-  TOOL_PROJECT: "tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj"
+  SOLUTION_FILE: "dotnet-skills.slnx"
+  TOOL_PROJECT: "tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj"
   PACKAGE_SOURCE: "https://api.nuget.org/v3/index.json"
   PACKAGE_OUTPUT_GLOB: "artifacts/nuget/*.nupkg"
 
@@ -44,35 +46,31 @@ jobs:
         id: version
         shell: bash
         run: |
-          release_tag='${{ github.event.release.tag_name }}'
-          manual_version='${{ inputs.package_version }}'
+          base_version=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' "${{ env.TOOL_PROJECT }}" | head -n 1 | tr -d '[:space:]')
 
-          if [[ -n "$release_tag" ]]; then
-            version="${release_tag#v}"
-          else
-            version="$manual_version"
-          fi
-
-          if [[ -z "$version" ]]; then
-            echo "Package version is required." >&2
+          if [[ -z "$base_version" ]]; then
+            echo "VersionPrefix is required in ${{ env.TOOL_PROJECT }}." >&2
             exit 1
           fi
 
-          if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
-            echo "Package version must be SemVer-compatible. Got: $version" >&2
+          if [[ ! "$base_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "VersionPrefix must use <major>.<minor>. Got: $base_version" >&2
             exit 1
           fi
 
+          version="${base_version}.${GITHUB_RUN_NUMBER}"
+
+          echo "base_version=$base_version" >> "$GITHUB_OUTPUT"
           echo "package_version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Generate catalog outputs in CI
         run: python3 scripts/generate_catalog.py
 
       - name: Build dotnet tool
-        run: dotnet build "${{ env.TOOL_PROJECT }}" -c Release -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.version.outputs.package_version }}"
+        run: dotnet build "${{ env.SOLUTION_FILE }}" -c Release -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.version.outputs.package_version }}"
 
       - name: Pack dotnet tool
-        run: dotnet pack "${{ env.TOOL_PROJECT }}" -c Release --no-build -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.version.outputs.package_version }}"
+        run: dotnet pack "${{ env.SOLUTION_FILE }}" -c Release --no-build -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.version.outputs.package_version }}"
 
       - name: Smoke test installable tool
         run: bash scripts/smoke_test_tool.sh artifacts/nuget
@@ -80,28 +78,45 @@ jobs:
       - name: Upload NuGet package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: managedcode-dotnet-skills-tool-${{ steps.version.outputs.package_version }}
+          name: managedcode-dotnet-skills-${{ steps.version.outputs.package_version }}
           path: ${{ env.PACKAGE_OUTPUT_GLOB }}
           if-no-files-found: error
 
-      - name: Acquire NuGet API key with Trusted Publishing
-        id: nuget_login
-        if: ${{ secrets.NUGET_USER != '' }}
-        uses: NuGet/login@v1
-        with:
-          user: ${{ secrets.NUGET_USER }}
-
-      - name: Fail when no publish credentials are configured
-        if: ${{ steps.nuget_login.outputs.NUGET_API_KEY == '' && secrets.NUGET_API_KEY == '' }}
+      - name: Publish to NuGet
         shell: bash
         run: |
-          echo "Configure NuGet Trusted Publishing with NUGET_USER or set the fallback NUGET_API_KEY secret." >&2
-          exit 1
+          set -euo pipefail
 
-      - name: Publish to NuGet with Trusted Publishing
-        if: ${{ steps.nuget_login.outputs.NUGET_API_KEY != '' }}
-        run: dotnet nuget push "${{ env.PACKAGE_OUTPUT_GLOB }}" --source "${{ env.PACKAGE_SOURCE }}" --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" --skip-duplicate
+          if [[ -z "${{ secrets.NUGET_API_KEY }}" ]]; then
+            echo "NUGET_API_KEY is required for NuGet publish." >&2
+            exit 1
+          fi
 
-      - name: Publish to NuGet with API key fallback
-        if: ${{ steps.nuget_login.outputs.NUGET_API_KEY == '' && secrets.NUGET_API_KEY != '' }}
-        run: dotnet nuget push "${{ env.PACKAGE_OUTPUT_GLOB }}" --source "${{ env.PACKAGE_SOURCE }}" --api-key "${{ secrets.NUGET_API_KEY }}" --skip-duplicate
+          shopt -s nullglob
+          packages=( ${{ env.PACKAGE_OUTPUT_GLOB }} )
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "No NuGet packages found for publish." >&2
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            exit_code=0
+            echo "Publishing $package..."
+            result=$(dotnet nuget push "$package" \
+              --api-key "${{ secrets.NUGET_API_KEY }}" \
+              --source "${{ env.PACKAGE_SOURCE }}" \
+              --skip-duplicate 2>&1) || exit_code=$?
+
+            echo "$result"
+
+            if [[ "$exit_code" -eq 0 ]]; then
+              continue
+            fi
+
+            if echo "$result" | grep -qi "already exists"; then
+              echo "Package already exists, skipping."
+              continue
+            fi
+
+            exit "$exit_code"
+          done

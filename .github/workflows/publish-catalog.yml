@@ -1,11 +1,18 @@
 name: Publish Catalog Release
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "skills/**"
+      - "scripts/generate_catalog.py"
+      - ".github/workflows/publish-catalog.yml"
   workflow_dispatch:
     inputs:
       catalog_version:
         description: "Catalog version to publish, for example 1.0.0 or 1.2.3-preview.1"
-        required: true
+        required: false
         type: string
 
 permissions:
@@ -34,8 +41,10 @@ jobs:
           version='${{ inputs.catalog_version }}'
 
           if [[ -z "$version" ]]; then
-            echo "Catalog version is required." >&2
-            exit 1
+            year="$(date -u +%Y)"
+            month=$((10#$(date -u +%m)))
+            day=$((10#$(date -u +%d)))
+            version="${year}.${month}.${day}-ci.${GITHUB_RUN_NUMBER}"
           fi
 
           if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+([-.][0-9A-Za-z.-]+)?$ ]]; then
@@ -76,12 +85,20 @@ jobs:
         run: |
           tag='${{ steps.version.outputs.tag }}'
           title="Catalog ${{ steps.version.outputs.version }}"
-          notes="Catalog release for dotnet-skills content. Assets: dotnet-skills-manifest.json and dotnet-skills-catalog.zip."
+          notes=$(cat <<EOF
+          Automated catalog release for dotnet-skills content.
+
+          Source commit: ${{ github.sha }}
+          Assets:
+          - dotnet-skills-manifest.json
+          - dotnet-skills-catalog.zip
+          EOF
+          )
 
           if gh release view "$tag" >/dev/null 2>&1; then
             gh release edit "$tag" --title "$title" --notes "$notes"
           else
-            gh release create "$tag" --title "$title" --notes "$notes"
+            gh release create "$tag" --title "$title" --notes "$notes" --latest
           fi
 
           gh release upload "$tag" artifacts/catalog-release/dotnet-skills-manifest.json artifacts/catalog-release/dotnet-skills-catalog.zip --clobber

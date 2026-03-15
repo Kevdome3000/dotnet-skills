@@ -1,7 +1,7 @@
 ---
 name: dotnet-legacy-aspnet
 version: "1.0.0"
-category: "Legacy and Compatibility"
+category: "Legacy"
 description: "Maintain classic ASP.NET applications on .NET Framework, including Web Forms, older MVC, and legacy hosting patterns, while planning realistic modernization boundaries."
 compatibility: "Requires classic ASP.NET on .NET Framework."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires classic ASP.NET on .NET Framework."
 - classic and Core guidance are not mixed
 - legacy runtime assumptions are preserved deliberately
 - migration steps are incremental and testable
+
+## References
+
+- [Migration Paths](references/migration.md): strategies for migrating from ASP.NET to ASP.NET Core, including incremental migration, strangler fig pattern, and component-specific guidance
+- [Maintenance Patterns](references/patterns.md): stabilization and maintenance patterns for legacy ASP.NET code, including abstraction layers, testing seams, and deployment practices

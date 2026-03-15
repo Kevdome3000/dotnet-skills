@@ -34,3 +34,8 @@ compatibility: "Best for new repositories or structural refactors of existing .N
 - projects have explicit responsibility boundaries
 - shared MSBuild settings do not accidentally override platform-specific needs
 - a new contributor can build and test the repo without guessing
+
+## References
+
+- [patterns.md](references/patterns.md): solution layout conventions, `Directory.Build.props`, `Directory.Build.targets`, Central Package Management, `global.json`, `nuget.config`, analyzers, multi-targeting, and source link
+- [templates.md](references/templates.md): `dotnet new` templates for console apps, class libraries, ASP.NET Core APIs, worker services, Blazor, test projects, .NET Aspire, and gRPC services

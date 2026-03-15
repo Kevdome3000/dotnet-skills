@@ -1,7 +1,7 @@
 ---
 name: dotnet-entity-framework6
 version: "1.0.0"
-category: "Data, Distributed, and AI"
+category: "Data"
 description: "Maintain or migrate EF6-based applications with realistic guidance on what to keep, what to modernize, and when EF Core is or is not the right next step."
 compatibility: "Requires EF6 or a transition plan from EF6 to EF Core or modern .NET."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires EF6 or a transition plan from EF6 to EF Core or modern 
 - migration assumptions are backed by real feature usage
 - EF6-only features are identified early
 - the proposed path avoids avoidable churn
+
+## References
+
+- [EF6 to EF Core Migration Guide](references/migration.md) - decision framework, migration approaches, feature mapping, and common pitfalls when moving from EF6 to EF Core
+- [EF6 Maintenance Patterns](references/patterns.md) - repository and unit of work patterns, query optimization, concurrency handling, auditing, and testing strategies for EF6 codebases

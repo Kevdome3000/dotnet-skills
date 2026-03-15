@@ -76,6 +76,9 @@ It should make these points obvious:
 - What are the main integration decisions?
 - What validations should happen after using it?
 
+If the skill explains non-trivial wiring, runtime flow, integration steps, or decision branches, add at least one Mermaid diagram that makes those details explicit.
+Do not leave complex implementation guidance as prose only when a simple diagram would clarify it.
+
 Do not write vague descriptions like:
 
 - "Helper library for communication"
@@ -94,17 +97,15 @@ Create:
 ```text
 skills/<skill-slug>/
 ├── SKILL.md
-└── agents/
+├── scripts/       # optional
+├── references/    # optional
+├── assets/        # optional
+└── agents/        # optional OpenAI/Codex adapter metadata
     └── openai.yaml
 ```
 
-`agents/openai.yaml` is required in this repository as the OpenAI or Codex adapter file for the skill package.
-
-Optional:
-
-```text
-skills/<skill-slug>/references/
-```
+`SKILL.md` is the only required file for the skill package itself.
+Add `agents/openai.yaml` only when you actually need an OpenAI or Codex adapter file.
 
 Do not create random extra docs for one skill unless they are part of the actual reusable skill package.
 
@@ -141,7 +142,7 @@ python3 scripts/generate_catalog.py --validate-only
 
 This repository also publishes an installable `.NET` tool for consumers of the catalog:
 
-- package id: `ManagedCode.DotnetSkills.Tool`
+- package id: `dotnet-skills`
 - command name: `dotnet-skills`
 - CLI shape: `dotnet skills ...`
 
@@ -159,45 +160,44 @@ Agent target rule:
 
 - support Codex, Claude, Copilot, and Gemini target layouts through `--agent`
 - support global or repository-local installation through `--scope`
+- when `--agent` is omitted, auto-detect existing repo roots in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; if none exist, install into a root `skills/` folder
 - keep `--target` as an explicit override when a caller wants a custom path
-- for Claude, generate `.claude/agents` subagent adapters in addition to installing the reusable skill payload
+- for Claude, generate native `.claude/agents` subagent files from `SKILL.md`
+- for Gemini, use `.gemini/skills` for explicit `--agent gemini` installs, but keep compatibility with existing shared `.agents/skills` layouts during auto-detect
 
 Publishing is handled by [`.github/workflows/publish-tool.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/publish-tool.yml).
 
 Preferred publish model:
 
-1. Configure a NuGet Trusted Publishing policy for `managedcode/dotnet-skills`
-2. Bind it to the `publish-tool.yml` workflow and the `release` environment
-3. Add the `NUGET_USER` repository secret with the NuGet profile name that owns the package
-4. Publish by creating a GitHub release with a tag like `v1.2.3`, or run the workflow manually with `package_version=1.2.3`
+1. Add the `NUGET_API_KEY` repository secret
+2. Keep only the manual base version in [`tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj`](/Users/ksemenenko/Developer/dotnet-skills/tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj) as `<VersionPrefix>major.minor</VersionPrefix>`
+3. Let [`.github/workflows/publish-tool.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/publish-tool.yml) publish automatically from `main` when tool-source inputs change, or trigger it manually only for a backfill or rerun
 
-The workflow resolves the package version from the release tag or manual input and pushes the produced `.nupkg` to NuGet.
-
-Fallback:
-
-- If Trusted Publishing is not set up yet, the workflow can still publish with a classic `NUGET_API_KEY` repository secret.
+The workflow resolves the publish version in CI as `<VersionPrefix>.<GITHUB_RUN_NUMBER>` and pushes the produced `.nupkg` to NuGet. For example, a checked-in `0.0` base version becomes `0.0.412` on run `412`.
 
 ## Catalog Releases
 
 Skill content releases are separate from NuGet tool releases.
 
-Use [`.github/workflows/publish-catalog.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/publish-catalog.yml) to publish a new remote catalog release when `skills/` changes.
+Catalog releases are published automatically by [`.github/workflows/publish-catalog.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/publish-catalog.yml) on pushes to `main` when catalog-source inputs change.
 
 Rules:
 
 - catalog release tags must use `catalog-v<version>`
+- the normal flow is automatic on `main`; do not treat manual dispatch as the primary release path
 - the workflow generates fresh catalog outputs in CI from `skills/*/SKILL.md`
 - the tool resolves the latest remote catalog from the newest non-draft `catalog-v*` GitHub release
 - the workflow uploads two assets:
   - `dotnet-skills-manifest.json`
   - `dotnet-skills-catalog.zip`
-- use `dotnet skills sync --catalog-version <version>` to validate a pinned catalog release after it is published
+- if you need a backfill or emergency rerun, `workflow_dispatch` may still provide an explicit `catalog_version`
+- use `dotnet skills sync --catalog-version <version>` only when you intentionally need to validate a pinned catalog release after it is published
 
 If you change the tool:
 
 ```bash
-dotnet build tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj
-dotnet pack tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj -c Release
+dotnet build dotnet-skills.slnx
+dotnet pack dotnet-skills.slnx -c Release
 ```
 
 Installability smoke tests run in CI.

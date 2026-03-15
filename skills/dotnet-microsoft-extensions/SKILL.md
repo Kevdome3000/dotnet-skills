@@ -34,3 +34,8 @@ compatibility: "Relevant to console apps, workers, ASP.NET Core apps, functions,
 - service lifetimes are correct
 - configuration is strongly typed where it matters
 - host setup remains easy to debug and reason about
+
+## References
+
+- [patterns.md](references/patterns.md) - DI patterns, Configuration patterns, Options pattern, Logging patterns, HttpClientFactory patterns, Hosted Service patterns
+- [anti-patterns.md](references/anti-patterns.md) - Common mistakes with DI, configuration, options, logging, HttpClient, and hosted services

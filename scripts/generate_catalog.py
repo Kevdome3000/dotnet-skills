@@ -18,11 +18,18 @@ END_MARKER = "<!-- END GENERATED CATALOG -->"
 
 CATEGORY_ORDER = [
     "Core",
-    "Web and Cloud",
-    "Desktop and Mobile",
-    "Data, Distributed, and AI",
-    "Legacy and Compatibility",
-    "Quality, Testing, and Tooling",
+    "Web",
+    "Cloud",
+    "Distributed",
+    "Desktop",
+    "Cross-Platform UI",
+    "Data",
+    "AI",
+    "Legacy",
+    "Testing",
+    "Code Quality",
+    "Architecture",
+    "Metrics",
 ]
 
 
@@ -65,11 +72,8 @@ def collect_skills() -> list[dict[str, str]]:
     skills: list[dict[str, str]] = []
     for skill_dir in sorted(path for path in SKILLS_DIR.iterdir() if path.is_dir()):
         skill_path = skill_dir / "SKILL.md"
-        agents_path = skill_dir / "agents" / "openai.yaml"
         if not skill_path.exists():
             continue
-        if not agents_path.exists():
-            raise ValueError(f"{skill_dir} is missing agents/openai.yaml")
 
         metadata, body = parse_frontmatter(skill_path)
         title = parse_title(body, skill_path)

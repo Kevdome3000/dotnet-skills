@@ -1,7 +1,7 @@
 ---
 name: dotnet-mstest
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Testing"
 description: "Write, run, or repair .NET tests that use MSTest. Use when a repo uses `MSTest.Sdk`, `MSTest`, `[TestClass]`, `[TestMethod]`, `DataRow`, or Microsoft.Testing.Platform-based MSTest execution."
 compatibility: "Requires a .NET solution or project with MSTest packages; respects the repo's `AGENTS.md` commands first."
 ---
@@ -109,6 +109,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 ## Load References
 
 - read `references/mstest.md` first
+- read `references/patterns.md` for MSTest patterns (DataRow, DynamicData, lifecycle hooks, parallel testing)
+- read `references/anti-patterns.md` for common testing mistakes to avoid
 
 ## Example Requests
 

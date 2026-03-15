@@ -1,7 +1,7 @@
 ---
 name: dotnet-netarchtest
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Architecture"
 description: "Use the open-source free `NetArchTest.Rules` library for architecture rules in .NET unit tests. Use when a repo wants lightweight, fluent architecture assertions for namespaces, dependencies, or layering."
 compatibility: "Requires a .NET test project; works with any unit-test framework."
 ---
@@ -97,7 +97,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/netarchtest.md` first
+- read `references/patterns.md` for NetArchTest fluent API patterns and predicate usage
+- read `references/examples.md` for common architecture test implementations
 
 ## Example Requests
 

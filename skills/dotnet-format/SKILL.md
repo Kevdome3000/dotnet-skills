@@ -1,7 +1,7 @@
 ---
 name: dotnet-format
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use the free first-party `dotnet format` CLI for .NET formatting and analyzer fixes. Use when a .NET repo needs formatting commands, `--verify-no-changes` CI checks, or `.editorconfig`-driven code style enforcement."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -101,7 +101,9 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/dotnet-format.md` first
+- read `references/dotnet-format.md` first for overview and installation
+- read `references/commands.md` for CLI command patterns and CI integration
+- read `references/config.md` for .editorconfig settings and code style options
 
 ## Example Requests
 

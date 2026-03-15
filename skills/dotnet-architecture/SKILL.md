@@ -34,3 +34,8 @@ compatibility: "Best when project structure, service boundaries, or long-term ma
 - the proposed structure reduces rather than increases accidental complexity
 - data ownership and integration paths are explicit
 - the architecture is testable and operable, not just diagram-friendly
+
+## References
+
+- [references/patterns.md](references/patterns.md) - detailed implementations of Clean Architecture, Vertical Slices, DDD, CQRS, Modular Monolith, and Microservices with C# 12+ examples
+- [references/anti-patterns.md](references/anti-patterns.md) - common architectural mistakes including over-abstraction, anemic domain models, premature microservices, and cargo cult patterns

@@ -1,7 +1,7 @@
 ---
 name: dotnet-wcf
 version: "1.0.0"
-category: "Legacy and Compatibility"
+category: "Legacy"
 description: "Work on WCF services, clients, bindings, contracts, and migration decisions for SOAP and multi-transport service-oriented systems on .NET Framework or compatible stacks."
 compatibility: "Requires WCF or a concrete migration off WCF."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires WCF or a concrete migration off WCF."
 - WCF is used for a reason the modern stack does not replace directly
 - binding and security behavior are explicit
 - interop is verified with real consumers
+
+## References
+
+- [migration.md](references/migration.md) - WCF to gRPC/REST/CoreWCF migration paths, decision framework, and endpoint-by-endpoint migration strategy
+- [patterns.md](references/patterns.md) - WCF maintenance patterns for configuration, contracts, hosting, security, diagnostics, and client proxy management

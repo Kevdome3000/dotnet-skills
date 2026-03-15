@@ -1,7 +1,7 @@
 ---
 name: dotnet-stylecop-analyzers
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use the open-source free `StyleCop.Analyzers` package for naming, layout, documentation, and style rules in .NET projects. Use when a repo wants stricter style conventions than the SDK analyzers alone provide."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -99,7 +99,9 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/stylecop-analyzers.md` first
+- read `references/stylecop-analyzers.md` for installation and ownership model
+- read `references/rules.md` for commonly used StyleCop rules and .editorconfig examples
+- read `references/config.md` for stylecop.json settings and configuration options
 
 ## Example Requests
 

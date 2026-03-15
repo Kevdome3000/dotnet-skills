@@ -1,7 +1,7 @@
 ---
 name: dotnet-code-analysis
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Code Quality"
 description: "Use the free built-in .NET SDK analyzers and analysis levels. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning policy wired into build and CI."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -105,7 +105,8 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/code-analysis.md` first
+- read `references/rules.md` for SDK analyzer rule categories and severity guidance
+- read `references/config.md` for AnalysisLevel, AnalysisMode, and .editorconfig settings
 
 ## Example Requests
 

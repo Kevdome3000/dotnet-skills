@@ -1,7 +1,7 @@
 ---
 name: dotnet-mlnet
 version: "1.0.0"
-category: "Data, Distributed, and AI"
+category: "AI"
 description: "Use ML.NET to train, evaluate, or integrate machine-learning models into .NET applications with realistic data preparation, inference, and deployment expectations."
 compatibility: "Requires ML.NET, Model Builder, or ML.NET CLI scenarios."
 ---
@@ -34,3 +34,8 @@ compatibility: "Requires ML.NET, Model Builder, or ML.NET CLI scenarios."
 - model quality is measured, not assumed
 - training and inference responsibilities are separated
 - deployment and versioning expectations are explicit
+
+## References
+
+- [patterns.md](references/patterns.md) - Data loading, training pipelines, evaluation metrics, deployment strategies, and feature engineering patterns
+- [examples.md](references/examples.md) - Complete examples for sentiment analysis, price prediction, image classification, anomaly detection, recommendations, clustering, fraud detection, text classification, object detection, and AutoML

@@ -52,10 +52,10 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Build dotnet tool
-        run: dotnet build tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj -c Release
+        run: dotnet build dotnet-skills.slnx -c Release
 
       - name: Pack dotnet tool
-        run: dotnet pack tools/DotnetSkills.Tooling/DotnetSkills.Tooling.csproj -c Release --no-build
+        run: dotnet pack dotnet-skills.slnx -c Release --no-build
 
       - name: Smoke test installable tool
         run: bash scripts/smoke_test_tool.sh artifacts/nuget

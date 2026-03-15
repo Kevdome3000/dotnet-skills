@@ -1,7 +1,7 @@
 ---
 name: dotnet-complexity
 version: "1.0.0"
-category: "Quality, Testing, and Tooling"
+category: "Metrics"
 description: "Use free built-in .NET maintainability analyzers and code metrics configuration to find overly complex methods and coupled code. Use when a repo needs cyclomatic complexity checks, maintainability thresholds, or complexity-driven refactoring gates."
 compatibility: "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first."
 ---
@@ -104,7 +104,9 @@ For setup-only requests with no execution, return `status: configured` and exact
 
 ## Load References
 
-- read `references/complexity.md` first
+- read `references/complexity.md` first for rule overview and verification commands
+- read `references/metrics.md` for detailed metric explanations and thresholds
+- read `references/config.md` for analyzer configuration options
 
 ## Example Requests
 
