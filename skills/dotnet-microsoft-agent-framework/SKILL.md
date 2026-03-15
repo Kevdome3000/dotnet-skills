@@ -39,3 +39,8 @@ compatibility: "Requires a .NET AI application that truly needs agent orchestrat
 
 - [patterns.md](references/patterns.md) - Agent patterns, multi-agent orchestration, provider patterns, telemetry, and error handling
 - [examples.md](references/examples.md) - Practical agent implementations including customer support, code review, document processing, RAG, shopping, and workflow automation
+- [tools.md](references/tools.md) - Function tools, tool approval, agent-as-tool, structured output, MCP tool exposure
+- [workflows.md](references/workflows.md) - Sequential, concurrent, handoff, and group chat orchestrations with custom executors
+- [mcp.md](references/mcp.md) - Model Context Protocol: local/hosted MCP servers, authentication, security, exposing agents as MCP
+- [middleware.md](references/middleware.md) - Agent run, function calling, and IChatClient middleware for logging, security, and transformation
+- [sessions.md](references/sessions.md) - Sessions, RAG with TextSearchProvider, context providers, chat history, observability

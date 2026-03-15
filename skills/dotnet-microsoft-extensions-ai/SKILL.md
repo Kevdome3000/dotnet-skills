@@ -39,3 +39,4 @@ compatibility: "Requires `Microsoft.Extensions.AI` or a plan to standardize AI p
 
 - [patterns.md](references/patterns.md) - IChatClient patterns, embedding patterns, provider integration, and testing patterns
 - [examples.md](references/examples.md) - Practical AI integration examples including RAG, semantic caching, content moderation, structured output extraction, and API integration
+- [evaluation.md](references/evaluation.md) - AI response evaluation: quality evaluators (relevance, coherence, completeness), safety evaluators (content harm, protected material), NLP evaluators (BLEU, F1), reporting, and test integration
