@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate GitHub Pages site with skills data from the catalog."""
+"""Generate GitHub Pages site with skills and agents data from the catalog."""
 
 from datetime import date
 import html
@@ -10,6 +10,7 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = REPO_ROOT / "catalog" / "skills.json"
+AGENTS_CATALOG_PATH = REPO_ROOT / "catalog" / "agents.json"
 TEMPLATE_PATH = REPO_ROOT / "github-pages" / "index.html"
 OUTPUT_DIR = REPO_ROOT / "artifacts" / "github-pages"
 OUTPUT_PATH = OUTPUT_DIR / "index.html"
@@ -18,6 +19,7 @@ ROBOTS_PATH = OUTPUT_DIR / "robots.txt"
 
 SKILLS_DATA_PLACEHOLDER = "SKILLS_DATA_PLACEHOLDER"
 SKILLS_GRID_PLACEHOLDER = "<!-- SKILLS_GRID_PLACEHOLDER -->"
+AGENTS_GRID_PLACEHOLDER = "<!-- AGENTS_GRID_PLACEHOLDER -->"
 CATEGORY_TABS_PLACEHOLDER = "<!-- CATEGORY_TABS_PLACEHOLDER -->"
 COPYRIGHT_YEAR_RANGE_PLACEHOLDER = "COPYRIGHT_YEAR_RANGE_PLACEHOLDER"
 SITE_URL_PLACEHOLDER = "SITE_URL_PLACEHOLDER"
@@ -55,6 +57,66 @@ def render_skill_card(skill: dict) -> str:
 def render_skills_grid(skills: list) -> str:
     """Render all skill cards as HTML."""
     cards = [render_skill_card(skill) for skill in skills]
+    return "\n        ".join(cards)
+
+
+def render_agent_card(agent: dict) -> str:
+    """Render a single orchestration agent card HTML."""
+    name = escape_html(agent["name"])
+    title = escape_html(agent.get("title", agent["name"]))
+    description = escape_html(agent["description"])
+    short_name = name.replace("dotnet-", "")
+    install_command = f"dotnet skills agent install {short_name}"
+    linked_skills = [escape_html(skill.replace("dotnet-", "")) for skill in agent.get("skills", [])[:4]]
+    source_path = escape_html(agent.get("path", "agents/"))
+
+    if linked_skills:
+        skills_html = "".join(f'<span class="agent-skill-chip">{skill}</span>' for skill in linked_skills)
+    else:
+        skills_html = '<span class="agent-skill-chip">no linked skills</span>'
+
+    extra_skills_count = max(0, len(agent.get("skills", [])) - len(linked_skills))
+    extra_skills_label = f"+{extra_skills_count} more" if extra_skills_count > 0 else ""
+    extra_skills_badge = (
+        f'<span class="agent-meta-pill">{escape_html(extra_skills_label)}</span>'
+        if extra_skills_label
+        else ""
+    )
+
+    return f'''<div class="agent-card">
+          <div class="agent-card-top">
+            <div>
+              <h3>{title}</h3>
+              <p>{description}</p>
+            </div>
+            <span class="agent-meta-pill">{len(agent.get("skills", []))} linked skills</span>
+          </div>
+          <div class="agent-skill-list">
+            {skills_html}
+          </div>
+          <div class="agent-card-footer">
+            <code class="agent-command">{escape_html(install_command)}</code>
+            <div class="agent-card-links">
+              {extra_skills_badge}
+              <a href="https://github.com/managedcode/dotnet-skills/tree/main/{source_path}" target="_blank" rel="noopener noreferrer">Source</a>
+            </div>
+          </div>
+        </div>'''
+
+
+def render_agents_grid(agents: list) -> str:
+    """Render all orchestration agent cards as HTML."""
+    if not agents:
+        return """<div class="agent-card">
+          <div class="agent-card-top">
+            <div>
+              <h3>Agent catalog unavailable</h3>
+              <p>No orchestration agents were found in the current catalog build.</p>
+            </div>
+          </div>
+        </div>"""
+
+    cards = [render_agent_card(agent) for agent in agents]
     return "\n        ".join(cards)
 
 
@@ -121,6 +183,11 @@ def main() -> int:
         print("Run 'python3 scripts/generate_catalog.py' first.", file=sys.stderr)
         return 1
 
+    if not AGENTS_CATALOG_PATH.exists():
+        print(f"Error: Agent catalog not found at {AGENTS_CATALOG_PATH}", file=sys.stderr)
+        print("Run 'python3 scripts/generate_agent_catalog.py' first.", file=sys.stderr)
+        return 1
+
     if not TEMPLATE_PATH.exists():
         print(f"Error: Template not found at {TEMPLATE_PATH}", file=sys.stderr)
         return 1
@@ -131,6 +198,12 @@ def main() -> int:
     skills = catalog.get("skills", [])
     print(f"Loaded {len(skills)} skills from catalog")
 
+    with open(AGENTS_CATALOG_PATH, "r", encoding="utf-8") as f:
+        agent_catalog = json.load(f)
+
+    agents = agent_catalog.get("agents", [])
+    print(f"Loaded {len(agents)} agents from catalog")
+
     with open(TEMPLATE_PATH, "r", encoding="utf-8") as f:
         template = f.read()
 
@@ -139,12 +212,14 @@ def main() -> int:
     # Generate HTML components
     skills_json = json.dumps(skills, indent=2)
     skills_grid_html = render_skills_grid(skills)
+    agents_grid_html = render_agents_grid(agents)
     category_tabs_html = render_category_tabs(skills)
 
     # Replace placeholders
     output_html = template
     output_html = output_html.replace(SKILLS_DATA_PLACEHOLDER, skills_json)
     output_html = output_html.replace(SKILLS_GRID_PLACEHOLDER, skills_grid_html)
+    output_html = output_html.replace(AGENTS_GRID_PLACEHOLDER, agents_grid_html)
     output_html = output_html.replace(CATEGORY_TABS_PLACEHOLDER, category_tabs_html)
     output_html = output_html.replace(COPYRIGHT_YEAR_RANGE_PLACEHOLDER, render_copyright_year_range())
     output_html = output_html.replace(SITE_URL_PLACEHOLDER, site_url)
@@ -157,6 +232,10 @@ def main() -> int:
     output_html = output_html.replace(
         'id="count-all">62',
         f'id="count-all">{len(skills)}'
+    )
+    output_html = output_html.replace(
+        'id="agent-count">6',
+        f'id="agent-count">{len(agents)}'
     )
     categories_count = len(set(s["category"] for s in skills))
     output_html = output_html.replace(

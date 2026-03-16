@@ -110,6 +110,79 @@ internal static class ConsoleUi
         AnsiConsole.Write(new Panel(new Markup(Escape(layout.ReloadHint))).Header("Next step").Expand());
     }
 
+    public static void RenderInstallSummaryMultiple(
+        SkillCatalogPackage catalog,
+        IReadOnlyList<SkillInstallBatchResult> results)
+    {
+        WriteTitle("dotnet skills install");
+
+        var totalWritten = results.Sum(result => result.Summary.InstalledCount);
+        var totalSkipped = results.Sum(result => result.Summary.SkippedExisting.Count);
+        var totalAdapters = results.Sum(result => result.Summary.GeneratedAdapters);
+
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().NoWrap());
+        grid.AddColumn();
+        grid.AddRow(new Markup("[grey]Catalog[/]"), new Markup($"{Escape(catalog.SourceLabel)} [grey]({Escape(catalog.CatalogVersion)})[/]"));
+        grid.AddRow(new Markup("[grey]Targets[/]"), new Markup(results.Count.ToString()));
+        grid.AddRow(new Markup("[grey]Written[/]"), new Markup(totalWritten.ToString()));
+        grid.AddRow(new Markup("[grey]Skipped[/]"), new Markup(totalSkipped.ToString()));
+
+        if (totalAdapters > 0)
+        {
+            grid.AddRow(new Markup("[grey]Claude adapters[/]"), new Markup(totalAdapters.ToString()));
+        }
+
+        AnsiConsole.Write(new Panel(grid).Header("Summary").Expand());
+        AnsiConsole.WriteLine();
+
+        var targetTable = new Table().Expand();
+        targetTable.Title = new TableTitle("Install targets");
+        targetTable.AddColumn("Platform");
+        targetTable.AddColumn("Mode");
+        targetTable.AddColumn("Path");
+        targetTable.AddColumn("Written");
+        targetTable.AddColumn("Skipped");
+
+        foreach (var result in results)
+        {
+            targetTable.AddRow(
+                Escape(result.Layout.Agent.ToString()),
+                FormatInstallMode(result.Layout.Mode),
+                Escape(result.Layout.PrimaryRoot.FullName),
+                result.Summary.InstalledCount.ToString(),
+                result.Summary.SkippedExisting.Count.ToString());
+        }
+
+        AnsiConsole.Write(targetTable);
+        AnsiConsole.WriteLine();
+
+        var resultTable = new Table().Expand();
+        resultTable.Title = new TableTitle("Install results");
+        resultTable.AddColumn("Target");
+        resultTable.AddColumn("Skill");
+        resultTable.AddColumn("Action");
+
+        foreach (var result in results)
+        {
+            foreach (var row in result.Rows.OrderBy(item => item.Skill.Name, StringComparer.Ordinal))
+            {
+                resultTable.AddRow(
+                    Escape(result.Layout.PrimaryRoot.FullName),
+                    BuildSkillCell(row.Skill),
+                    FormatAction(row.Action));
+            }
+        }
+
+        AnsiConsole.Write(resultTable);
+        AnsiConsole.WriteLine();
+
+        var hints = string.Join(
+            Environment.NewLine,
+            results.Select(result => $"{result.Layout.Agent} [{result.Layout.PrimaryRoot.FullName}] : {result.Layout.ReloadHint}"));
+        AnsiConsole.Write(new Panel(new Markup(Escape(hints))).Header("Next steps").Expand());
+    }
+
     public static void RenderRemoveSummary(
         SkillCatalogPackage catalog,
         SkillInstallLayout layout,
@@ -303,7 +376,7 @@ internal static class ConsoleUi
             "- `--refresh` forces `install` or `update` to redownload the selected remote catalog first.",
             "- Short aliases work everywhere: `aspire` resolves to `dotnet-aspire`.",
             "- Set `DOTNET_SKILLS_SKIP_UPDATE_CHECK=1` to suppress automatic tool update notices on startup.",
-            "- Auto target detection probes `.codex`, `.claude`, `.github`, `.gemini`, and `.agents`; if none exist, it falls back to `./skills`.");
+            "- Auto target detection probes `.codex`, `.claude`, `.github`, `.gemini`, and `.agents`; `install` writes to every existing platform target it finds, and falls back to `.agents/skills` only when no platform folder exists.");
 
         AnsiConsole.Write(new Panel(new Markup(Escape(notes))).Header("Notes").Expand());
     }
@@ -863,6 +936,11 @@ internal sealed record ScopeInventoryRow(
     InstallScope Scope,
     DirectoryInfo TargetRoot,
     IReadOnlyList<InstalledSkillRecord> InstalledSkills);
+
+internal sealed record SkillInstallBatchResult(
+    SkillInstallLayout Layout,
+    IReadOnlyList<SkillActionRow> Rows,
+    SkillInstallSummary Summary);
 
 internal sealed record SkillActionRow(SkillEntry Skill, string FromVersion, string ToVersion, SkillAction Action);
 

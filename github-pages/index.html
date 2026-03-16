@@ -758,6 +758,112 @@
       gap: 18px;
     }
 
+    .agents-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .agent-card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, #ffffff 100%);
+      border: 1px solid rgba(214, 223, 235, 0.95);
+      border-radius: 22px;
+      padding: 20px;
+      text-align: left;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      display: grid;
+      gap: 16px;
+      min-height: 100%;
+    }
+
+    .agent-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .agent-card h3 {
+      font-size: 1.08rem;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+
+    .agent-card p {
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+      line-height: 1.65;
+    }
+
+    .agent-meta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--accent-light);
+      color: var(--accent-primary);
+      font-size: 0.78rem;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .agent-skill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .agent-skill-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+    }
+
+    .agent-card-footer {
+      display: grid;
+      gap: 12px;
+    }
+
+    .agent-command {
+      display: block;
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      color: var(--text-primary);
+      font-size: 0.82rem;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+
+    .agent-card-links {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .agent-card-links a {
+      color: var(--accent-primary);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+
+    .agent-card-links a:hover {
+      text-decoration: underline;
+    }
+
     .platforms-overview {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
@@ -1280,6 +1386,10 @@
         grid-template-columns: 1fr;
       }
 
+      .agent-card-top {
+        flex-direction: column;
+      }
+
       .stats {
         flex-direction: column;
         gap: 24px;
@@ -1360,6 +1470,7 @@
       </a>
       <div class="nav-links">
         <a href="#about">About</a>
+        <a href="#agents">Agents</a>
         <a href="#catalog">Catalog</a>
         <a href="https://github.com/managedcode/dotnet-skills" target="_blank">GitHub</a>
         <a href="https://www.nuget.org/packages/dotnet-skills" target="_blank">NuGet</a>
@@ -1597,39 +1708,10 @@
     <section class="about-section" id="agents">
       <h2>Orchestration Agents</h2>
       <p style="text-align: center; color: var(--text-secondary); margin-bottom: 24px;">
-        Higher-level agents that route work to the right skills. Install them to get intelligent task routing.
+        Higher-level repo-owned agents that route work to the right skills. Install them when you want broader triage, review, modernization, data, build, or AI routing on top of the skill catalog.
       </p>
-      <div class="agents-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-router</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Broad .NET triage agent that classifies repos and routes work to the right skills.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install router</code>
-        </div>
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-ai</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">AI-focused agent for Semantic Kernel, Agent Framework, MCP, and ML.NET.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install ai</code>
-        </div>
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-build</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Build-focused agent for restore, build, test, packaging, and CI failures.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install build</code>
-        </div>
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-data</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Data-access agent for EF Core, EF6, migrations, and persistence strategy.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install data</code>
-        </div>
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-modernization</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Modernization agent for upgrades, migrations, and legacy code transformation.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install modernization</code>
-        </div>
-        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
-          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-review</h3>
-          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Review agent for code review, analyzers, testing, and architecture.</p>
-          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install review</code>
-        </div>
+      <div class="agents-grid">
+        <!-- AGENTS_GRID_PLACEHOLDER -->
       </div>
     </section>
 

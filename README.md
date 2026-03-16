@@ -71,7 +71,7 @@ Catalog releases are published automatically from `main` when `skills/` or catal
 | Claude | `~/.claude/agents/` | `.claude/agents/` |
 | Copilot | `~/.copilot/skills/` | `.github/skills/` |
 | Gemini | `~/.gemini/skills/` | `.gemini/skills/` |
-| Codex | `~/.agents/skills/` | `.agents/skills/` |
+| Codex | `~/.codex/skills/` | `.codex/skills/` |
 
 ### Orchestration Agents Installation Paths
 
@@ -82,7 +82,7 @@ Catalog releases are published automatically from `main` when `skills/` or catal
 | Gemini | `~/.gemini/agents/` | `.gemini/agents/` |
 | Codex | `~/.agents/skills/` | `.agents/skills/` |
 
-When `--agent` is omitted, the tool auto-detects your project layout by checking for `.codex/`, `.claude/`, `.github/`, `.gemini/`, or `.agents/` directories.
+When `--agent` is omitted for skill installation, the tool checks for `.codex/`, `.claude/`, `.github/`, `.gemini/`, and `.agents/` directories in that order, installs into every already existing platform target it finds, and falls back to `.agents/skills/` only when no platform folder exists.
 
 ## Orchestration Agents
 

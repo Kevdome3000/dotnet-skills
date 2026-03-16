@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "skills/**"
+      - "agents/**"
       - "github-pages/**"
       - "scripts/generate_pages.py"
       - "scripts/generate_catalog.py"
+      - "scripts/generate_agent_catalog.py"
       - ".github/workflows/publish-pages.yml"
   workflow_dispatch:
 
@@ -38,6 +40,9 @@ jobs:
 
       - name: Generate catalog
         run: python3 scripts/generate_catalog.py
+
+      - name: Generate agent catalog
+        run: python3 scripts/generate_agent_catalog.py
 
       - name: Generate GitHub Pages
         run: python3 scripts/generate_pages.py

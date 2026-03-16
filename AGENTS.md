@@ -149,10 +149,11 @@ Other important repository files:
 - [`tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj`](tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj): publishable `.NET` tool that installs the catalog through `dotnet skills ...`.
 - [`dotnet-skills.slnx`](dotnet-skills.slnx): canonical solution entry point for repository-level `dotnet build` and `dotnet pack` commands.
 - [`scripts/generate_catalog.py`](scripts/generate_catalog.py): catalog generator and checker.
+- [`scripts/generate_agent_catalog.py`](scripts/generate_agent_catalog.py): agent catalog generator for the public site and installer metadata.
 - [`scripts/smoke_test_tool.sh`](scripts/smoke_test_tool.sh): CI smoke test for the installable tool package.
 - [`scripts/upstream_watch.py`](scripts/upstream_watch.py): watch runner.
 - [`github-pages/index.html`](github-pages/index.html): template for the public skills directory website.
-- [`scripts/generate_pages.py`](scripts/generate_pages.py): generates the GitHub Pages site with embedded skills data.
+- [`scripts/generate_pages.py`](scripts/generate_pages.py): generates the GitHub Pages site with embedded skills and agents data.
 - [`.github/workflows/publish-pages.yml`](.github/workflows/publish-pages.yml): deploys the skills directory website to GitHub Pages.
 
 ## Skill Naming Rules
@@ -315,8 +316,9 @@ Rules:
 - For Copilot, use the native `SKILL.md` layout in `.github/skills` or `~/.copilot/skills`.
 - For Gemini, use `.gemini/skills` for explicit Gemini installs, but keep compatibility with shared `.agents/skills` layouts when auto-detect finds them.
 - For Claude, generate native `.claude/agents` subagent files instead of pretending Claude consumes raw `SKILL.md` skill folders directly.
-- For Codex, keep compatibility with the Codex runtime skill folder layout, but do not describe repo-local adapters as public universal standards.
-- When `--agent` is omitted, the tool must auto-detect project layouts in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; if none exist, fall back to a root `skills/` folder in the current project.
+- For Codex, use the native `.codex/skills` layout for explicit Codex installs, and keep `.agents/skills` only as a legacy shared fallback when no platform-specific folder exists.
+- When `--agent` is omitted for skill installation, the tool must install into every already existing platform folder it detects in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`. Only when none of those folders exist may it fall back to creating `.agents/skills` in the current project.
+- Auto-install must not create an extra `.agents/skills` fallback when one or more platform-specific folders such as `.codex`, `.claude`, `.github`, or `.gemini` already exist. In that case it writes only to the folders that are already present.
 - Use the same NuGet publish pattern as other ManagedCode repositories: publish from `publish-tool.yml` with `dotnet nuget push` and the `NUGET_API_KEY` secret inside the shell step.
 - Do not reference `secrets.*` in GitHub Actions `if:` expressions for NuGet publish branching; keep secret-dependent logic inside the shell step instead.
 - Publish workflows should derive the package version from the checked-in base version plus the CI run number instead of relying on a manually typed patch version.
@@ -336,12 +338,13 @@ The repository publishes a public skills directory website to GitHub Pages.
 Rules:
 
 - The website source lives in `github-pages/index.html` as a template with a `SKILLS_DATA_PLACEHOLDER` marker.
-- `scripts/generate_pages.py` reads `catalog/skills.json` and injects the skills data into the template.
+- `scripts/generate_pages.py` reads `catalog/skills.json` and `catalog/agents.json` and injects the public catalog data into the template.
 - The generated site is output to `artifacts/github-pages/` which is gitignored.
-- `publish-pages.yml` runs on `main` when `skills/`, `github-pages/`, or page-generation scripts change.
-- The website displays the full skill catalog with search, category filters, and installation commands.
+- `publish-pages.yml` runs on `main` when `skills/`, `agents/`, `github-pages/`, or page-generation scripts change.
+- The website displays the full skill catalog with search, category filters, installation commands, and a visible orchestration-agents section sourced from the repo catalog.
 - Keep the website focused on skill discovery and installation; do not expand it into unrelated documentation.
 - The website must show the `dotnet skills install <skill>` command pattern for each skill.
+- The website must also show the `dotnet skills agent install <agent>` command pattern for repo-owned orchestration agents.
 - Dark terminal-like aesthetic with monospace fonts is the intended design language.
 - When the site refers to Claude Code, GitHub Copilot, Gemini, and Codex, present them as supported platforms or assistants that consume the catalog, not as repository-owned "AI agents".
 - Supported-platform sections on the site should use clearly differentiated brand-like tiles or logos instead of generic repeated cards.
@@ -485,6 +488,7 @@ For catalog release changes:
 
 For GitHub Pages changes:
 
+- `python3 scripts/generate_agent_catalog.py`
 - `python3 -m py_compile scripts/generate_pages.py`
 - `python3 scripts/generate_pages.py`
 - Verify `artifacts/github-pages/index.html` was generated with embedded skills data

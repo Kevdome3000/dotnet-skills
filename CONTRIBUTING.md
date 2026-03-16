@@ -231,9 +231,10 @@ Agent target rule:
 
 - support Codex, Claude, Copilot, and Gemini target layouts through `--agent`
 - support global or repository-local installation through `--scope`
-- when `--agent` is omitted, auto-detect existing repo roots in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; if none exist, install into a root `skills/` folder
+- when `--agent` is omitted for skill installation, auto-detect existing repo roots in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; install into every already existing platform target you find, and only fall back to `.agents/skills` when none exist
 - keep `--target` as an explicit override when a caller wants a custom path
 - for Claude, generate native `.claude/agents` subagent files from `SKILL.md`
+- for Codex, use `.codex/skills` for explicit `--agent codex` installs and keep `.agents/skills` only as the legacy shared fallback
 - for Gemini, use `.gemini/skills` for explicit `--agent gemini` installs, but keep compatibility with existing shared `.agents/skills` layouts during auto-detect
 
 Publishing is handled by [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml).

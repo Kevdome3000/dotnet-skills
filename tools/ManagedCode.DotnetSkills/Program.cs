@@ -260,15 +260,32 @@ internal static class Program
         await MaybeShowToolUpdateAsync(cachePath);
 
         var catalog = await ResolveCatalogForInstallAsync(bundledOnly, cachePath, catalogVersion, refreshCatalog);
-        var layout = SkillInstallTarget.Resolve(targetPath, agent, scope, projectDirectory);
         var installer = new SkillInstaller(catalog);
-        var installedBefore = installer.GetInstalledSkills(layout)
-            .ToDictionary(record => record.Skill.Name, StringComparer.OrdinalIgnoreCase);
         var selectedSkills = installer.SelectSkills(requestedSkills, installAll);
-        var summary = installer.Install(selectedSkills, layout, force);
-        var rows = BuildInstallRows(selectedSkills, installedBefore, force, summary);
+        if (ShouldUseAutoDetectedLayouts(targetPath, agent))
+        {
+            var batchResults = new List<SkillInstallBatchResult>();
 
-        ConsoleUi.RenderInstallSummary(catalog, layout, rows, summary);
+            foreach (var layout in SkillInstallTarget.ResolveAllDetected(projectDirectory, scope))
+            {
+                var installedBefore = installer.GetInstalledSkills(layout)
+                    .ToDictionary(record => record.Skill.Name, StringComparer.OrdinalIgnoreCase);
+                var summary = installer.Install(selectedSkills, layout, force);
+                var rows = BuildInstallRows(selectedSkills, installedBefore, force, summary);
+                batchResults.Add(new SkillInstallBatchResult(layout, rows, summary));
+            }
+
+            ConsoleUi.RenderInstallSummaryMultiple(catalog, batchResults);
+            return 0;
+        }
+
+        var singleLayout = SkillInstallTarget.Resolve(targetPath, agent, scope, projectDirectory);
+        var installedInSingleLayout = installer.GetInstalledSkills(singleLayout)
+            .ToDictionary(record => record.Skill.Name, StringComparer.OrdinalIgnoreCase);
+        var singleSummary = installer.Install(selectedSkills, singleLayout, force);
+        var singleRows = BuildInstallRows(selectedSkills, installedInSingleLayout, force, singleSummary);
+
+        ConsoleUi.RenderInstallSummary(catalog, singleLayout, singleRows, singleSummary);
         return 0;
     }
 
@@ -729,6 +746,9 @@ internal static class Program
     private static DirectoryInfo ResolveCacheRoot(string? cachePath) => string.IsNullOrWhiteSpace(cachePath)
         ? GitHubCatalogReleaseClient.ResolveDefaultCacheDirectory()
         : new DirectoryInfo(Path.GetFullPath(cachePath));
+
+    private static bool ShouldUseAutoDetectedLayouts(string? targetPath, AgentPlatform agent) =>
+        string.IsNullOrWhiteSpace(targetPath) && agent == AgentPlatform.Auto;
 
     private static ToolUpdateService CreateToolUpdateService() => new(new NuGetPackageVersionClient());
 

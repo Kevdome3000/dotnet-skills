@@ -3,7 +3,7 @@
     {
       "name": "dotnet-ai",
       "title": ".NET AI",
-      "description": "AI-focused orchestration agent for Semantic Kernel, Microsoft Agent Framework, Microsoft.Extensions.AI, MCP, and ML.NET. Use when the dominant problem is LLM integration, agent workflows, tool calling, embeddings, or .NET AI platform selection.",
+      "description": "AI-focused orchestration agent for Microsoft Agent Framework, Microsoft.Extensions.AI, Semantic Kernel, MCP, and ML.NET. Use when the dominant problem is .NET AI architecture, model integration, agent workflows, tool calling, embeddings, or platform selection.",
       "skills": [
         "dotnet-semantic-kernel",
         "dotnet-microsoft-agent-framework",
