@@ -1,97 +1,63 @@
-# Model Context Protocol (MCP) Integration
+# Model Context Protocol And External Boundaries
 
-## Overview
+## Choose The Right Protocol
 
-MCP is an open standard for providing tools and contextual data to LLMs. Agent Framework supports both consuming and exposing MCP tools.
+| Need | Choose | Why |
+|---|---|---|
+| Expose tools or contextual data to an agent | MCP | Tool and context transport |
+| Let one agent call another remote agent | A2A | Agent-to-agent delegation and discovery |
+| Drive a browser or app UI for humans | AG-UI | Streaming UI protocol with state and approvals |
 
-## Using MCP Tools
+Do not blur these together:
 
-### Local MCP Server (Stdio)
+- MCP is about tools and context.
+- A2A is about remote agents.
+- AG-UI is about human-facing UI integration.
 
-```csharp
-using ModelContextProtocol;
-using ModelContextProtocol.Client;
+## Using MCP With Agents
 
-// Connect to MCP server
-await using var mcpClient = await McpClientFactory.CreateAsync(new StdioClientTransport(new()
-{
-    Name = "MCPServer",
-    Command = "npx",
-    Arguments = ["-y", "@modelcontextprotocol/server-github"]
-}));
+Agent Framework can attach remote MCP servers as tools for agents.
 
-// Get available tools
-var mcpTools = await mcpClient.ListToolsAsync();
+Typical pattern:
 
-// Create agent with MCP tools
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You answer questions about GitHub repositories.",
-    tools: [.. mcpTools.Cast<AITool>()]);
+- create or configure the MCP tool or client
+- add the resulting tool set to the agent
+- run the agent normally with those tools available
 
-// Agent can now use GitHub tools
-var response = await agent.RunAsync(
-    "Summarize the last 4 commits to microsoft/semantic-kernel");
-```
+The official docs emphasize these security rules:
 
-### HTTP/SSE MCP Server
+- prefer trusted providers over random proxy servers
+- review exactly what prompt or tool data is shared with each MCP server
+- log or audit data exchanged with third-party MCP services
+- pass authentication headers at run time rather than baking them into durable agent definitions
 
-```csharp
-// Python example
-async with MCPStreamableHTTPTool(
-    name="Microsoft Learn MCP",
-    url="https://learn.microsoft.com/api/mcp",
-    headers={"Authorization": f"Bearer {token}"}
-) as mcp_server:
+## Headers And Credentials
 
-    async with Agent(
-        client=chat_client,
-        tools=mcp_server
-    ) as agent:
-        result = await agent.run("How to create Azure storage?")
-```
+Custom headers such as bearer tokens should be injected only for the current run through the tool resources or request context that the MCP integration exposes.
 
-### WebSocket MCP Server
+Do not:
 
-```csharp
-// Python example
-async with MCPWebsocketTool(
-    name="realtime-data",
-    url="wss://api.example.com/mcp"
-) as mcp_server:
+- persist API keys inside long-lived thread state
+- hardcode third-party MCP credentials in source
+- assume all MCP servers use the same auth pattern
 
-    async with Agent(
-        client=chat_client,
-        tools=mcp_server
-    ) as agent:
-        result = await agent.run("Current market status?")
-```
+## Hosted MCP Versus Local Or Remote MCP
 
-## Popular MCP Servers
+- A `ChatClientAgent` can use MCP servers as tools when the underlying service and tool path support it.
+- Some hosted providers also surface MCP as a managed tool category.
+- Support is provider-specific. Verify the chosen agent type before you assume hosted MCP works.
 
-| Server | Command | Purpose |
-|--------|---------|---------|
-| GitHub | `npx @modelcontextprotocol/server-github` | Repository access |
-| Filesystem | `npx @modelcontextprotocol/server-filesystem` | File operations |
-| SQLite | `npx @modelcontextprotocol/server-sqlite` | Database access |
-| Calculator | `uvx mcp-server-calculator` | Math operations |
+## Agent As MCP Tool
 
-## Exposing Agent as MCP Server
-
-Make your agent available to any MCP client:
+You can expose an agent itself as an MCP tool so that any MCP client can call it.
 
 ```csharp
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 
-// Create the agent
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You are good at telling jokes.",
-    name: "Joker");
-
-// Convert to MCP tool
 McpServerTool tool = McpServerTool.Create(agent.AsAIFunction());
 
-// Set up MCP server
 HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(settings: null);
 builder.Services
     .AddMcpServer()
@@ -101,87 +67,17 @@ builder.Services
 await builder.Build().RunAsync();
 ```
 
-### Required Packages
+Use this when:
 
-```bash
-dotnet add package Microsoft.Extensions.Hosting --prerelease
-dotnet add package ModelContextProtocol --prerelease
-```
+- you want external tools or clients to consume the agent through the MCP ecosystem
+- the right abstraction is a callable tool, not a full conversational remote agent
 
-## Authentication
+Use A2A instead when the remote system should remain an agent with its own protocol semantics, discovery, and task model.
 
-### API Key
+## Security Checklist
 
-```csharp
-// Python example
-auth_headers = {
-    "Authorization": f"Bearer {api_key}",
-    # Or: "X-API-Key": api_key
-}
-
-http_client = AsyncClient(headers=auth_headers)
-
-async with MCPStreamableHTTPTool(
-    name="MCP tool",
-    url=mcp_server_url,
-    http_client=http_client
-) as mcp_tool:
-    # Use the tool
-```
-
-### Security Considerations
-
-- Review all MCP servers before adding to your application
-- Use servers from trusted providers only
-- Log all data shared with MCP servers for auditing
-- Pass credentials via `tool_resources` at runtime (not persisted)
-- See [MCP Security Best Practices](https://modelcontextprotocol.io/specification/draft/basic/security_best_practices)
-
-## MCP Tool with Agent
-
-```csharp
-// Full example: Agent with GitHub MCP tools
-var endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
-var deploymentName = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME");
-
-// Set up MCP client for GitHub
-await using var mcpClient = await McpClientFactory.CreateAsync(new StdioClientTransport(new()
-{
-    Name = "GitHub",
-    Command = "npx",
-    Arguments = ["-y", "--verbose", "@modelcontextprotocol/server-github"]
-}));
-
-// Get tools
-var tools = await mcpClient.ListToolsAsync();
-
-// Create agent
-AIAgent agent = new AzureOpenAIClient(new Uri(endpoint), new DefaultAzureCredential())
-    .GetChatClient(deploymentName)
-    .AsAIAgent(
-        instructions: "You answer questions about GitHub repositories only.",
-        tools: [.. tools.Cast<AITool>()]);
-
-// Use
-Console.WriteLine(await agent.RunAsync("List open issues in dotnet/runtime"));
-```
-
-## Combining MCP with Local Tools
-
-```csharp
-// Local tool
-[Description("Get current time")]
-static string GetTime() => DateTime.Now.ToString("HH:mm:ss");
-
-// MCP tools
-var mcpTools = await mcpClient.ListToolsAsync();
-
-// Combine
-var allTools = mcpTools.Cast<AITool>()
-    .Append(AIFunctionFactory.Create(GetTime))
-    .ToArray();
-
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You have access to GitHub and time tools.",
-    tools: allTools);
-```
+- Review every third-party MCP server before enabling it.
+- Keep credentials request-scoped.
+- Log what the agent sends to and receives from MCP servers.
+- Limit the MCP tool set to the smallest useful subset.
+- Treat MCP output as untrusted input before passing it to sensitive tools or downstream systems.

@@ -1,245 +1,106 @@
-# Agent Sessions, Memory & RAG
+# Threads, Chat History, and Memory
 
-## Sessions (Conversation State)
+## Core Rule
 
-`AgentSession` maintains conversation state across agent runs.
-
-### Basic Usage
+`AIAgent` instances are stateless. Conversation state and provider-specific state belong in `AgentThread`.
 
 ```csharp
-// Create session
-AgentSession session = await agent.CreateSessionAsync();
+AgentThread thread = await agent.GetNewThreadAsync();
 
-// Multi-turn conversation
-var first = await agent.RunAsync("My name is Alice.", session);
-var second = await agent.RunAsync("What is my name?", session);  // Agent remembers
+AgentResponse first = await agent.RunAsync("My name is Alice.", thread);
+AgentResponse second = await agent.RunAsync("What is my name?", thread);
 ```
 
-### Session Contents
+If you omit the thread, the agent creates a throwaway thread for that single run only.
 
-| Field | Purpose |
-|-------|---------|
-| `StateBag` | Arbitrary state container |
-| `session_id` (Python) | Local unique identifier |
-| `service_session_id` | Remote service conversation ID |
+## Thread Compatibility Boundaries
 
-### Restore Existing Session
+- Create threads from the agent itself with `GetNewThreadAsync`.
+- Treat threads as opaque provider-specific state.
+- Do not reuse a thread created by one agent with a different agent unless you fully understand the underlying service model.
+- If you change provider, service mode, or agent configuration, assume old threads are incompatible until proven otherwise.
 
-```csharp
-// From existing conversation ID
-AgentSession session = await agent.CreateSessionAsync(conversationId);
+## Chat History Storage Models
 
-// Or deserialize
-var serialized = agent.SerializeSession(session);
-AgentSession resumed = await agent.DeserializeSessionAsync(serialized);
-```
+| Model | Typical Backends | What Lives In `AgentThread` |
+|---|---|---|
+| In-memory | Chat Completions-style backends | Full message history |
+| Service-stored | Azure AI Foundry Agents, Assistants, many Responses modes | A service conversation or response-chain identifier |
+| Third-party custom store | ChatCompletion-style agents with custom persistence | Store-specific state plus the thread identity |
 
-## RAG (Retrieval Augmented Generation)
+## In-Memory Chat History And Reducers
 
-### TextSearchProvider
+When the service does not own history, Agent Framework can keep chat history in memory or in a custom store.
 
-Built-in RAG context provider:
+You can attach a reducer to the built-in in-memory store to control prompt growth.
 
 ```csharp
-// Search function
-static Task<IEnumerable<TextSearchProvider.TextSearchResult>> SearchAsync(
-    string query, CancellationToken ct)
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
+
+AIAgent agent = openAIClient.GetChatClient(modelName).AsAIAgent(new ChatClientAgentOptions
 {
-    var results = new List<TextSearchProvider.TextSearchResult>();
-
-    if (query.Contains("return", StringComparison.OrdinalIgnoreCase))
-    {
-        results.Add(new()
-        {
-            SourceName = "Return Policy",
-            SourceLink = "https://example.com/returns",
-            Text = "Customers may return items within 30 days."
-        });
-    }
-
-    return Task.FromResult<IEnumerable<TextSearchProvider.TextSearchResult>>(results);
-}
-
-// Create agent with RAG
-AIAgent agent = chatClient.AsAIAgent(new ChatClientAgentOptions
-{
-    ChatOptions = new() { Instructions = "Answer using the context provided." },
-    AIContextProviders = [new TextSearchProvider(SearchAsync)]
+    Name = "Joker",
+    ChatOptions = new() { Instructions = "You are good at telling jokes." },
+    ChatMessageStoreFactory = (ctx, ct) => new ValueTask<ChatMessageStore>(
+        new InMemoryChatMessageStore(
+            new MessageCountingChatReducer(12),
+            ctx.SerializedState,
+            ctx.JsonSerializerOptions,
+            InMemoryChatMessageStore.ChatReducerTriggerEvent.AfterMessageAdded))
 });
 ```
 
-### TextSearchProvider Options
+Use reducers when:
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `SearchTime` | When to search: `BeforeAIInvoke` or on-demand | `BeforeAIInvoke` |
-| `FunctionToolName` | Tool name for on-demand mode | "Search" |
-| `ContextPrompt` | Prefix for search results | "## Additional Context..." |
-| `CitationsPrompt` | Request citations | "Include citations..." |
-| `RecentMessageMemoryLimit` | Messages to include in search | 0 (disabled) |
+- the thread is purely local
+- the model context window can be exceeded
+- summarization or count-based pruning is acceptable
 
-```csharp
-var options = new TextSearchProviderOptions
-{
-    SearchTime = TextSearchProviderOptions.TextSearchBehavior.BeforeAIInvoke,
-    RecentMessageMemoryLimit = 6
-};
-```
+## Third-Party Chat Stores
 
-### Vector Store RAG (Python)
+For custom persistence, implement `ChatMessageStore` and provide it through `ChatMessageStoreFactory`.
 
-Using Semantic Kernel collections:
+Key rules:
 
-```csharp
-// Python example with Azure AI Search
-from semantic_kernel.connectors.azure_ai_search import AzureAISearchCollection
+- each thread needs its own unique storage key
+- serialization must preserve the store state needed to re-open that thread later
+- if the service already owns chat history, your custom store is ignored
 
-collection = AzureAISearchCollection[str, SupportArticle](
-    record_type=SupportArticle,
-    embedding_generator=OpenAITextEmbedding()
-)
+## Long-Term Memory Via Context Providers
 
-# Create search function
-search_function = collection.create_search_function(
-    function_name="search_knowledge_base",
-    description="Search for support articles.",
-    search_type="keyword_hybrid",
-    string_mapper=lambda x: f"{x.record.title}: {x.record.content}"
-)
+Use `AIContextProvider` when you need memory that is richer than raw chat history.
 
-# Convert to Agent Framework tool
-search_tool = search_function.as_agent_framework_tool()
+Typical pattern:
 
-# Create agent with search
-agent = chat_client.as_agent(
-    instructions="Use search to answer questions.",
-    tools=search_tool
-)
-```
+- `InvokingAsync` injects instructions, messages, or functions before the agent runs
+- `InvokedAsync` inspects the completed interaction and extracts memory to persistent storage
 
-## Context Providers
+Use context providers for:
 
-Custom memory and context injection:
+- user profile and preferences
+- retrieval augmentation
+- external memory systems
+- post-run extraction and enrichment
+
+## Serialize The Whole Thread
+
+Persist the full `AgentThread`, not just messages.
 
 ```csharp
-// Python example
-class UserInfoMemory(BaseContextProvider):
-    def __init__(self, client, user_info=None):
-        self._chat_client = client
-        self.user_info = user_info or UserInfo()
-
-    async def invoking(self, messages, **kwargs) -> Context:
-        """Provide context before agent runs."""
-        if self.user_info.name:
-            return Context(instructions=f"User's name is {self.user_info.name}.")
-        return Context(instructions="Ask the user for their name.")
-
-    async def invoked(self, request_messages, response_messages, **kwargs):
-        """Extract information after agent runs."""
-        # Extract user info from messages
-        result = await self._chat_client.get_response(
-            messages=request_messages,
-            instructions="Extract user's name and age.",
-            options={"response_format": UserInfo}
-        )
-        if result.value.name:
-            self.user_info.name = result.value.name
-
-# Use with agent
-async with Agent(
-    client=client,
-    context_providers=[UserInfoMemory(client)]
-) as agent:
-    await agent.run("My name is Alice")
+JsonElement serialized = thread.Serialize();
+AgentThread resumed = await agent.DeserializeThreadAsync(serialized);
 ```
 
-## Chat History Management
+Why:
 
-### Service-Managed History
+- service-backed threads store identifiers, not the message list
+- custom stores can attach their own serialized state
+- context providers can attach additional state
 
-Some providers (Assistants API) manage history server-side:
+## Practical Safety Rules
 
-```csharp
-// History is automatically managed
-AgentSession session = await agent.CreateSessionAsync();
-await agent.RunAsync("First message", session);
-await agent.RunAsync("Second message", session);  // Server has full history
-```
-
-### Local History
-
-For Chat Completion providers:
-
-```csharp
-public sealed class ConversationalAgent(IChatClient chatClient)
-{
-    private readonly List<ChatMessage> _history = [
-        new(ChatRole.System, "You are a helpful assistant.")
-    ];
-
-    public async Task<string> ChatAsync(string message, CancellationToken ct = default)
-    {
-        _history.Add(new ChatMessage(ChatRole.User, message));
-        var response = await chatClient.GetResponseAsync(_history, cancellationToken: ct);
-        _history.Add(new ChatMessage(ChatRole.Assistant, response.Text));
-        return response.Text;
-    }
-}
-```
-
-## Background Agent Responses
-
-For long-running operations:
-
-```csharp
-// Python example
-async with Agent(
-    client=client,
-    background_mode=True
-) as agent:
-    # Start background task
-    task_id = await agent.start_background("Process large dataset")
-
-    # Check status
-    status = await agent.get_background_status(task_id)
-
-    # Get result when ready
-    result = await agent.get_background_result(task_id)
-```
-
-## Observability
-
-Built-in telemetry for agent operations:
-
-```csharp
-// Enable OpenTelemetry
-services.AddOpenTelemetry()
-    .WithTracing(builder => builder
-        .AddSource("Microsoft.Extensions.AI")
-        .AddSource("Microsoft.Agents"));
-
-// Or via middleware
-var agent = chatClient
-    .AsBuilder()
-    .UseOpenTelemetry()
-    .Build()
-    .AsAIAgent("You are helpful.");
-```
-
-### Workflow Observability
-
-```csharp
-// Watch workflow events
-await foreach (var evt in workflow.WatchStreamAsync())
-{
-    switch (evt)
-    {
-        case ExecutorStartEvent e:
-            logger.LogInformation("Executor {Id} started", e.ExecutorId);
-            break;
-        case ExecutorCompleteEvent e:
-            logger.LogInformation("Executor {Id} completed", e.ExecutorId);
-            break;
-    }
-}
-```
+- Always store the whole serialized thread.
+- Restore with an agent configured the same way as the original.
+- Be careful with service-backed thread lifecycle and cleanup; some providers require deletion through their own SDKs.
+- When the architecture changes, consider thread migration explicitly rather than assuming old serialized state still works.

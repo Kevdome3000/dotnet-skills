@@ -1,175 +1,128 @@
-# Agent Framework Tools
+# Tools and Tool Approval
 
-## Tool Types
+## Tool Support Is Agent-Specific
 
-| Tool Type | Description |
-|-----------|-------------|
-| Function Tools | Custom code agents can call |
-| Tool Approval | Human-in-the-loop approval |
-| Code Interpreter | Execute code in sandbox |
-| File Search | Search uploaded files |
-| Web Search | Search the web |
-| Hosted MCP Tools | MCP tools hosted by Microsoft Foundry |
-| Local MCP Tools | MCP tools running locally |
+The base `AIAgent` abstraction does not guarantee tool support. Tooling depends on the specific agent type and the underlying service.
+
+For .NET, the common default is a `ChatClientAgent`, which supports:
+
+- custom function tools that you provide
+- service-provided built-in tools when the underlying service exposes them
+- per-agent and per-run tool injection
 
 ## Function Tools
 
-### Basic Function Tool
+Use `AIFunctionFactory.Create` to expose plain .NET methods.
 
 ```csharp
-[Description("Gets current weather for a location")]
-static string GetWeather(
-    [Description("City name")] string city,
-    [Description("Temperature unit")] string unit = "celsius")
-{
-    return $"Weather in {city}: 22°{unit[0].ToString().ToUpper()}";
-}
+using System.ComponentModel;
+using Microsoft.Agents.AI;
+using Microsoft.Extensions.AI;
 
-// Create agent with tool
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You are a weather assistant.",
-    tools: [AIFunctionFactory.Create(GetWeather)]);
-
-var response = await agent.RunAsync("What's the weather in Seattle?");
-```
-
-### Tool with DI
-
-```csharp
-public class WeatherService(IHttpClientFactory httpFactory)
-{
-    [Description("Gets weather from API")]
-    public async Task<WeatherData> GetWeatherAsync(
-        [Description("City name")] string city)
-    {
-        var client = httpFactory.CreateClient("weather");
-        return await client.GetFromJsonAsync<WeatherData>($"/weather/{city}");
-    }
-}
-
-// Register and use
-services.AddSingleton<WeatherService>();
-var weatherService = serviceProvider.GetRequiredService<WeatherService>();
+[Description("Get the weather for a location.")]
+static string GetWeather([Description("City or region.")] string location)
+    => $"Weather in {location}: cloudy and 15C";
 
 AIAgent agent = chatClient.AsAIAgent(
-    tools: [AIFunctionFactory.Create(weatherService.GetWeatherAsync)]);
-```
-
-### Multiple Tools
-
-```csharp
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You help with travel planning.",
-    tools: [
-        AIFunctionFactory.Create(GetWeather),
-        AIFunctionFactory.Create(SearchFlights),
-        AIFunctionFactory.Create(BookHotel),
-        AIFunctionFactory.Create(GetRestaurants)
-    ]);
-```
-
-## Tool Approval (Human-in-the-Loop)
-
-Require approval before executing sensitive tools:
-
-```csharp
-// Python example - approval_mode parameter
-@tool(approval_mode="always_require")
-def transfer_money(
-    amount: Annotated[float, Field(description="Amount to transfer")],
-    to_account: Annotated[str, Field(description="Target account")]
-) -> str:
-    return f"Transferred ${amount} to {to_account}"
-
-# Never require approval (use for safe tools only)
-@tool(approval_mode="never_require")
-def get_balance() -> str:
-    return "Balance: $1,234.56"
-```
-
-## Agent as Function Tool
-
-Convert an agent to a tool for another agent:
-
-```csharp
-// Create inner agent
-AIAgent weatherAgent = chatClient.AsAIAgent(
-    instructions: "You answer questions about the weather.",
-    name: "WeatherAgent",
-    description: "An agent that answers questions about the weather.",
-    tools: [AIFunctionFactory.Create(GetWeather)]);
-
-// Create main agent with inner agent as tool
-AIAgent mainAgent = chatClient.AsAIAgent(
     instructions: "You are a helpful assistant.",
-    tools: [weatherAgent.AsAIFunction()]);
-
-// Main agent can now call weather agent as needed
-Console.WriteLine(await mainAgent.RunAsync("What is the weather in Amsterdam?"));
+    tools: [AIFunctionFactory.Create(GetWeather)]);
 ```
 
-## Expose Agent as MCP Server
+Guidance:
 
-Make your agent available as an MCP tool:
+- Add `Description` metadata to both the method and parameters.
+- Keep tool contracts narrow and deterministic.
+- Put side effects behind clearly named tools so approval or auditing is easy.
 
-```csharp
-using ModelContextProtocol.Server;
+## Per-Run Tools
 
-// Create the agent
-AIAgent agent = chatClient.AsAIAgent(
-    instructions: "You are good at telling jokes.",
-    name: "Joker");
-
-// Convert to MCP tool
-McpServerTool tool = McpServerTool.Create(agent.AsAIFunction());
-
-// Set up MCP server over stdio
-HostApplicationBuilder builder = Host.CreateEmptyApplicationBuilder(settings: null);
-builder.Services
-    .AddMcpServer()
-    .WithStdioServerTransport()
-    .WithTools([tool]);
-
-await builder.Build().RunAsync();
-```
-
-## Provider Support Matrix
-
-| Tool Type | Chat Completion | Responses | Assistants | Foundry | Anthropic |
-|-----------|-----------------|-----------|------------|---------|-----------|
-| Function Tools | ✅ | ✅ | ✅ | ✅ | ✅ |
-| Tool Approval | ❌ | ✅ | ❌ | ✅ | ❌ |
-| Code Interpreter | ❌ | ✅ | ✅ | ✅ | ❌ |
-| File Search | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Web Search | ✅ | ✅ | ❌ | ❌ | ❌ |
-| Hosted MCP | ❌ | ✅ | ❌ | ✅ | ✅ |
-| Local MCP | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-## Structured Output
-
-Return strongly-typed responses:
+`ChatClientAgent` can accept tools per invocation by merging `ChatOptions` into `ChatClientAgentRunOptions`.
 
 ```csharp
-public record WeatherReport(
-    string Location,
-    double Temperature,
-    string Condition,
-    string[] Recommendations);
-
-var response = await chatClient.GetResponseAsync<WeatherReport>(
-    messages: [new ChatMessage(ChatRole.User, "What's the weather?")],
-    options: new ChatOptions { ResponseFormat = typeof(WeatherReport) });
-
-Console.WriteLine($"Temp: {response.Temperature}°C");
-```
-
-### With JSON Schema
-
-```csharp
-var options = new ChatOptions
+var chatOptions = new ChatOptions
 {
-    ResponseFormat = ChatResponseFormat.ForJsonSchema(
-        JsonSchema.FromType<WeatherReport>(),
-        jsonSchemaName: "weather_report")
+    Tools = [AIFunctionFactory.Create(GetWeather)]
 };
+
+var options = new ChatClientAgentRunOptions(chatOptions);
+AgentResponse response = await agent.RunAsync(
+    "What is the weather like in Amsterdam?",
+    options: options);
 ```
+
+Use per-run tools when:
+
+- a tool should be available only for a single request
+- tool access depends on the current user or tenant
+- you need to attach temporary credentials or request-specific behavior
+
+## Service-Provided Tools
+
+Some agent backends expose service-native tools. These are provider-specific `AITool` implementations rather than plain functions.
+
+Typical categories surfaced by the official docs are:
+
+- code interpreter
+- file search
+- web search
+- hosted MCP tools
+
+Example for a hosted service tool:
+
+```csharp
+var agent = await persistentAgentsClient.CreateAIAgentAsync(
+    deploymentName,
+    instructions: "You are a helpful assistant.",
+    tools: [new CodeInterpreterToolDefinition()]);
+```
+
+Do not assume these tools exist for every agent type. Check the provider and service before depending on them.
+
+## Tool Approval And Human-In-The-Loop
+
+Approval support is not uniform across all providers.
+
+Use approval for:
+
+- money movement
+- data deletion or mutation
+- external side effects
+- third-party calls that can exfiltrate data
+
+If the chosen agent backend does not give you built-in approval semantics, model approval explicitly with:
+
+- workflow request and response handling
+- middleware that blocks or rewrites calls
+- a dedicated approval tool that returns a denial unless a human explicitly authorizes the action
+
+## Agent As A Tool
+
+Wrap a specialist agent as a callable tool when you want one agent to delegate bounded work to another.
+
+```csharp
+AIAgent weatherAgent = chatClient.AsAIAgent(
+    name: "WeatherAgent",
+    description: "Answers weather questions.",
+    instructions: "You answer questions about weather.",
+    tools: [AIFunctionFactory.Create(GetWeather)]);
+
+AIAgent coordinator = chatClient.AsAIAgent(
+    instructions: "Delegate weather questions when needed.",
+    tools: [weatherAgent.AsAIFunction()]);
+```
+
+Choose agent-as-tool when:
+
+- the delegated task has a clear boundary
+- the caller should stay in control
+- you do not need a full workflow graph
+
+Choose a workflow instead when the handoff or retry logic must be explicit and inspectable.
+
+## Tool Guardrails
+
+- Start with the minimum useful tool set.
+- Avoid putting dozens of unrelated tools on one agent; split into workflows or specialist agents.
+- Log tool name, arguments, result shape, and approval outcome.
+- Keep secrets out of static tool registration when they should be injected per request.
+- Treat tool outputs as untrusted input, especially when they come from MCP servers or remote systems.

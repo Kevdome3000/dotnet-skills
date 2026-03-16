@@ -1,378 +1,193 @@
-# MCP Security Reference
+# MCP C# SDK Security Notes
 
-## Input Validation
+Use this file when the task involves safe server/client design, auth boundaries, or data exposure rules for MCP.
 
-### Path Validation
+## Security Priorities
+
+1. Keep the MCP transport clean and predictable.
+2. Limit what tools and resources can reach.
+3. Return safe protocol errors instead of leaking internals.
+4. Authenticate and authorize at the transport boundary.
+5. Make optional capabilities explicit.
+
+## stdio hygiene
+
+For stdio servers, anything written to stdout can corrupt the protocol stream. Route logs to stderr:
+
 ```csharp
-public class FileTools(IFileService files, string allowedRoot)
+builder.Logging.AddConsole(options =>
 {
-    [McpTool("read_file")]
-    [Description("Reads a file from the allowed directory")]
-    public async Task<FileResult> ReadFileAsync(
-        [Description("Relative file path")] string path,
-        CancellationToken ct = default)
-    {
-        // Prevent path traversal
-        if (path.Contains(".."))
-            return FileResult.Error("Path traversal not allowed");
-
-        // Normalize and validate path
-        var fullPath = Path.GetFullPath(Path.Combine(allowedRoot, path));
-        if (!fullPath.StartsWith(allowedRoot))
-            return FileResult.Error("Access denied: path outside allowed directory");
-
-        // Check file extension whitelist
-        var extension = Path.GetExtension(path).ToLowerInvariant();
-        if (!IsAllowedExtension(extension))
-            return FileResult.Error($"File type '{extension}' not allowed");
-
-        var content = await files.ReadAsync(fullPath, ct);
-        return FileResult.Success(content);
-    }
-
-    private static bool IsAllowedExtension(string ext) =>
-        ext is ".txt" or ".json" or ".xml" or ".md" or ".csv";
-}
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 ```
 
-### SQL Injection Prevention
+Do not:
+
+- write banner text to stdout
+- print debug tracing with `Console.WriteLine`
+- mix app startup messaging into the MCP pipe
+
+## Parameter validation
+
+Treat every tool/resource/prompt argument as untrusted input.
+
 ```csharp
-public class DatabaseTools(IDbConnection db)
+[McpServerToolType]
+public sealed class FileTools(IFileSystem files)
 {
-    [McpTool("query_data")]
-    [Description("Queries data from a table")]
-    public async Task<QueryResult> QueryDataAsync(
-        [Description("Table name")] string tableName,
-        [Description("Column to filter")] string? filterColumn = null,
-        [Description("Filter value")] string? filterValue = null,
-        CancellationToken ct = default)
+    [McpServerTool, Description("Reads a text file below the approved workspace root.")]
+    public async Task<string> ReadTextFileAsync(
+        [Description("Relative path below the workspace root")] string relativePath,
+        CancellationToken cancellationToken = default)
     {
-        // Whitelist table names
-        var allowedTables = new[] { "products", "orders", "customers" };
-        if (!allowedTables.Contains(tableName.ToLowerInvariant()))
-            return QueryResult.Error($"Table '{tableName}' not accessible");
-
-        // Use parameterized queries
-        var sql = $"SELECT * FROM {tableName}";
-        var parameters = new DynamicParameters();
-
-        if (!string.IsNullOrEmpty(filterColumn) && !string.IsNullOrEmpty(filterValue))
+        if (string.IsNullOrWhiteSpace(relativePath))
         {
-            // Whitelist column names
-            var columns = await db.GetColumnsAsync(tableName, ct);
-            if (!columns.Contains(filterColumn))
-                return QueryResult.Error($"Column '{filterColumn}' not found");
-
-            sql += $" WHERE {filterColumn} = @value";
-            parameters.Add("value", filterValue);
+            throw new McpProtocolException("Path is required.", McpErrorCode.InvalidParams);
         }
 
-        var results = await db.QueryAsync<dynamic>(sql, parameters);
-        return QueryResult.Success(results);
-    }
-}
-```
+        var root = Path.GetFullPath("/path/to/approved/workspace");
+        var fullPath = Path.GetFullPath(Path.Combine(root, relativePath));
 
-### Command Injection Prevention
-```csharp
-public class SystemTools
-{
-    private static readonly Regex SafeCommandPattern = new(@"^[a-zA-Z0-9_\-\.]+$");
-
-    [McpTool("get_system_info")]
-    [Description("Gets system information")]
-    public Task<SystemInfo> GetSystemInfoAsync(
-        [Description("Info type: cpu, memory, disk")] string infoType,
-        CancellationToken ct = default)
-    {
-        // Never execute arbitrary commands
-        // Use predefined safe operations only
-        return infoType.ToLowerInvariant() switch
+        if (!fullPath.StartsWith(root, StringComparison.Ordinal))
         {
-            "cpu" => GetCpuInfoAsync(ct),
-            "memory" => GetMemoryInfoAsync(ct),
-            "disk" => GetDiskInfoAsync(ct),
-            _ => Task.FromResult(SystemInfo.Error("Invalid info type"))
-        };
-    }
-
-    // NEVER do this:
-    // [McpTool("execute_command")]
-    // public Task<string> ExecuteCommand(string command) =>
-    //     Process.Start(command); // SECURITY VULNERABILITY
-}
-```
-
-## Authentication & Authorization
-
-### API Key Validation
-```csharp
-public class AuthenticatedTools
-{
-    private readonly IApiKeyValidator _validator;
-
-    public AuthenticatedTools(IApiKeyValidator validator)
-    {
-        _validator = validator;
-    }
-
-    [McpTool("sensitive_operation")]
-    [Description("Performs a sensitive operation requiring authentication")]
-    public async Task<OperationResult> SensitiveOperationAsync(
-        [Description("API key for authentication")] string apiKey,
-        [Description("Operation to perform")] string operation,
-        CancellationToken ct = default)
-    {
-        // Validate API key
-        var keyInfo = await _validator.ValidateAsync(apiKey, ct);
-        if (!keyInfo.IsValid)
-            return OperationResult.Error("Invalid API key");
-
-        // Check permissions
-        if (!keyInfo.HasPermission(operation))
-            return OperationResult.Error($"API key does not have permission for '{operation}'");
-
-        // Log the operation
-        _logger.LogInformation(
-            "Sensitive operation {Operation} by key {KeyId}",
-            operation, keyInfo.KeyId);
-
-        // Perform operation
-        return await PerformOperationAsync(operation, ct);
-    }
-}
-```
-
-### Role-Based Access
-```csharp
-public class AdminTools
-{
-    [McpTool("admin_delete_user")]
-    [Description("Deletes a user (admin only)")]
-    public async Task<DeleteResult> DeleteUserAsync(
-        [Description("Admin token")] string adminToken,
-        [Description("User ID to delete")] string userId,
-        CancellationToken ct = default)
-    {
-        var admin = await _authService.ValidateAdminAsync(adminToken, ct);
-        if (admin is null)
-            return DeleteResult.Error("Admin authentication required");
-
-        if (admin.Role != "SuperAdmin")
-            return DeleteResult.Error("Insufficient permissions");
-
-        // Audit log
-        await _auditService.LogAsync(new AuditEntry
-        {
-            Action = "DeleteUser",
-            PerformedBy = admin.Id,
-            TargetId = userId,
-            Timestamp = DateTime.UtcNow
-        }, ct);
-
-        await _userService.DeleteAsync(userId, ct);
-        return DeleteResult.Success(userId);
-    }
-}
-```
-
-## Rate Limiting
-
-### Per-Client Rate Limiting
-```csharp
-public class RateLimitedTools
-{
-    private readonly IRateLimiter _rateLimiter;
-
-    [McpTool("expensive_operation")]
-    [Description("Performs an expensive operation (rate limited)")]
-    public async Task<OperationResult> ExpensiveOperationAsync(
-        string input,
-        CancellationToken ct = default)
-    {
-        var clientId = GetClientId();
-
-        // Check rate limit
-        if (!await _rateLimiter.TryAcquireAsync(clientId, "expensive_operation", ct))
-        {
-            var retryAfter = await _rateLimiter.GetRetryAfterAsync(clientId, ct);
-            return OperationResult.RateLimited(retryAfter);
+            throw new McpException("Requested path is outside the allowed workspace.");
         }
 
-        return await PerformExpensiveOperationAsync(input, ct);
+        return await files.File.ReadAllTextAsync(fullPath, cancellationToken);
     }
 }
+```
 
-// Rate limiter configuration
-builder.Services.AddMcpServer()
-    .WithRateLimiting(options =>
+Patterns:
+
+- normalize paths before checking the root
+- whitelist supported operations and file types
+- clamp numeric limits and pagination inputs
+- reject blank or ambiguous identifiers early
+
+## Error boundaries
+
+Use the right exception type for the right kind of failure:
+
+- `McpProtocolException` for JSON-RPC or contract-level failures such as invalid parameters
+- `McpException` for domain errors whose message is safe to surface
+- ordinary exceptions only for unexpected faults; they will be converted into generic tool errors
+
+This distinction matters because tool failures are exposed differently from protocol failures.
+
+## Authorization
+
+For HTTP servers, prefer normal ASP.NET Core auth middleware and endpoint policy around `MapMcp()`:
+
+- bearer tokens, cookies, or mutual TLS belong at the HTTP boundary
+- rate limiting belongs in ASP.NET Core middleware or infrastructure, not ad hoc inside every tool
+- map unauthenticated requests to standard HTTP auth behavior before MCP handlers run
+
+Inside MCP handlers, use injected principals for per-operation authorization:
+
+```csharp
+[McpServerToolType]
+public sealed class DeploymentTools(IDeploymentService deployments)
+{
+    [McpServerTool, Description("Cancels a deployment owned by the current user.")]
+    public async Task<string> CancelDeploymentAsync(
+        [Description("Deployment identifier")] string deploymentId,
+        ClaimsPrincipal user,
+        CancellationToken cancellationToken = default)
     {
-        options.DefaultLimit = new RateLimit
+        if (!user.Identity?.IsAuthenticated ?? true)
         {
-            Requests = 100,
-            Window = TimeSpan.FromMinutes(1)
-        };
+            throw new McpException("Authentication is required.");
+        }
 
-        options.ToolLimits["expensive_operation"] = new RateLimit
+        await deployments.CancelAsync(deploymentId, user, cancellationToken);
+        return $"Cancelled deployment {deploymentId}.";
+    }
+}
+```
+
+## Capability minimization
+
+Only enable features you are prepared to support safely:
+
+- roots: only if the client should disclose filesystem roots
+- sampling: only if the server should request LLM completions from the client
+- elicitation: only if the server is allowed to prompt the user for more input
+- resource subscriptions: only if you can track and notify subscribers correctly
+
+Do not assume a host/client supports these features. Capability negotiation is part of the security boundary.
+
+## Tool and resource output discipline
+
+Keep payloads small and deliberate.
+
+Prefer:
+
+- summaries plus identifiers
+- paginated lists
+- direct resources for large text or binary data
+- explicit MIME types
+
+Avoid:
+
+- dumping whole databases or repositories into one tool result
+- returning secrets or internal stack traces
+- embedding large binary payloads when a resource URI is enough
+
+## Remote transport guidance
+
+For remote servers:
+
+- prefer Streamable HTTP
+- use HTTPS
+- pass auth via standard HTTP headers or ASP.NET Core auth
+- use SSE only for legacy compatibility
+
+For local-only integrations:
+
+- prefer stdio
+- keep environment variables explicit
+- avoid inheriting more process privileges than the child server needs
+
+## Filters as policy points
+
+Filters are appropriate for audit, tracing, and global policy checks:
+
+```csharp
+builder.Services
+    .AddMcpServer()
+    .WithRequestFilters(filters =>
+    {
+        filters.AddCallToolFilter(next => async (context, cancellationToken) =>
         {
-            Requests = 10,
-            Window = TimeSpan.FromMinutes(1)
-        };
+            var toolName = context.Params?.Name;
+            if (toolName is "delete_all_data")
+            {
+                throw new McpException("This tool is disabled in the current environment.");
+            }
+
+            return await next(context, cancellationToken);
+        });
     });
 ```
 
-## Audit Logging
+Do not hide primary business rules in filters if the tool handler itself can express them clearly.
 
-### Comprehensive Audit Trail
-```csharp
-public class AuditedTools(IAuditService audit, ILogger<AuditedTools> logger)
-{
-    [McpTool("modify_data")]
-    [Description("Modifies data with full audit trail")]
-    public async Task<ModifyResult> ModifyDataAsync(
-        [Description("Record ID")] string recordId,
-        [Description("New value")] string newValue,
-        CancellationToken ct = default)
-    {
-        var context = GetMcpContext();
+## Experimental APIs
 
-        // Log before operation
-        logger.LogInformation(
-            "Data modification requested: Record={RecordId}, Client={ClientId}",
-            recordId, context.ClientId);
+Experimental MCP APIs can change outside normal patch-level expectations. Before adopting them:
 
-        try
-        {
-            var oldValue = await _dataService.GetAsync(recordId, ct);
+- suppress only the specific `MCPEXP...` diagnostic you intend to accept
+- document why the suppression exists
+- isolate experimental usage behind an internal abstraction if the project needs a stable surface
 
-            await _dataService.UpdateAsync(recordId, newValue, ct);
+If you use source-generated JSON serialization, prepend `McpJsonUtilities.DefaultOptions.TypeInfoResolver` so MCP protocol types keep the SDK's serialization contract, including experimental fields when required by the wire protocol.
 
-            // Audit success
-            await audit.LogAsync(new AuditEntry
-            {
-                Action = "ModifyData",
-                RecordId = recordId,
-                OldValue = oldValue,
-                NewValue = newValue,
-                ClientId = context.ClientId,
-                Timestamp = DateTime.UtcNow,
-                Success = true
-            }, ct);
+## Review Checklist
 
-            return ModifyResult.Success();
-        }
-        catch (Exception ex)
-        {
-            // Audit failure
-            await audit.LogAsync(new AuditEntry
-            {
-                Action = "ModifyData",
-                RecordId = recordId,
-                ClientId = context.ClientId,
-                Timestamp = DateTime.UtcNow,
-                Success = false,
-                Error = ex.Message
-            }, ct);
-
-            logger.LogError(ex, "Data modification failed: Record={RecordId}", recordId);
-            return ModifyResult.Error("Modification failed");
-        }
-    }
-}
-```
-
-## Secrets Management
-
-### Never Expose Secrets
-```csharp
-// BAD - exposes secrets
-[McpTool("get_config")]
-public Task<string> GetConfigAsync()
-{
-    return Task.FromResult(JsonSerializer.Serialize(new
-    {
-        ApiKey = Environment.GetEnvironmentVariable("API_KEY"), // WRONG
-        DatabasePassword = _config["Database:Password"] // WRONG
-    }));
-}
-
-// GOOD - safe configuration exposure
-[McpTool("get_config")]
-[Description("Gets safe configuration values")]
-public Task<ConfigResult> GetConfigAsync()
-{
-    return Task.FromResult(new ConfigResult
-    {
-        Environment = _config["Environment"],
-        Region = _config["Region"],
-        FeatureFlags = _config.GetSection("Features").Get<Dictionary<string, bool>>()
-        // No secrets exposed
-    });
-}
-```
-
-### Secure Secret Access
-```csharp
-public class SecureTools(ISecretManager secrets)
-{
-    [McpTool("call_external_api")]
-    [Description("Calls an external API")]
-    public async Task<ApiResult> CallExternalApiAsync(
-        [Description("API endpoint")] string endpoint,
-        CancellationToken ct = default)
-    {
-        // Get secret securely - never log or return it
-        var apiKey = await secrets.GetSecretAsync("external-api-key", ct);
-
-        using var client = new HttpClient();
-        client.DefaultRequestHeaders.Authorization =
-            new AuthenticationHeaderValue("Bearer", apiKey);
-
-        var response = await client.GetAsync(endpoint, ct);
-        var content = await response.Content.ReadAsStringAsync(ct);
-
-        // Return response without exposing the key
-        return new ApiResult
-        {
-            StatusCode = (int)response.StatusCode,
-            Content = content
-        };
-    }
-}
-```
-
-## Data Sanitization
-
-### Output Sanitization
-```csharp
-[McpTool("get_user_data")]
-[Description("Gets user data")]
-public async Task<UserData> GetUserDataAsync(
-    [Description("User ID")] string userId,
-    CancellationToken ct = default)
-{
-    var user = await _userService.GetAsync(userId, ct);
-    if (user is null)
-        return UserData.NotFound(userId);
-
-    // Sanitize sensitive fields
-    return new UserData
-    {
-        Id = user.Id,
-        Name = user.Name,
-        Email = MaskEmail(user.Email), // Partially masked
-        Phone = MaskPhone(user.Phone), // Partially masked
-        // Do NOT include: Password, SSN, PaymentInfo
-    };
-}
-
-private static string MaskEmail(string email)
-{
-    var parts = email.Split('@');
-    if (parts.Length != 2) return "***@***";
-    var name = parts[0].Length > 2
-        ? parts[0][..2] + new string('*', parts[0].Length - 2)
-        : "**";
-    return $"{name}@{parts[1]}";
-}
-```
+- stdout remains protocol-clean for stdio servers
+- every externally supplied argument is validated and normalized
+- auth happens at the HTTP boundary and is rechecked inside sensitive handlers
+- sensitive operations are scoped to the caller's identity or allowed root
+- optional capabilities are enabled intentionally rather than by accident
+- tool/resource outputs exclude secrets, internal stack traces, and oversized payloads

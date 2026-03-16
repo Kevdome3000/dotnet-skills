@@ -39,10 +39,10 @@
     {
       "name": "dotnet-aspire",
       "title": ".NET Aspire",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "category": "Cloud",
-      "description": "Use .NET Aspire to orchestrate distributed .NET applications locally with service discovery, telemetry, dashboards, and cloud-ready composition for cloud-native development.",
-      "compatibility": "Requires .NET 8+ and Aspire workload installed.",
+      "description": "Build, upgrade, and operate .NET Aspire application hosts with current CLI, AppHost, ServiceDefaults, integrations, dashboard, testing, and Azure deployment patterns for distributed apps.",
+      "compatibility": "Best for current Aspire 13-era tooling on .NET 10; use version-aware upgrade guidance for older 8.x or 9.x Aspire solutions.",
       "path": "skills/dotnet-aspire/"
     },
     {
@@ -84,9 +84,9 @@
     {
       "name": "dotnet-code-analysis",
       "title": ".NET Code Analysis",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "category": "Code Quality",
-      "description": "Use the free built-in .NET SDK analyzers and analysis levels. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning policy wired into build and CI.",
+      "description": "Use the free built-in .NET SDK analyzers and analysis levels with gradual Roslyn warning promotion. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning-as-error policy wired into build and CI.",
       "compatibility": "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first.",
       "path": "skills/dotnet-code-analysis/"
     },
@@ -254,11 +254,11 @@
     },
     {
       "name": "dotnet-mcp",
-      "title": "Model Context Protocol (MCP) for .NET",
-      "version": "1.0.0",
+      "title": "MCP C# SDK for .NET",
+      "version": "1.1.0",
       "category": "AI",
-      "description": "Implement Model Context Protocol (MCP) servers and clients in .NET to enable secure, standardized communication between LLM applications and external tools or data sources.",
-      "compatibility": "Requires ModelContextProtocol NuGet packages (.NET 8+).",
+      "description": "Build or consume Model Context Protocol (MCP) servers and clients in .NET using the official MCP C# SDK, including stdio, Streamable HTTP, tools, prompts, resources, and capability negotiation.",
+      "compatibility": "Requires the official MCP C# SDK packages (`ModelContextProtocol.Core`, `ModelContextProtocol`, or `ModelContextProtocol.AspNetCore`) on .NET 8+; current guidance targets the v1.1.x SDK.",
       "path": "skills/dotnet-mcp/"
     },
     {
@@ -273,10 +273,10 @@
     {
       "name": "dotnet-microsoft-agent-framework",
       "title": "Microsoft Agent Framework",
-      "version": "1.0.0",
+      "version": "1.3.1",
       "category": "AI",
-      "description": "Build agentic .NET applications with Microsoft Agent Framework using modern agent orchestration, provider abstractions, telemetry, and enterprise integration patterns.",
-      "compatibility": "Requires a .NET AI application that truly needs agent orchestration.",
+      "description": "Build .NET AI agents and multi-agent workflows with Microsoft Agent Framework using the right agent type, threads, tools, workflows, hosting protocols, and enterprise guardrails.",
+      "compatibility": "Requires preview-era Microsoft Agent Framework packages and a .NET application that truly needs agentic or workflow orchestration.",
       "path": "skills/dotnet-microsoft-agent-framework/"
     },
     {
@@ -291,10 +291,10 @@
     {
       "name": "dotnet-microsoft-extensions-ai",
       "title": "Microsoft.Extensions.AI",
-      "version": "1.0.0",
+      "version": "1.2.1",
       "category": "AI",
-      "description": "Use Microsoft.Extensions.AI abstractions such as `IChatClient` and embeddings cleanly in .NET applications, libraries, and provider integrations.",
-      "compatibility": "Requires `Microsoft.Extensions.AI` or a plan to standardize AI provider integration.",
+      "description": "Build provider-agnostic .NET AI integrations with `Microsoft.Extensions.AI`, `IChatClient`, embeddings, middleware, structured output, vector search, and evaluation.",
+      "compatibility": "Requires `Microsoft.Extensions.AI` or a .NET AI application that needs model, embedding, tool-calling, or evaluation composition without full agent orchestration.",
       "path": "skills/dotnet-microsoft-extensions-ai/"
     },
     {
@@ -372,10 +372,10 @@
     {
       "name": "dotnet-orleans",
       "title": "Microsoft Orleans",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "category": "Distributed",
-      "description": "Build or review distributed .NET applications with Orleans grains, silos, streams, persistence, versioning, and cloud-native hosting patterns.",
-      "compatibility": "Requires Orleans 7+ (preferably 8.x for latest features).",
+      "description": "Build or review distributed .NET applications with Orleans grains, silos, persistence, streaming, reminders, placement, testing, and cloud-native hosting.",
+      "compatibility": "Prefer current Orleans releases with `UseOrleans`, `IPersistentState<TState>`, `RegisterGrainTimer`, modern providers, and production-grade clustering.",
       "path": "skills/dotnet-orleans/"
     },
     {

@@ -1,388 +1,361 @@
-# MCP Patterns Reference
+# MCP C# SDK Patterns
 
-## Tool Patterns
+Use this file when the task needs concrete current patterns from the official MCP C# SDK rather than high-level routing guidance.
 
-### CRUD Tool Set
+## Package and Transport Matrix
+
+| Scenario | Package | Transport / API |
+|----------|---------|-----------------|
+| Minimal client or low-level host | `ModelContextProtocol.Core` | `McpClient`, low-level server APIs |
+| Typical client or stdio server | `ModelContextProtocol` | `StdioClientTransport`, `WithStdioServerTransport()` |
+| ASP.NET Core server | `ModelContextProtocol.AspNetCore` | `WithHttpTransport()`, `MapMcp()` |
+| Remote client over HTTP | `ModelContextProtocol` or `Core` | `HttpClientTransport` |
+
+## Minimal stdio server
+
 ```csharp
-public class ProductTools(IProductService products)
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
+using System.ComponentModel;
+
+var builder = Host.CreateApplicationBuilder(args);
+builder.Logging.AddConsole(options =>
 {
-    [McpTool("list_products")]
-    [Description("Lists all products with optional filtering")]
-    public async Task<ProductListResult> ListProductsAsync(
-        [Description("Filter by category")] string? category = null,
-        [Description("Filter by minimum price")] decimal? minPrice = null,
-        [Description("Maximum results (1-100)")] int limit = 20,
-        CancellationToken ct = default)
-    {
-        if (limit < 1 || limit > 100)
-            return ProductListResult.Error("Limit must be between 1 and 100");
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 
-        var products = await products.ListAsync(category, minPrice, limit, ct);
-        return ProductListResult.Success(products);
-    }
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
 
-    [McpTool("get_product")]
-    [Description("Gets a single product by ID")]
-    public async Task<ProductResult> GetProductAsync(
-        [Description("Product ID")] string id,
-        CancellationToken ct = default)
-    {
-        var product = await products.GetAsync(id, ct);
-        return product is null
-            ? ProductResult.NotFound(id)
-            : ProductResult.Success(product);
-    }
+await builder.Build().RunAsync();
 
-    [McpTool("create_product")]
-    [Description("Creates a new product")]
-    public async Task<ProductResult> CreateProductAsync(
-        [Description("Product name")] string name,
-        [Description("Price in USD")] decimal price,
-        [Description("Category")] string category,
-        CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(name))
-            return ProductResult.Error("Name is required");
-        if (price < 0)
-            return ProductResult.Error("Price cannot be negative");
-
-        var product = await products.CreateAsync(name, price, category, ct);
-        return ProductResult.Created(product);
-    }
-
-    [McpTool("update_product")]
-    [Description("Updates an existing product")]
-    public async Task<ProductResult> UpdateProductAsync(
-        [Description("Product ID")] string id,
-        [Description("New name (optional)")] string? name = null,
-        [Description("New price (optional)")] decimal? price = null,
-        CancellationToken ct = default)
-    {
-        var product = await products.GetAsync(id, ct);
-        if (product is null)
-            return ProductResult.NotFound(id);
-
-        if (price < 0)
-            return ProductResult.Error("Price cannot be negative");
-
-        var updated = await products.UpdateAsync(id, name, price, ct);
-        return ProductResult.Success(updated);
-    }
-
-    [McpTool("delete_product")]
-    [Description("Deletes a product")]
-    public async Task<DeleteResult> DeleteProductAsync(
-        [Description("Product ID")] string id,
-        CancellationToken ct = default)
-    {
-        var exists = await products.ExistsAsync(id, ct);
-        if (!exists)
-            return DeleteResult.NotFound(id);
-
-        await products.DeleteAsync(id, ct);
-        return DeleteResult.Success(id);
-    }
+[McpServerToolType]
+public static class EchoTools
+{
+    [McpServerTool, Description("Echoes the message back to the caller.")]
+    public static string Echo([Description("Message to echo")] string message)
+        => $"hello {message}";
 }
 ```
 
-### Search Tool
+Use `WithTools<T>()`, `WithResources<T>()`, and `WithPrompts<T>()` when you want explicit registration instead of assembly scanning.
+
+## Minimal ASP.NET Core server
+
 ```csharp
-public class SearchTools(ISearchService search)
+using ModelContextProtocol.Server;
+using System.ComponentModel;
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport()
+    .WithTools<WeatherTools>()
+    .WithResources<WeatherResources>()
+    .WithPrompts<WeatherPrompts>();
+
+var app = builder.Build();
+app.MapMcp("/mcp");
+app.Run();
+
+[McpServerToolType]
+public static class WeatherTools
 {
-    [McpTool("search")]
-    [Description("Searches across all content types")]
-    public async Task<SearchResult> SearchAsync(
-        [Description("Search query")] string query,
-        [Description("Content types to search: products, orders, customers")] string[]? types = null,
-        [Description("Maximum results per type (1-50)")] int limit = 10,
-        CancellationToken ct = default)
-    {
-        if (string.IsNullOrWhiteSpace(query))
-            return SearchResult.Error("Query is required");
-
-        if (query.Length < 2)
-            return SearchResult.Error("Query must be at least 2 characters");
-
-        types ??= ["products", "orders", "customers"];
-        limit = Math.Clamp(limit, 1, 50);
-
-        var results = await search.SearchAsync(query, types, limit, ct);
-        return SearchResult.Success(results);
-    }
+    [McpServerTool, Description("Returns the current weather for a city.")]
+    public static string GetCurrentWeather(
+        [Description("City name")] string city)
+        => $"Current weather for {city}: sunny";
 }
 ```
 
-### Batch Operations Tool
+Notes:
+
+- `MapMcp()` serves Streamable HTTP and legacy SSE endpoints.
+- New remote clients should connect to the mapped route directly and prefer Streamable HTTP.
+- Only point SSE clients to `{route}/sse`.
+
+## Stdio client pattern
+
 ```csharp
-public class BatchTools(IProductService products)
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
+
+var transport = new StdioClientTransport(new StdioClientTransportOptions
 {
-    [McpTool("batch_update_prices")]
-    [Description("Updates prices for multiple products")]
-    public async Task<BatchResult> BatchUpdatePricesAsync(
-        [Description("Product IDs to update")] string[] productIds,
-        [Description("Price adjustment (positive or negative)")] decimal adjustment,
-        [Description("Adjustment type: 'fixed' or 'percentage'")] string adjustmentType = "fixed",
-        CancellationToken ct = default)
+    Name = "Everything",
+    Command = "npx",
+    Arguments = ["-y", "@modelcontextprotocol/server-everything"],
+});
+
+await using var client = await McpClient.CreateAsync(transport);
+
+IList<McpClientTool> tools = await client.ListToolsAsync();
+
+CallToolResult result = await client.CallToolAsync(
+    "echo",
+    new Dictionary<string, object?> { ["message"] = "Hello MCP!" });
+
+Console.WriteLine(result.Content.OfType<TextContentBlock>().First().Text);
+```
+
+## HTTP client pattern
+
+```csharp
+using ModelContextProtocol.Client;
+
+var transport = new HttpClientTransport(new HttpClientTransportOptions
+{
+    Endpoint = new Uri("https://example.com/mcp"),
+    TransportMode = HttpTransportMode.StreamableHttp,
+    ConnectionTimeout = TimeSpan.FromSeconds(30),
+    AdditionalHeaders = new Dictionary<string, string>
     {
-        if (productIds.Length == 0)
-            return BatchResult.Error("No product IDs provided");
+        ["Authorization"] = "Bearer <token>"
+    }
+});
 
-        if (productIds.Length > 100)
-            return BatchResult.Error("Maximum 100 products per batch");
+await using var client = await McpClient.CreateAsync(transport);
+```
 
-        if (adjustmentType != "fixed" && adjustmentType != "percentage")
-            return BatchResult.Error("Adjustment type must be 'fixed' or 'percentage'");
+For mixed environments, `HttpTransportMode.AutoDetect` is the default. It tries Streamable HTTP first and falls back to SSE when needed.
 
-        var results = new List<BatchItemResult>();
-        foreach (var id in productIds)
+## Session resumption
+
+Use this only for Streamable HTTP sessions:
+
+```csharp
+var transport = new HttpClientTransport(new HttpClientTransportOptions
+{
+    Endpoint = new Uri("https://example.com/mcp"),
+    KnownSessionId = previousSessionId
+});
+
+await using var client = await McpClient.ResumeSessionAsync(
+    transport,
+    new ResumeClientSessionOptions
+    {
+        ServerCapabilities = previousServerCapabilities,
+        ServerInfo = previousServerInfo
+    });
+```
+
+## Tool pattern
+
+```csharp
+[McpServerToolType]
+public sealed class BuildTools(IBuildService builds)
+{
+    [McpServerTool, Description("Queues a build for the requested branch.")]
+    public async Task<string> QueueBuildAsync(
+        [Description("Git branch to build")] string branch,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(branch))
         {
-            try
-            {
-                var product = await products.GetAsync(id, ct);
-                if (product is null)
-                {
-                    results.Add(BatchItemResult.NotFound(id));
-                    continue;
-                }
-
-                var newPrice = adjustmentType == "percentage"
-                    ? product.Price * (1 + adjustment / 100)
-                    : product.Price + adjustment;
-
-                if (newPrice < 0)
-                {
-                    results.Add(BatchItemResult.Error(id, "Resulting price would be negative"));
-                    continue;
-                }
-
-                await products.UpdateAsync(id, price: newPrice, ct: ct);
-                results.Add(BatchItemResult.Success(id, newPrice));
-            }
-            catch (Exception ex)
-            {
-                results.Add(BatchItemResult.Error(id, ex.Message));
-            }
+            throw new McpProtocolException("Branch is required.", McpErrorCode.InvalidParams);
         }
 
-        return BatchResult.Success(results);
+        var buildId = await builds.QueueAsync(branch, cancellationToken);
+        return $"queued:{buildId}";
     }
 }
 ```
 
-## Resource Patterns
+Guidance:
 
-### File Resource
+- `string` results are wrapped as `TextContentBlock`.
+- Use `ImageContentBlock`, `AudioContentBlock`, or `EmbeddedResourceBlock` when the tool returns richer content.
+- Use `[Description]` on the method and parameters so hosts can build better schemas.
+- Methods can accept `McpServer`, `ClaimsPrincipal`, `IProgress<ProgressNotificationValue>`, and DI-registered services in addition to normal arguments.
+
+## Resource pattern
+
 ```csharp
-public class FileResources(IFileService files)
+[McpServerResourceType]
+public static class RepoResources
 {
-    [McpResource("files/{path}")]
-    [Description("Gets file content by path")]
-    public async Task<ResourceContent> GetFileAsync(
-        string path,
-        CancellationToken ct = default)
+    [McpServerResource(
+        UriTemplate = "repo://readme",
+        Name = "Repository README",
+        MimeType = "text/markdown")]
+    [Description("Returns the repository overview document.")]
+    public static string ReadReadme()
+        => File.ReadAllText("README.md");
+
+    [McpServerResource(UriTemplate = "repo://files/{path}", Name = "Repository File")]
+    [Description("Returns a file under the approved repository root.")]
+    public static TextResourceContents ReadFile(string path)
     {
-        // Validate path
-        if (path.Contains(".."))
-            throw new UnauthorizedAccessException("Path traversal not allowed");
+        var fullPath = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, path));
+        var root = Path.GetFullPath(Environment.CurrentDirectory);
 
-        var content = await files.ReadAsync(path, ct);
-        var mimeType = GetMimeType(path);
-
-        return new ResourceContent
+        if (!fullPath.StartsWith(root, StringComparison.Ordinal))
         {
-            MimeType = mimeType,
-            Text = content
+            throw new McpException("Requested file is outside the repository root.");
+        }
+
+        return new TextResourceContents
+        {
+            Uri = $"repo://files/{path}",
+            MimeType = "text/plain",
+            Text = File.ReadAllText(fullPath)
         };
-    }
-
-    [McpResourceList("files")]
-    [Description("Lists available files")]
-    public async Task<IEnumerable<ResourceInfo>> ListFilesAsync(
-        CancellationToken ct = default)
-    {
-        var files = await files.ListAsync(ct);
-        return files.Select(f => new ResourceInfo
-        {
-            Uri = $"files/{f.Path}",
-            Name = f.Name,
-            Description = $"{f.Size} bytes, modified {f.ModifiedAt:g}"
-        });
-    }
-
-    private static string GetMimeType(string path) => Path.GetExtension(path) switch
-    {
-        ".json" => "application/json",
-        ".xml" => "application/xml",
-        ".md" => "text/markdown",
-        ".txt" => "text/plain",
-        ".csv" => "text/csv",
-        _ => "application/octet-stream"
-    };
-}
-```
-
-### Database Resource
-```csharp
-public class DatabaseResources(IDbConnection db)
-{
-    [McpResource("tables/{tableName}/schema")]
-    [Description("Gets table schema")]
-    public async Task<ResourceContent> GetTableSchemaAsync(
-        string tableName,
-        CancellationToken ct = default)
-    {
-        var schema = await db.GetSchemaAsync(tableName, ct);
-        return new ResourceContent
-        {
-            MimeType = "application/json",
-            Text = JsonSerializer.Serialize(schema)
-        };
-    }
-
-    [McpResource("tables/{tableName}/sample")]
-    [Description("Gets sample data from table (first 10 rows)")]
-    public async Task<ResourceContent> GetTableSampleAsync(
-        string tableName,
-        CancellationToken ct = default)
-    {
-        var sample = await db.QueryAsync(
-            $"SELECT TOP 10 * FROM {tableName}", ct);
-        return new ResourceContent
-        {
-            MimeType = "application/json",
-            Text = JsonSerializer.Serialize(sample)
-        };
-    }
-
-    [McpResourceList("tables")]
-    [Description("Lists all database tables")]
-    public async Task<IEnumerable<ResourceInfo>> ListTablesAsync(
-        CancellationToken ct = default)
-    {
-        var tables = await db.GetTablesAsync(ct);
-        return tables.Select(t => new ResourceInfo
-        {
-            Uri = $"tables/{t.Name}/schema",
-            Name = t.Name,
-            Description = $"{t.RowCount} rows"
-        });
     }
 }
 ```
 
-## Prompt Patterns
+Use resource templates when the URI contains parameters. Clients can enumerate them with `ListResourceTemplatesAsync()` and materialize them with `ReadResourceAsync(...)`.
 
-### Multi-Step Prompt
+## Prompt pattern
+
 ```csharp
-public class AnalysisPrompts
+using Microsoft.Extensions.AI;
+using ModelContextProtocol.Protocol;
+
+[McpServerPromptType]
+public static class ReviewPrompts
 {
-    [McpPrompt("code_analysis")]
-    [Description("Comprehensive code analysis prompt")]
-    public PromptContent CodeAnalysisPrompt(
+    [McpServerPrompt, Description("Builds a code-review prompt.")]
+    public static IEnumerable<ChatMessage> CodeReview(
         [Description("Programming language")] string language,
-        [Description("Code to analyze")] string code,
-        [Description("Focus areas: security, performance, style, all")] string focus = "all")
-    {
-        var focusInstructions = focus switch
-        {
-            "security" => "Focus specifically on security vulnerabilities and best practices.",
-            "performance" => "Focus specifically on performance optimizations and bottlenecks.",
-            "style" => "Focus specifically on code style, readability, and maintainability.",
-            _ => "Analyze all aspects: security, performance, style, and correctness."
-        };
+        [Description("Code to review")] string code) =>
+        [
+            new(ChatRole.User, $"Review this {language} code:\n\n```{language}\n{code}\n```")
+        ];
 
-        return new PromptContent
-        {
-            Messages =
-            [
-                new PromptMessage
+    [McpServerPrompt, Description("Builds a document-review prompt with an embedded resource.")]
+    public static IEnumerable<PromptMessage> ReviewDocument(
+        [Description("Document identifier")] string id)
+        =>
+        [
+            new()
+            {
+                Role = Role.User,
+                Content = new TextContentBlock
                 {
-                    Role = "system",
-                    Content = $"""
-                        You are an expert {language} code reviewer.
-                        {focusInstructions}
-                        Provide specific, actionable feedback with code examples.
-                        """
-                },
-                new PromptMessage
-                {
-                    Role = "user",
-                    Content = $"""
-                        Please analyze the following {language} code:
-
-                        ```{language}
-                        {code}
-                        ```
-                        """
+                    Text = "Review the attached document."
                 }
-            ]
-        };
-    }
+            },
+            new()
+            {
+                Role = Role.User,
+                Content = new EmbeddedResourceBlock
+                {
+                    Resource = new TextResourceContents
+                    {
+                        Uri = $"docs://documents/{id}",
+                        MimeType = "text/plain",
+                        Text = LoadDocument(id)
+                    }
+                }
+            }
+        ];
 }
 ```
 
-## Error Handling Patterns
+Use `ChatMessage` for normal text/image flows and `PromptMessage` when you need protocol-specific content such as embedded resources.
 
-### Result Types
+## Capability-aware client pattern
+
 ```csharp
-public record ToolResult
+var options = new McpClientOptions
 {
-    public bool Success { get; init; }
-    public string? Error { get; init; }
-    public object? Data { get; init; }
+    Capabilities = new ClientCapabilities
+    {
+        Roots = new RootsCapability { ListChanged = true },
+        Sampling = new SamplingCapability(),
+        Elicitation = new ElicitationCapability
+        {
+            Form = new FormElicitationCapability(),
+            Url = new UrlElicitationCapability()
+        }
+    }
+};
 
-    public static ToolResult Ok(object data) => new() { Success = true, Data = data };
-    public static ToolResult Fail(string error) => new() { Success = false, Error = error };
+await using var client = await McpClient.CreateAsync(transport, options);
+
+if (client.ServerCapabilities.Resources is { Subscribe: true })
+{
+    await client.SubscribeToResourceAsync("repo://readme");
 }
 
-public record ProductResult : ToolResult
+if (client.ServerCapabilities.Logging is not null)
 {
-    public Product? Product { get; init; }
-
-    public static ProductResult Success(Product product) =>
-        new() { Success = true, Product = product, Data = product };
-
-    public static ProductResult NotFound(string id) =>
-        new() { Success = false, Error = $"Product '{id}' not found" };
-
-    public static ProductResult Error(string message) =>
-        new() { Success = false, Error = message };
-
-    public static ProductResult Created(Product product) =>
-        new() { Success = true, Product = product, Data = product };
+    await client.SetLoggingLevelAsync(LoggingLevel.Info);
 }
 ```
 
-### Graceful Error Handling
+Check `client.ServerCapabilities` before using:
+
+- resource subscriptions
+- prompt/resource list-change notifications
+- completions
+- logging
+- any feature that is optional in the spec
+
+## Passing MCP tools into a chat client
+
+`McpClientTool` inherits from `AIFunction`, so discovered tools can be passed directly into `IChatClient`:
+
 ```csharp
-[McpTool("dangerous_operation")]
-[Description("Performs an operation that might fail")]
-public async Task<OperationResult> DangerousOperationAsync(
-    string target,
-    CancellationToken ct = default)
-{
-    try
-    {
-        // Validate
-        if (string.IsNullOrEmpty(target))
-            return OperationResult.Error("Target is required");
+IList<McpClientTool> tools = await client.ListToolsAsync();
 
-        // Execute
-        var result = await _service.PerformAsync(target, ct);
-        return OperationResult.Success(result);
-    }
-    catch (NotFoundException)
-    {
-        return OperationResult.Error($"Target '{target}' not found");
-    }
-    catch (UnauthorizedException)
-    {
-        return OperationResult.Error("Access denied to target");
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Operation failed for {Target}", target);
-        return OperationResult.Error("Operation failed. Please try again.");
-    }
-}
+IChatClient chatClient = ...;
+var response = await chatClient.GetResponseAsync(
+    "Use the MCP tools to answer the question.",
+    new() { Tools = [.. tools] });
 ```
+
+## Filters for cross-cutting behavior
+
+Use filters for audit, custom JSON-RPC routing, or policy, not for normal domain logic:
+
+```csharp
+builder.Services
+    .AddMcpServer()
+    .WithMessageFilters(messageFilters =>
+    {
+        messageFilters.AddIncomingFilter(next => async (context, cancellationToken) =>
+        {
+            if (context.JsonRpcMessage is JsonRpcRequest request)
+            {
+                Console.Error.WriteLine($"Incoming MCP method: {request.Method}");
+            }
+
+            await next(context, cancellationToken);
+        });
+    })
+    .WithRequestFilters(requestFilters =>
+    {
+        requestFilters.AddCallToolFilter(next => async (context, cancellationToken) =>
+        {
+            Console.Error.WriteLine($"Executing tool: {context.Params?.Name}");
+            return await next(context, cancellationToken);
+        });
+    })
+    .WithTools<WeatherTools>();
+```
+
+## Experimental APIs and serialization
+
+When using experimental MCP APIs:
+
+- suppress only the relevant `MCPEXP...` diagnostic ids
+- avoid blanket `NoWarn` entries for unrelated code
+- if you supply a custom `JsonSerializerContext`, prepend `McpJsonUtilities.DefaultOptions.TypeInfoResolver` so MCP protocol types continue to serialize with the SDK's contract
+
+## Validation Checklist
+
+- client and server transport choices match the deployment topology
+- stdio servers keep stdout protocol-clean
+- HTTP endpoints are tested at the real final route
+- tool/resource/prompt descriptions are explicit
+- optional features are guarded by capability checks
+- filter usage is cross-cutting rather than replacing normal handlers
+
+static string LoadDocument(string id) => $"Document {id}";

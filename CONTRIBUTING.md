@@ -22,7 +22,7 @@ Please contribute:
 
 If you want people to use your library well, please add:
 
-1. Your project to [`.github/upstream-watch.json`](.github/upstream-watch.json)
+1. Your project to the right upstream watch shard under [`.github/upstream-watch*.json`](.github/)
 2. A dedicated skill under [`skills/`](skills) when the project is important enough to justify one
 3. Clear guidance in that skill about:
    - what the library is
@@ -34,7 +34,12 @@ If you want people to use your library well, please add:
 
 The skill must be understandable by someone who has never used your project before.
 
-For upstream watch configuration, keep one human-maintained file with two obvious lists:
+For upstream watch configuration, keep one obvious config surface:
+
+- [`.github/upstream-watch.json`](.github/upstream-watch.json) for shared metadata
+- [`.github/upstream-watch*.json`](.github/) for shard files
+
+Each shard keeps the same two obvious lists:
 
 - `github_releases`
 - `documentation`
@@ -130,6 +135,11 @@ Agent placement depends on scope:
 - tightly coupled specialist agents live in `skills/<skill-slug>/agents/<agent-slug>/AGENT.md`
 - top-level agents usually orchestrate a group of related skills, while skill-scoped agents usually ship as a narrow companion to one skill
 
+Current skill-scoped example:
+
+- `skills/dotnet-orleans/agents/dotnet-orleans-specialist/AGENT.md` for Orleans-only triage next to the `dotnet-orleans` skill
+- `skills/dotnet-aspire/agents/dotnet-aspire-orchestrator/AGENT.md` for AppHost, integration, deployment, and Community Toolkit routing next to the `dotnet-aspire` skill
+
 Use this decision rule:
 
 - if the agent routes across multiple skills or domains, put it in `agents/`
@@ -156,6 +166,11 @@ An agent file should:
 
 Keep detailed implementation instructions in `SKILL.md`. Use agents for routing, triage, and bounded role behavior.
 Do not store agents as loose flat `.agent.md` source files in the repo; folder-per-agent is the canonical source layout here.
+
+Current skill-scoped specialist examples:
+
+- `skills/dotnet-orleans/agents/dotnet-orleans-specialist/AGENT.md`
+- `skills/dotnet-microsoft-agent-framework/agents/agent-framework-router/AGENT.md`
 
 ## README and Catalog
 
@@ -272,7 +287,7 @@ Official references:
 
 If you add a project to the watch list:
 
-1. Add an entry to the right list in [`.github/upstream-watch.json`](.github/upstream-watch.json)
+1. Add an entry to the right list in the relevant shard under [`.github/upstream-watch*.json`](.github/)
 2. Map it to the affected `dotnet-*` skills
 3. Add `match_tag_regex` if the repository publishes multiple release streams
 4. Validate the config:
@@ -295,9 +310,12 @@ python3 scripts/upstream_watch.py --dry-run
 
 ### Which File Do I Edit?
 
-Edit [`.github/upstream-watch.json`](.github/upstream-watch.json) directly.
-
 Keep it simple:
+
+- keep [`.github/upstream-watch.json`](.github/upstream-watch.json) for `watch_issue_label` and `labels`
+- edit the relevant shard such as `upstream-watch.ai.json`, `upstream-watch.data.json`, `upstream-watch.platform.json`, or `upstream-watch-agent-framework.json`
+- keep shard names semantic and review-friendly
+- do not create numbered fragments or `.d` directory indirection
 
 - add GitHub repositories to `github_releases`
 - add docs pages to `documentation`
@@ -308,7 +326,7 @@ Keep it simple:
 
 ```mermaid
 flowchart LR
-  A["Edit .github/upstream-watch.json"] --> B["Run scripts/upstream_watch.py --validate-config"]
+  A["Edit upstream-watch.json or a named upstream-watch.<domain>.json shard"] --> B["Run scripts/upstream_watch.py --validate-config"]
   B --> C["Run scripts/upstream_watch.py --sync-state-only once"]
   C --> D["Commit the config and state baseline"]
   D --> E["Scheduled upstream-watch.yml checks sources every day"]
@@ -371,7 +389,7 @@ Do not use umbrella skills such as `dotnet`, `dotnet-architecture`, or `dotnet-o
 
 ### Commands To Run After Editing Watches
 
-After editing [`.github/upstream-watch.json`](.github/upstream-watch.json):
+After editing the relevant [`.github/upstream-watch*.json`](.github/) shard, and [`.github/upstream-watch.json`](.github/upstream-watch.json) if you changed shared metadata:
 
 ```bash
 python3 scripts/upstream_watch.py --validate-config

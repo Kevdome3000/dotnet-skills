@@ -1,231 +1,114 @@
-# Agent Framework Workflows
+# Workflows
 
-## Overview
+## Use Workflows When Control Flow Must Be Explicit
 
-Workflows orchestrate multiple agents in predefined sequences. Unlike agents (LLM-driven, dynamic), workflows have explicit control flow.
+Choose Workflows when you need:
 
-## Key Concepts
+- typed execution stages
+- explicit sequencing or branching
+- multiple agents that coordinate predictably
+- checkpoints and resume
+- request and response loops for human-in-the-loop or external systems
+- shared state and deterministic orchestration
 
-| Concept | Description |
-|---------|-------------|
-| **Executors** | Processing units (agents or custom logic) |
-| **Edges** | Connections between executors |
-| **Events** | Lifecycle and execution observability |
-| **Checkpointing** | Save/resume long-running workflows |
+If one dynamic agent with a small tool surface is enough, keep the design simpler and stay with an agent.
 
-## Orchestration Types
+## Core Concepts
 
-| Type | Description | Use Case |
-|------|-------------|----------|
-| Sequential | Pipeline, each builds on previous | Document review, translation chain |
-| Concurrent | Parallel execution | Multi-search, parallel analysis |
-| Handoff | Transfer control between agents | Customer support escalation |
-| Group Chat | Multi-agent discussion | Brainstorming, debate |
+| Concept | Meaning |
+|---|---|
+| Executor | A processing node that handles messages |
+| Edge | A routing rule between executors |
+| Workflow | A graph of executors and edges |
+| Superstep | A unit of workflow progress after which checkpoints can be captured |
+| `InputPort` | Boundary that lets workflows emit requests and receive responses |
+| Shared state | Workflow-wide durable data accessible to executors |
+| Checkpoint | Saved workflow state that supports restore or rehydration |
+| Workflow as agent | A workflow wrapped so it can be exposed like an `AIAgent` |
 
-## Sequential Orchestration
+## Builders And Composition
 
-Agents process in order, each receiving full conversation history:
+- Use `WorkflowBuilder` for graph-shaped flows with explicit edges and message types.
+- Use `AgentWorkflowBuilder` when you want built-in orchestration helpers such as sequential or concurrent agent patterns.
+- Use workflows to coordinate agents, custom executors, or both.
+- Convert a workflow to an agent when a hosting protocol expects an `AIAgent`.
 
-```csharp
-// Create translation agents
-static ChatClientAgent GetTranslationAgent(string language, IChatClient client) =>
-    new(client, $"Translate any input to {language}. State the input language first.");
+## Orchestration Patterns
 
-var agents = new[] { "French", "Spanish", "English" }
-    .Select(lang => GetTranslationAgent(lang, chatClient));
+| Pattern | Best For | Notes |
+|---|---|---|
+| Sequential | Pipelines and staged refinement | Each stage builds on the previous result |
+| Concurrent | Parallel analysis and fan-out | Aggregate results explicitly |
+| Handoff | Dynamic expert routing | Agents pass control based on context |
+| Group Chat | Managed multi-agent discussion | Manager controls turn taking |
+| Magentic | Planner-led multi-agent collaboration | Good for complex, generalist decomposition |
 
-// Build sequential workflow
-var workflow = AgentWorkflowBuilder.BuildSequential(agents);
+These are workflow patterns, not vague prompt recipes. Prefer them when the collaboration shape matters to correctness.
 
-// Run
-var messages = new List<ChatMessage> { new(ChatRole.User, "Hello, world!") };
-StreamingRun run = await InProcessExecution.StreamAsync(workflow, messages);
-await run.TrySendMessageAsync(new TurnToken(emitEvents: true));
+## Requests, Responses, And Human-In-The-Loop
 
-await foreach (WorkflowEvent evt in run.WatchStreamAsync())
-{
-    if (evt is AgentResponseUpdateEvent e)
-        Console.WriteLine($"{e.ExecutorId}: {e.Data}");
-    else if (evt is WorkflowOutputEvent)
-        break;
-}
-```
-
-### Output
-
-```
-French_Translation: English detected. Bonjour, le monde !
-Spanish_Translation: French detected. ¡Hola, mundo!
-English_Translation: Spanish detected. Hello, world!
-```
-
-## Concurrent Orchestration
-
-Execute multiple agents in parallel:
+Workflows can send requests outside the workflow and pause until a response arrives.
 
 ```csharp
-var searchAgents = new[]
-{
-    chatClient.AsAIAgent("Search academic papers"),
-    chatClient.AsAIAgent("Search news articles"),
-    chatClient.AsAIAgent("Search social media")
-};
+var inputPort = InputPort.Create<ApprovalRequest, ApprovalResponse>("approval");
 
-var workflow = AgentWorkflowBuilder.BuildConcurrent(searchAgents);
-
-// All agents run simultaneously
-var result = await workflow.RunAsync("AI safety research 2024");
+var workflow = new WorkflowBuilder(inputPort)
+    .AddEdge(inputPort, reviewerExecutor)
+    .AddEdge(reviewerExecutor, inputPort)
+    .Build<ApprovalRequest>();
 ```
 
-## Handoff Orchestration
+Key ideas:
 
-Transfer control between specialized agents:
+- executors send requests through the workflow context
+- the outer host listens for `RequestInfoEvent`
+- responses are sent back into the workflow and routed to the waiting executor
+- pending requests are preserved in checkpoints
 
-```csharp
-var triageAgent = chatClient.AsAIAgent(
-    instructions: "Route to billing, technical, or general support.");
+This is the clean way to model approval, escalation, and external callbacks.
 
-var billingAgent = chatClient.AsAIAgent(
-    instructions: "Handle billing and payment issues.");
+## Checkpoints
 
-var technicalAgent = chatClient.AsAIAgent(
-    instructions: "Handle technical problems and bugs.");
+Checkpoints are created at the end of supersteps.
 
-// Define handoff rules
-var workflow = AgentWorkflowBuilder.BuildHandoff(
-    entryAgent: triageAgent,
-    handoffs: new Dictionary<string, AIAgent>
-    {
-        ["billing"] = billingAgent,
-        ["technical"] = technicalAgent
-    });
-```
+They capture:
 
-## Group Chat Orchestration
+- executor state
+- queued messages
+- pending requests and responses
+- shared states
 
-Multi-agent discussion with turn-taking:
+Custom executors that carry internal state must persist and restore it explicitly during checkpoint save and restore hooks.
 
-```csharp
-var developer = chatClient.AsAIAgent(
-    name: "Developer",
-    instructions: "You are a software developer.");
+## Shared State And State Isolation
 
-var reviewer = chatClient.AsAIAgent(
-    name: "Reviewer",
-    instructions: "You review code for quality and security.");
+- Use shared state only for data that truly belongs to the workflow as a whole.
+- Keep executor-local state local and checkpoint it intentionally.
+- Treat built workflows as immutable execution definitions.
+- Be careful when reusing mutable workflow builders; state isolation matters when workflows are created through factories or reused in long-lived hosts.
 
-var manager = chatClient.AsAIAgent(
-    name: "Manager",
-    instructions: "You make final decisions.");
+## Workflows As Agents
 
-var workflow = AgentWorkflowBuilder.BuildGroupChat(
-    participants: [developer, reviewer, manager],
-    maxTurns: 10);
-```
+Wrap a workflow as an agent when:
 
-## Custom Executor
+- you want to expose it through ASP.NET Core hosting
+- a higher-level system expects an `AIAgent`
+- you want protocol adapters such as OpenAI-compatible endpoints or A2A over a workflow
 
-Mix agents with custom logic:
+Do not wrap a workflow as an agent just to hide its structure from yourself. Keep the workflow graph explicit in code and docs.
 
-```csharp
-public class SummarizerExecutor : IExecutor
-{
-    public async Task<ExecutorResult> ExecuteAsync(
-        WorkflowContext context,
-        CancellationToken ct = default)
-    {
-        var messages = context.Messages;
-        var userCount = messages.Count(m => m.Role == ChatRole.User);
-        var assistantCount = messages.Count(m => m.Role == ChatRole.Assistant);
+## Observability And Visualization
 
-        var summary = new ChatMessage(ChatRole.Assistant,
-            $"Summary: {userCount} user messages, {assistantCount} assistant messages");
+- Workflow execution emits events such as executor start, agent response updates, workflow output, and superstep completion.
+- Use workflow observability and visualization when diagnosing routing, aggregation, or checkpoint behavior.
+- Visual traces are especially important once you introduce concurrent, handoff, or Magentic patterns.
 
-        return new ExecutorResult(messages.Append(summary).ToList());
-    }
-}
+## Declarative Workflows
 
-// Use in workflow
-var workflow = AgentWorkflowBuilder.BuildSequential([
-    contentAgent,
-    new SummarizerExecutor()
-]);
-```
+Official docs currently position declarative workflows as Python-first, with YAML-based workflow definitions, expressions, and action libraries.
 
-## Workflow Builder (Graph-Based)
+For .NET work:
 
-For complex workflows with conditional routing:
-
-```csharp
-var builder = new WorkflowBuilder()
-    .AddExecutor("entry", triageAgent)
-    .AddExecutor("billing", billingAgent)
-    .AddExecutor("technical", technicalAgent)
-    .AddExecutor("escalate", managerAgent)
-    .AddEdge("entry", "billing", when: m => m.Contains("payment"))
-    .AddEdge("entry", "technical", when: m => m.Contains("bug"))
-    .AddEdge("billing", "escalate", when: m => m.Contains("urgent"))
-    .AddEdge("technical", "escalate", when: m => m.Contains("critical"));
-
-var workflow = builder.Build();
-```
-
-## Events
-
-Monitor workflow execution:
-
-```csharp
-await foreach (var evt in run.WatchStreamAsync())
-{
-    switch (evt)
-    {
-        case WorkflowStartEvent start:
-            Console.WriteLine("Workflow started");
-            break;
-        case ExecutorStartEvent execStart:
-            Console.WriteLine($"Executor {execStart.ExecutorId} starting");
-            break;
-        case AgentResponseUpdateEvent update:
-            Console.Write(update.Data);
-            break;
-        case ExecutorCompleteEvent execComplete:
-            Console.WriteLine($"Executor {execComplete.ExecutorId} completed");
-            break;
-        case WorkflowOutputEvent output:
-            Console.WriteLine("Workflow completed");
-            break;
-    }
-}
-```
-
-## Checkpointing
-
-Save and resume long-running workflows:
-
-```csharp
-// Save checkpoint
-var checkpoint = await workflow.CreateCheckpointAsync();
-var serialized = JsonSerializer.Serialize(checkpoint);
-await File.WriteAllTextAsync("checkpoint.json", serialized);
-
-// Restore later
-var restored = JsonSerializer.Deserialize<WorkflowCheckpoint>(
-    await File.ReadAllTextAsync("checkpoint.json"));
-var resumedWorkflow = await workflow.ResumeAsync(restored);
-```
-
-## Workflow as Agent
-
-Convert a workflow to an agent for composition:
-
-```csharp
-var workflow = AgentWorkflowBuilder.BuildSequential([writer, reviewer]);
-
-// Use workflow as an agent
-AIAgent workflowAgent = workflow.AsAgent(
-    name: "ContentPipeline",
-    description: "Creates and reviews content");
-
-// Can now be used as a tool in another agent
-mainAgent.AddTool(workflowAgent.AsAIFunction());
-```
+- treat declarative workflow docs as conceptual guidance only
+- do not invent a .NET declarative API surface that the docs do not actually publish
+- keep .NET implementations programmatic unless official .NET declarative docs and packages are explicitly available

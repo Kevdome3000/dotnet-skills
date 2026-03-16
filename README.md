@@ -117,6 +117,14 @@ flowchart LR
 | [`dotnet-modernization`](agents/dotnet-modernization/AGENT.md) | top-level | upgrade, migration, and legacy modernization |
 | [`dotnet-review`](agents/dotnet-review/AGENT.md) | top-level | code review, analyzers, testing, architecture |
 
+### Skill-Scoped Specialists
+
+| Agent | Scope | Primary routing |
+|-------|-------|-----------------|
+| [`dotnet-orleans-specialist`](skills/dotnet-orleans/agents/dotnet-orleans-specialist/AGENT.md) | skill-scoped | Orleans grain boundaries, persistence, streams, reminders, placement, Aspire wiring, and cluster validation |
+| [`dotnet-aspire-orchestrator`](skills/dotnet-aspire/agents/dotnet-aspire-orchestrator/AGENT.md) | skill-scoped | AppHost, CLI, first-party versus CommunityToolkit/Aspire integration choice, testing, and deployment routing inside the Aspire surface |
+| [`agent-framework-router`](skills/dotnet-microsoft-agent-framework/agents/agent-framework-router/AGENT.md) | skill-scoped | Agent Framework agent-vs-workflow choice, `AgentThread`, tools, workflows, hosting, MCP/A2A/AG-UI, durable agents, and migration |
+
 ## Repository Layout
 
 ```text
@@ -174,7 +182,7 @@ This catalog currently contains **63** skills.
 
 | Skill | Version | Description |
 |-------|---------|-------------|
-| [`dotnet-aspire`](skills/dotnet-aspire/) | `1.0.0` | Use .NET Aspire to orchestrate distributed .NET applications locally with service discovery, telemetry, dashboards, and cloud-ready composition for cloud-native development. |
+| [`dotnet-aspire`](skills/dotnet-aspire/) | `1.1.0` | Build, upgrade, and operate .NET Aspire application hosts with current CLI, AppHost, ServiceDefaults, integrations, dashboard, testing, and Azure deployment patterns for distributed apps. |
 | [`dotnet-azure-functions`](skills/dotnet-azure-functions/) | `1.0.0` | Build, review, or migrate Azure Functions in .NET with correct execution model, isolated worker setup, bindings, DI, and Durable Functions patterns. |
 
 ### Distributed
@@ -183,7 +191,7 @@ This catalog currently contains **63** skills.
 |-------|---------|-------------|
 | [`dotnet-managedcode-orleans-graph`](skills/dotnet-managedcode-orleans-graph/) | `1.0.0` | Use ManagedCode.Orleans.Graph when a distributed .NET application models graph-oriented relationships or traversal logic on top of Orleans grains and graph-aware integration patterns. |
 | [`dotnet-managedcode-orleans-signalr`](skills/dotnet-managedcode-orleans-signalr/) | `1.0.0` | Use ManagedCode.Orleans.SignalR when a distributed .NET application needs Orleans-based coordination of SignalR real-time messaging, hub delivery, and grain-driven push flows. |
-| [`dotnet-orleans`](skills/dotnet-orleans/) | `1.0.0` | Build or review distributed .NET applications with Orleans grains, silos, streams, persistence, versioning, and cloud-native hosting patterns. |
+| [`dotnet-orleans`](skills/dotnet-orleans/) | `1.2.0` | Build or review distributed .NET applications with Orleans grains, silos, persistence, streaming, reminders, placement, testing, and cloud-native hosting. |
 | [`dotnet-worker-services`](skills/dotnet-worker-services/) | `1.0.0` | Build long-running .NET background services with `BackgroundService`, Generic Host, graceful shutdown, configuration, logging, and deployment patterns suited to workers and daemons. |
 
 ### Desktop
@@ -216,9 +224,9 @@ This catalog currently contains **63** skills.
 
 | Skill | Version | Description |
 |-------|---------|-------------|
-| [`dotnet-mcp`](skills/dotnet-mcp/) | `1.0.0` | Implement Model Context Protocol (MCP) servers and clients in .NET to enable secure, standardized communication between LLM applications and external tools or data sources. |
-| [`dotnet-microsoft-agent-framework`](skills/dotnet-microsoft-agent-framework/) | `1.0.0` | Build agentic .NET applications with Microsoft Agent Framework using modern agent orchestration, provider abstractions, telemetry, and enterprise integration patterns. |
-| [`dotnet-microsoft-extensions-ai`](skills/dotnet-microsoft-extensions-ai/) | `1.0.0` | Use Microsoft.Extensions.AI abstractions such as `IChatClient` and embeddings cleanly in .NET applications, libraries, and provider integrations. |
+| [`dotnet-mcp`](skills/dotnet-mcp/) | `1.1.0` | Build or consume Model Context Protocol (MCP) servers and clients in .NET using the official MCP C# SDK, including stdio, Streamable HTTP, tools, prompts, resources, and capability negotiation. |
+| [`dotnet-microsoft-agent-framework`](skills/dotnet-microsoft-agent-framework/) | `1.3.1` | Build .NET AI agents and multi-agent workflows with Microsoft Agent Framework using the right agent type, threads, tools, workflows, hosting protocols, and enterprise guardrails. |
+| [`dotnet-microsoft-extensions-ai`](skills/dotnet-microsoft-extensions-ai/) | `1.2.1` | Build provider-agnostic .NET AI integrations with `Microsoft.Extensions.AI`, `IChatClient`, embeddings, middleware, structured output, vector search, and evaluation. |
 | [`dotnet-mixed-reality`](skills/dotnet-mixed-reality/) | `1.0.0` | Work on C# and .NET-adjacent mixed-reality solutions around HoloLens, MRTK, OpenXR, Azure services, and integration boundaries where .NET participates in the stack. |
 | [`dotnet-mlnet`](skills/dotnet-mlnet/) | `1.0.0` | Use ML.NET to train, evaluate, or integrate machine-learning models into .NET applications with realistic data preparation, inference, and deployment expectations. |
 | [`dotnet-semantic-kernel`](skills/dotnet-semantic-kernel/) | `1.0.0` | Build AI-enabled .NET applications with Semantic Kernel using services, plugins, prompts, and function-calling patterns that remain testable and maintainable. |
@@ -248,7 +256,7 @@ This catalog currently contains **63** skills.
 | Skill | Version | Description |
 |-------|---------|-------------|
 | [`dotnet-analyzer-config`](skills/dotnet-analyzer-config/) | `1.0.0` | Use a repo-root `.editorconfig` to configure free .NET analyzer and style rules. Use when a .NET repo needs rule severity, code-style options, section layout, or analyzer ownership made explicit. Nested `.editorconfig` files are allowed when they serve a clear subtree-specific purpose. |
-| [`dotnet-code-analysis`](skills/dotnet-code-analysis/) | `1.0.0` | Use the free built-in .NET SDK analyzers and analysis levels. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning policy wired into build and CI. |
+| [`dotnet-code-analysis`](skills/dotnet-code-analysis/) | `1.0.1` | Use the free built-in .NET SDK analyzers and analysis levels with gradual Roslyn warning promotion. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning-as-error policy wired into build and CI. |
 | [`dotnet-csharpier`](skills/dotnet-csharpier/) | `1.0.0` | Use the open-source free `CSharpier` formatter for C# and XML. Use when a .NET repo intentionally wants one opinionated formatter instead of a highly configurable `dotnet format`-driven style model. |
 | [`dotnet-format`](skills/dotnet-format/) | `1.0.0` | Use the free first-party `dotnet format` CLI for .NET formatting and analyzer fixes. Use when a .NET repo needs formatting commands, `--verify-no-changes` CI checks, or `.editorconfig`-driven code style enforcement. |
 | [`dotnet-meziantou-analyzer`](skills/dotnet-meziantou-analyzer/) | `1.0.0` | Use the open-source free `Meziantou.Analyzer` package for design, usage, security, performance, and style rules in .NET. Use when a repo wants broader analyzer coverage with a single NuGet package. |
@@ -281,13 +289,18 @@ This catalog currently contains **63** skills.
 
 This repository does not guess what to monitor.
 
-It watches only the sources explicitly listed in [`.github/upstream-watch.json`](.github/upstream-watch.json). That file is the human-maintained source of truth for:
+It watches only the sources explicitly listed in the upstream watch config surface:
+
+- [`.github/upstream-watch.json`](.github/upstream-watch.json) for shared metadata such as labels
+- [`.github/upstream-watch*.json`](.github/) for shard files such as `upstream-watch.ai.json` or `upstream-watch-agent-framework.json`
+
+Those files are the human-maintained source of truth for:
 
 - GitHub release streams that should trigger skill review
 - documentation pages that should trigger skill review
 - which `dotnet-*` skills are affected by each upstream change
 
-The file has exactly two lists:
+Each named shard file has exactly two lists:
 
 - `github_releases`
 - `documentation`
@@ -296,7 +309,7 @@ High-level flow:
 
 ```mermaid
 flowchart LR
-  A["Edit .github/upstream-watch.json"] --> B["Run scripts/upstream_watch.py --validate-config"]
+  A["Edit upstream-watch.json or a named upstream-watch.<domain>.json shard"] --> B["Run scripts/upstream_watch.py --validate-config"]
   B --> C["Run dry-run and sync-state-only once"]
   C --> D["Scheduled upstream-watch.yml runs upstream_watch.py daily"]
   D --> E["GitHub release or documentation change is detected"]
@@ -307,6 +320,19 @@ flowchart LR
 ```
 
 Use this shape:
+
+```json
+{
+  "watch_issue_label": "upstream-update",
+  "labels": [
+    {
+      "name": "upstream-update",
+      "color": "5319E7",
+      "description": "Framework or documentation updates detected by automation"
+    }
+  ]
+}
+```
 
 ```json
 {
@@ -328,6 +354,8 @@ Use this shape:
   ]
 }
 ```
+
+Keep the base file small and name shard files semantically, for example `upstream-watch.ai.json`, `upstream-watch.data.json`, `upstream-watch.platform.json`, or `upstream-watch-agent-framework.json`.
 
 That is enough for normal maintenance.
 `scripts/upstream_watch.py` derives the watch kind, ids, source coordinates, display names, and default notes at runtime.

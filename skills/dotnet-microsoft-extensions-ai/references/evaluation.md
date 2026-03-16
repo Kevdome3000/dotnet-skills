@@ -1,207 +1,91 @@
-# Microsoft.Extensions.AI.Evaluation
+# Microsoft.Extensions.AI Evaluation
 
-## Overview
-
-The evaluation libraries simplify assessing AI response quality and safety. Built on `Microsoft.Extensions.AI` abstractions.
-
-## Packages
+## Package Set
 
 | Package | Purpose |
-|---------|---------|
-| `Microsoft.Extensions.AI.Evaluation` | Core abstractions and types |
-| `Microsoft.Extensions.AI.Evaluation.Quality` | Quality evaluators (relevance, coherence, completeness) |
-| `Microsoft.Extensions.AI.Evaluation.Safety` | Safety evaluators (content harm, protected material) |
-| `Microsoft.Extensions.AI.Evaluation.NLP` | NLP-based evaluators (BLEU, F1) - no LLM required |
-| `Microsoft.Extensions.AI.Evaluation.Reporting` | Caching, storage, report generation |
-| `Microsoft.Extensions.AI.Evaluation.Console` | CLI tool (`dotnet aieval`) |
+|---|---|
+| `Microsoft.Extensions.AI.Evaluation` | Core evaluation abstractions and result types |
+| `Microsoft.Extensions.AI.Evaluation.Quality` | LLM-based quality evaluators such as relevance, completeness, groundedness, and fluency |
+| `Microsoft.Extensions.AI.Evaluation.NLP` | Non-LLM text-similarity evaluators such as BLEU, GLEU, and F1 |
+| `Microsoft.Extensions.AI.Evaluation.Safety` | Safety evaluators backed by the Microsoft Foundry Evaluation service |
+| `Microsoft.Extensions.AI.Evaluation.Reporting` | Result storage, cached responses, and report generation |
+| `Microsoft.Extensions.AI.Evaluation.Reporting.Azure` | Azure Storage-backed reporting and caching support |
+| `Microsoft.Extensions.AI.Evaluation.Console` | `dotnet aieval` CLI for reports and cache management |
 
-## Quality Evaluators
+## Choose Evaluators By Risk
 
-Use LLM to evaluate response quality:
+### Quality
 
-```csharp
-// Create evaluators
-var relevance = new RelevanceEvaluator();
-var completeness = new CompletenessEvaluator();
-var coherence = new CoherenceEvaluator();
-var groundedness = new GroundednessEvaluator();
-var fluency = new FluencyEvaluator();
+Use these when answer quality or agent behavior matters:
 
-// Agent-focused evaluators
-var intentResolution = new IntentResolutionEvaluator();  // How well agent resolves user intent
-var taskAdherence = new TaskAdherenceEvaluator();        // How well agent follows instructions
-var toolCallAccuracy = new ToolCallAccuracyEvaluator();  // How well agent uses tools
-```
+- `RelevanceEvaluator`
+- `CompletenessEvaluator`
+- `RetrievalEvaluator`
+- `FluencyEvaluator`
+- `CoherenceEvaluator`
+- `EquivalenceEvaluator`
+- `GroundednessEvaluator`
+- `IntentResolutionEvaluator`
+- `TaskAdherenceEvaluator`
+- `ToolCallAccuracyEvaluator`
 
-### Basic Evaluation
+### NLP
 
-```csharp
-using Microsoft.Extensions.AI.Evaluation;
-using Microsoft.Extensions.AI.Evaluation.Quality;
+Use these when you already have reference answers and need cheaper deterministic comparisons:
 
-var evaluator = new RelevanceEvaluator();
+- `BLEUEvaluator`
+- `GLEUEvaluator`
+- `F1Evaluator`
 
-var result = await evaluator.EvaluateAsync(
-    query: "What is the capital of France?",
-    response: "Paris is the capital of France.",
-    chatClient: chatClient);
+### Safety
 
-Console.WriteLine($"Relevance: {result.Score}");  // 0.0 - 1.0
-Console.WriteLine($"Reasoning: {result.Reason}");
-```
+Use these when harmful output, prompt attacks, or unsafe code are part of the release risk:
 
-### Multiple Evaluations
+- `ContentHarmEvaluator`
+- `ProtectedMaterialEvaluator`
+- `GroundednessProEvaluator`
+- `UngroundedAttributesEvaluator`
+- `HateAndUnfairnessEvaluator`
+- `SelfHarmEvaluator`
+- `ViolenceEvaluator`
+- `SexualEvaluator`
+- `CodeVulnerabilityEvaluator`
+- `IndirectAttackEvaluator`
 
-```csharp
-var evaluators = new IEvaluator[]
-{
-    new RelevanceEvaluator(),
-    new CompletenessEvaluator(),
-    new CoherenceEvaluator()
-};
+## Practical Evaluation Loop
 
-var results = await Task.WhenAll(
-    evaluators.Select(e => e.EvaluateAsync(query, response, chatClient)));
+1. Pick a stable prompt or scenario set that represents the real feature.
+2. Decide whether the gate is about answer quality, tool behavior, safety, or all three.
+3. Use the same `IChatClient`-backed app surface that production uses, or a controlled test double when you are isolating logic.
+4. Cache responses for repeatability and lower cost.
+5. Store results and publish reports so model, prompt, or middleware changes are comparable across runs.
 
-foreach (var (evaluator, result) in evaluators.Zip(results))
-{
-    Console.WriteLine($"{evaluator.Name}: {result.Score:F2}");
-}
-```
+## CI Guidance
 
-## NLP Evaluators
+- Use NLP evaluators for low-cost baseline checks on every PR when reference outputs exist.
+- Use quality evaluators on targeted, high-value scenarios such as retrieval, summarization, tool use, or task adherence.
+- Use safety evaluators for user-facing or code-producing features before release.
+- Track threshold changes deliberately; do not quietly relax gates when a prompt or model regresses.
 
-No LLM required - uses traditional NLP techniques:
+## Agent-Oriented Checks
 
-```csharp
-using Microsoft.Extensions.AI.Evaluation.NLP;
+Even if the app is not using full Agent Framework, agent-like workflows often need:
 
-// BLEU score - machine translation quality
-var bleu = new BLEUEvaluator();
-var bleuResult = await bleu.EvaluateAsync(
-    response: "The quick brown fox",
-    references: ["The fast brown fox", "A quick brown fox"]);
+- `IntentResolutionEvaluator` when the system has to understand and complete multi-step user requests
+- `TaskAdherenceEvaluator` when the system receives bounded instructions or policies
+- `ToolCallAccuracyEvaluator` when local functions or MCP-backed tools are part of the flow
 
-// F1 score - word overlap
-var f1 = new F1Evaluator();
-var f1Result = await f1.EvaluateAsync(
-    response: "Paris is the capital",
-    reference: "The capital is Paris");
+These metrics are often the first place where prompt drift or tool-schema changes show up.
 
-// GLEU - sentence-level BLEU variant
-var gleu = new GLEUEvaluator();
-```
+## Reporting And Caching
 
-## Safety Evaluators
+- The libraries support response caching so unchanged prompt-model combinations can reuse prior results.
+- Reporting packages let you persist evaluation data and generate human-readable reports.
+- The `dotnet aieval` CLI is useful for report generation and cache management in local runs or CI pipelines.
 
-Require Azure AI Foundry Evaluation service:
+## Common Failure Modes
 
-```csharp
-using Microsoft.Extensions.AI.Evaluation.Safety;
-
-// Content harm detection
-var hateEvaluator = new HateAndUnfairnessEvaluator();
-var violenceEvaluator = new ViolenceEvaluator();
-var selfHarmEvaluator = new SelfHarmEvaluator();
-var sexualEvaluator = new SexualEvaluator();
-
-// Or use combined evaluator
-var contentHarm = new ContentHarmEvaluator();
-
-// Other safety evaluators
-var protectedMaterial = new ProtectedMaterialEvaluator();
-var codeVulnerability = new CodeVulnerabilityEvaluator();
-var indirectAttack = new IndirectAttackEvaluator();
-var groundednessPro = new GroundednessProEvaluator();
-```
-
-## Custom Evaluator
-
-```csharp
-public class CustomEvaluator : IEvaluator
-{
-    public string Name => "Custom";
-
-    public async Task<EvaluationResult> EvaluateAsync(
-        string query,
-        string response,
-        IChatClient chatClient,
-        CancellationToken ct = default)
-    {
-        // Custom evaluation logic
-        var isGood = response.Length > 10;
-
-        return new EvaluationResult
-        {
-            Score = isGood ? 1.0 : 0.0,
-            Reason = isGood ? "Response is detailed" : "Response too short"
-        };
-    }
-}
-```
-
-## Test Integration
-
-```csharp
-[TestClass]
-public class AIResponseTests
-{
-    private readonly IChatClient _chatClient;
-    private readonly RelevanceEvaluator _evaluator;
-
-    [TestMethod]
-    public async Task Response_ShouldBeRelevant()
-    {
-        var response = await _chatClient.GetResponseAsync("What is 2+2?");
-
-        var result = await _evaluator.EvaluateAsync(
-            query: "What is 2+2?",
-            response: response.Text,
-            chatClient: _chatClient);
-
-        Assert.IsTrue(result.Score >= 0.8, $"Low relevance: {result.Reason}");
-    }
-}
-```
-
-## Reporting
-
-```csharp
-using Microsoft.Extensions.AI.Evaluation.Reporting;
-
-// Configure reporting with Azure Storage
-var options = new ReportingOptions
-{
-    StorageConnectionString = "...",
-    ContainerName = "evaluations"
-};
-
-// Generate HTML report
-await ReportGenerator.GenerateAsync(results, "report.html");
-```
-
-### CLI Tool
-
-```bash
-# Install
-dotnet tool install --global Microsoft.Extensions.AI.Evaluation.Console
-
-# Generate report
-dotnet aieval report --input ./results --output ./report.html
-
-# Manage cached responses
-dotnet aieval cache --list
-dotnet aieval cache --clear
-```
-
-## Response Caching
-
-Evaluation libraries cache LLM responses for faster re-runs:
-
-```csharp
-var evaluator = new RelevanceEvaluator(new EvaluatorOptions
-{
-    UseCache = true,
-    CacheDirectory = "./.evaluation-cache"
-});
-```
+- Evaluating only one happy-path prompt instead of the real scenario envelope.
+- Comparing outputs without fixing the prompt, grounding data, or model selection.
+- Treating evaluation as a one-time benchmark instead of a regression suite.
+- Shipping tool-using or RAG features without measuring task adherence, groundedness, or tool accuracy.

@@ -1,205 +1,108 @@
 ---
 name: dotnet-aspire
-version: "1.0.0"
+version: "1.1.0"
 category: "Cloud"
-description: "Use .NET Aspire to orchestrate distributed .NET applications locally with service discovery, telemetry, dashboards, and cloud-ready composition for cloud-native development."
-compatibility: "Requires .NET 8+ and Aspire workload installed."
+description: "Build, upgrade, and operate .NET Aspire application hosts with current CLI, AppHost, ServiceDefaults, integrations, dashboard, testing, and Azure deployment patterns for distributed apps."
+compatibility: "Best for current Aspire 13-era tooling on .NET 10; use version-aware upgrade guidance for older 8.x or 9.x Aspire solutions."
 ---
 
 # .NET Aspire
 
 ## Trigger On
 
-- orchestrating multiple .NET services locally
-- setting up service discovery between microservices
-- configuring telemetry, health checks, and dashboards
-- building cloud-native .NET applications
-- managing dependencies like Redis, PostgreSQL, RabbitMQ in development
-
-## Documentation
-
-- [.NET Aspire Overview](https://learn.microsoft.com/en-us/dotnet/aspire/get-started/aspire-overview)
-- [Service Discovery](https://learn.microsoft.com/en-us/dotnet/aspire/service-discovery/overview)
-- [Aspire Components](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/components-overview)
-- [Aspire Dashboard](https://learn.microsoft.com/en-us/dotnet/aspire/fundamentals/dashboard/overview)
-- [Deployment](https://learn.microsoft.com/en-us/dotnet/aspire/deployment/overview)
-
-### References
-
-- [patterns.md](references/patterns.md) - Detailed AppHost patterns, service discovery, integrations, health checks, resilience, and testing patterns
-- [deployment.md](references/deployment.md) - Azure Container Apps deployment, manifest generation, CI/CD integration, and production configuration
-
-## Core Concepts
-
-### Three Pillars of Aspire
-
-1. **Orchestration** — Define your app's architecture in code
-2. **Integrations** — Pre-configured connections to services (Redis, SQL, etc.)
-3. **Service Discovery** — Automatic resolution of service URLs
-
-### Project Structure
-
-```
-MyApp/
-├── MyApp.AppHost/           # Orchestration project
-│   └── Program.cs           # Defines all services and dependencies
-├── MyApp.ServiceDefaults/   # Shared service configuration
-│   └── Extensions.cs        # OpenTelemetry, health checks, resilience
-├── MyApp.Api/               # Your API project
-└── MyApp.Web/               # Your web frontend
-```
+- `Aspire.AppHost.Sdk`, `Aspire.Hosting.*`, `DistributedApplication.CreateBuilder`, `WithReference`, `WaitFor`, `AddProject`, `AddRedis`, `AddPostgres`, `aspire run`, `aspire init`, `aspire add`, or `aspire update`
+- orchestrating multiple services and resources with an AppHost for local development or cloud deployment
+- setting up `ServiceDefaults`, service discovery, OpenTelemetry, health checks, or the Aspire Dashboard
+- choosing between official first-party Aspire integrations and `CommunityToolkit/Aspire`
+- upgrading older 8.x or 9.x Aspire solutions to the current CLI and AppHost SDK model
+- wiring polyglot services into an Aspire topology, especially when Go, Java, Python, or extra dev-time tools enter the picture
 
 ## Workflow
 
-1. **Start with the AppHost:**
-   - Add all services, databases, and dependencies
-   - Define relationships and references
-   - Configure environment-specific settings
+1. Classify the task first: new AppHost creation, existing-solution enlistment, integration wiring, testing and observability, deployment, or version upgrade.
+2. Prefer the current Aspire toolchain. For greenfield or modernized work, use the Aspire CLI and current AppHost SDK instead of writing new guidance around the deprecated legacy workload.
+3. Keep the AppHost code-first and topology-focused. Model services, resources, dependencies, endpoints, lifetimes, and parameters there; keep business logic out.
+4. Keep `ServiceDefaults` narrow. It exists for telemetry, health checks, resilience, and service discovery, not shared domain models or general utility code.
+5. Prefer official first-party Aspire integrations when they cover the requirement. Use `CommunityToolkit/Aspire` only when the capability gap is real: unsupported language hosts, extra dev infrastructure, or extension packages the official project does not provide.
+6. Validate the whole distributed system, not one project in isolation. Local success means the AppHost starts cleanly, dependencies resolve through `WithReference`, the dashboard shows the expected resource graph, and end-to-end tests can exercise the topology.
+7. When publishing, switch from local containers or emulators to managed resources deliberately and verify which services truly need external endpoints.
 
-2. **Use ServiceDefaults for cross-cutting concerns:**
-   - OpenTelemetry (logging, tracing, metrics)
-   - Health checks
-   - Resilience policies (Polly)
+## Architecture
 
-3. **Use built-in integrations:**
-   - Redis, PostgreSQL, SQL Server, RabbitMQ, Azure services
-   - Each integration auto-configures connection strings
-
-4. **Run with the dashboard:**
-   - `dotnet run --project MyApp.AppHost`
-   - View logs, traces, and metrics in one place
-
-## AppHost Patterns
-
-### Basic Service Orchestration
-```csharp
-var builder = DistributedApplication.CreateBuilder(args);
-
-// Add infrastructure
-var redis = builder.AddRedis("cache");
-var postgres = builder.AddPostgres("db")
-    .AddDatabase("orders");
-
-// Add services with dependencies
-var api = builder.AddProject<Projects.MyApp_Api>("api")
-    .WithReference(postgres)
-    .WithReference(redis);
-
-var web = builder.AddProject<Projects.MyApp_Web>("web")
-    .WithReference(api);  // Service discovery automatic
-
-builder.Build().Run();
+```mermaid
+flowchart LR
+  A["Distributed-app task"] --> B{"Need code-first orchestration?"}
+  B -->|No| C["Stay in service-level skills such as ASP.NET Core, Worker, or Orleans"]
+  B -->|Yes| D["Create or update the AppHost"]
+  D --> E["Model resources and services with `WithReference` and `WaitFor`"]
+  E --> F{"Official Aspire integration exists?"}
+  F -->|Yes| G["Use first-party Aspire integration"]
+  F -->|No or gap remains| H["Evaluate `CommunityToolkit/Aspire`"]
+  G --> I["Apply `ServiceDefaults`, dashboard, and tests"]
+  H --> I
+  I --> J{"Publishing now?"}
+  J -->|No| K["Run locally with `aspire run` or the AppHost project"]
+  J -->|Yes| L["Choose `azd`, App Service, or preview publish flow"]
 ```
 
-### Service Discovery Usage
-```csharp
-// In your API client configuration
-builder.Services.AddHttpClient<OrdersClient>(client =>
-{
-    // "api" is resolved automatically via service discovery
-    client.BaseAddress = new Uri("https+http://api");
-});
-```
+## Current Guidance
 
-### Named Endpoints
-```csharp
-// AppHost
-var api = builder.AddProject<Projects.Api>("api")
-    .WithHttpEndpoint(port: 5001, name: "public")
-    .WithHttpEndpoint(port: 5002, name: "internal");
+- AppHost shape: prefer current SDK-style AppHost projects using `Aspire.AppHost.Sdk/<version>` or a file-based AppHost when that repo intentionally uses the single-file model. Recognize both as valid current patterns.
+- CLI entry points: use `aspire new` for starter projects, `aspire init` to add Aspire support to an existing solution or create a single-file AppHost, `aspire add` to add integrations or starter pieces, `aspire run` for local orchestration, and `aspire update` for version-aware upgrades. `aspire publish` exists, but it is still preview.
+- App model wiring: use `WithReference(...)` for dependency and configuration flow, and `WaitFor(...)` for startup ordering. Use `WithExternalHttpEndpoints()` only when the resource truly needs an externally reachable endpoint for the chosen runtime or publish target.
+- ServiceDefaults boundaries: `AddServiceDefaults()` should stay focused on OpenTelemetry, health endpoints, service discovery, `HttpClient` resilience, and related cross-cutting infrastructure.
+- Testing model: prefer Aspire closed-box testing when you need to run the distributed application as a system. If the goal is in-memory or mocked component tests, stay in the underlying service's normal test stack instead.
+- Dashboard usage: treat the Aspire Dashboard as the development observability surface. It is valuable in AppHost runs and standalone OTLP scenarios, but it is not a production monitoring replacement.
+- Upgrade posture: older 8.x or 9.x solutions need explicit migration work. Current guidance favors the Aspire CLI upgrade path and the newer AppHost SDK structure on `.NET 10`.
 
-// Client usage
-client.BaseAddress = new Uri("https+http://_internal.api");
-```
+## Selection Rules
 
-## ServiceDefaults Pattern
+- Use first-party Aspire when the package and docs exist for the resource or platform, especially for core .NET, Azure, cache, database, messaging, and standard local-container flows.
+- Use `CommunityToolkit/Aspire` when you need polyglot app hosts beyond official coverage, extra dev-time tools around a resource, or community-maintained integrations such as SQLite, Java, Go, PowerShell, k6, MailPit, MinIO, or Meilisearch.
+- Prefer the smallest surface that solves the problem. Do not add a broad toolkit extension pack when an existing first-party integration plus a normal library already fits.
+- Treat toolkit packages as community-supported. Verify maturity, maintenance, external container images, and security or licensing assumptions before making them part of a production baseline.
 
-```csharp
-public static class Extensions
-{
-    public static IHostApplicationBuilder AddServiceDefaults(
-        this IHostApplicationBuilder builder)
-    {
-        // OpenTelemetry
-        builder.ConfigureOpenTelemetry();
+## Official Sources
 
-        // Health checks
-        builder.AddDefaultHealthChecks();
+- [Aspire docs home](https://aspire.dev/docs/)
+- [AppHost](https://aspire.dev/get-started/app-host/)
+- [Service defaults](https://aspire.dev/fundamentals/service-defaults/)
+- [Integrations overview](https://aspire.dev/integrations/overview/)
+- [Build your first app](https://aspire.dev/get-started/first-app/)
+- [Aspire CLI reference](https://aspire.dev/reference/cli/commands/aspire/)
+- [Upgrade Aspire](https://learn.microsoft.com/en-us/dotnet/aspire/get-started/upgrade-to-aspire-13)
+- [Testing overview](https://aspire.dev/testing/overview/)
+- [dotnet/aspire](https://github.com/dotnet/aspire)
+- [CommunityToolkit/Aspire](https://github.com/CommunityToolkit/Aspire)
 
-        // Resilience
-        builder.Services.ConfigureHttpClientDefaults(http =>
-        {
-            http.AddStandardResilienceHandler();
-        });
+## Anti-Patterns
 
-        // Service discovery
-        builder.Services.AddServiceDiscovery();
-
-        return builder;
-    }
-}
-```
-
-## Built-in Integrations
-
-| Integration | Package | Usage |
-|-------------|---------|-------|
-| Redis | `Aspire.StackExchange.Redis` | Caching, pub/sub |
-| PostgreSQL | `Aspire.Npgsql` | Relational data |
-| SQL Server | `Aspire.Microsoft.Data.SqlClient` | Relational data |
-| RabbitMQ | `Aspire.RabbitMQ.Client` | Messaging |
-| Azure Storage | `Aspire.Azure.Storage.Blobs` | Blob storage |
-| MongoDB | `Aspire.MongoDB.Driver` | Document data |
-
-## Anti-Patterns to Avoid
-
-| Anti-Pattern | Why It's Bad | Better Approach |
-|--------------|--------------|-----------------|
-| Hardcoded URLs | Breaks service discovery | Use `WithReference()` |
-| Manual connection strings | Error-prone, not portable | Use integrations |
-| Skipping ServiceDefaults | No telemetry or resilience | Always include |
-| One giant AppHost | Hard to maintain | Split by domain |
-
-## Dashboard Features
-
-- **Structured Logs** — All services in one view
-- **Distributed Tracing** — Request flow across services
-- **Metrics** — CPU, memory, custom metrics
-- **Resources** — Service health and endpoints
-
-## Deployment
-
-### Azure Container Apps
-```bash
-azd init
-azd up
-```
-
-### Docker Compose Export
-```bash
-dotnet run --project MyApp.AppHost -- --publisher manifest
-```
-
-## Best Practices
-
-1. **Always use ServiceDefaults** — Get telemetry for free
-2. **Use integrations over manual config** — Connection strings are managed
-3. **Reference services explicitly** — `WithReference()` enables discovery
-4. **Keep AppHost simple** — Orchestration only, no business logic
-5. **Use environment-specific config** — Dev vs production settings
-6. **Health checks everywhere** — Required for orchestration
+- hardcoding service URLs or connection strings instead of using `WithReference`
+- putting business logic, data migrations, or large configuration transforms inside the AppHost
+- turning `ServiceDefaults` into a dumping ground for shared models or helpers
+- adding external HTTP endpoints everywhere instead of only where runtime or publish needs them
+- defaulting to `CommunityToolkit/Aspire` when first-party Aspire already covers the requirement
+- assuming the dashboard or local containers automatically mean production readiness
+- treating Aspire tests as a mocking framework; they run the application as a real distributed system
 
 ## Deliver
 
-- working multi-service development environment
-- automatic service discovery between services
-- centralized telemetry and logging
-- cloud-deployment-ready architecture
+- a version-aware Aspire architecture or upgrade direction
+- the right AppHost, ServiceDefaults, integration, and CLI workflow
+- an explicit first-party versus `CommunityToolkit/Aspire` package decision
+- an end-to-end validation path for local orchestration, testing, and deployment
 
 ## Validate
 
-- all services start via AppHost
-- service discovery resolves correctly
-- dashboard shows traces and logs
-- health checks pass for all services
-- integrations connect without manual config
+- the AppHost starts cleanly via `aspire run` or the AppHost project
+- resources and projects are modeled with explicit `WithReference` and `WaitFor` relationships where needed
+- consuming apps resolve endpoints and connection strings without hardcoded values
+- `ServiceDefaults` contains only cross-cutting infrastructure concerns
+- dashboard, health checks, logs, and traces reflect the expected resource graph
+- testing and deployment guidance matches the chosen runtime: local AppHost, standalone dashboard, ACA/App Service, or preview publish flow
+
+## References
+
+- [patterns.md](references/patterns.md) - Current CLI-first setup flows, AppHost patterns, `ServiceDefaults`, testing, and upgrade checkpoints
+- [deployment.md](references/deployment.md) - ACA, App Service, publish-mode, and manifest-oriented deployment guidance
+- [community-toolkit.md](references/community-toolkit.md) - Practical guide to `CommunityToolkit/Aspire` packages, capability gaps, and selection rules

@@ -1,370 +1,211 @@
 ---
 name: dotnet-mcp
-version: "1.0.0"
+version: "1.1.0"
 category: "AI"
-description: "Implement Model Context Protocol (MCP) servers and clients in .NET to enable secure, standardized communication between LLM applications and external tools or data sources."
-compatibility: "Requires ModelContextProtocol NuGet packages (.NET 8+)."
+description: "Build or consume Model Context Protocol (MCP) servers and clients in .NET using the official MCP C# SDK, including stdio, Streamable HTTP, tools, prompts, resources, and capability negotiation."
+compatibility: "Requires the official MCP C# SDK packages (`ModelContextProtocol.Core`, `ModelContextProtocol`, or `ModelContextProtocol.AspNetCore`) on .NET 8+; current guidance targets the v1.1.x SDK."
 ---
 
-# Model Context Protocol (MCP) for .NET
+# MCP C# SDK for .NET
 
 ## Trigger On
 
-- building MCP servers to expose tools/resources to AI agents
-- integrating LLM applications with external data sources
-- creating AI-enabled applications that need structured context
-- implementing tool-calling interfaces for Claude, GPT, or other LLMs
-- extending AI agent capabilities with custom tools
+- building or consuming MCP servers from a .NET application or library
+- choosing between stdio and HTTP transport for MCP
+- exposing tools, resources, prompts, completions, or logging to an MCP host
+- connecting a .NET app to an existing MCP server and passing discovered tools into `IChatClient`
+- implementing capability-aware flows such as roots, sampling, elicitation, subscriptions, or session resumption
+
+## Use This Skill Instead Of
+
+- Use `dotnet-mcp` when **protocol interoperability** is the requirement.
+- Use `dotnet-microsoft-extensions-ai` when you only need model/provider abstraction or local tool orchestration without the MCP wire protocol.
+- Use `dotnet-microsoft-agent-framework` when the main problem is agent orchestration; combine it with `dotnet-mcp` only when those agents must consume or expose MCP endpoints.
 
 ## Documentation
 
-- [MCP C# SDK Repository](https://github.com/modelcontextprotocol/csharp-sdk)
-- [Model Context Protocol Specification](https://spec.modelcontextprotocol.io/)
-- [MCP Servers Documentation](https://modelcontextprotocol.io/docs/concepts/servers)
-- [MCP Tools Documentation](https://modelcontextprotocol.io/docs/concepts/tools)
+- [MCP C# SDK overview](https://csharp.sdk.modelcontextprotocol.io/)
+- [Getting Started](https://csharp.sdk.modelcontextprotocol.io/concepts/getting-started.html)
+- [API reference](https://csharp.sdk.modelcontextprotocol.io/api/ModelContextProtocol.html)
+- [Conceptual docs](https://csharp.sdk.modelcontextprotocol.io/concepts/index.html)
+- [Versioning policy](https://csharp.sdk.modelcontextprotocol.io/versioning.html)
+- [Experimental APIs](https://csharp.sdk.modelcontextprotocol.io/experimental.html)
+- [MCP C# SDK repository](https://github.com/modelcontextprotocol/csharp-sdk)
+- [Model Context Protocol specification](https://modelcontextprotocol.io/specification/)
 
 ## References
 
-See detailed examples in the `references/` folder:
-- [`patterns.md`](references/patterns.md) — Tool, resource, and prompt patterns
-- [`security.md`](references/security.md) — Input validation, auth, rate limiting, and audit patterns
+Load only what the task needs:
 
-## Core Concepts
-
-| Concept | Description |
-|---------|-------------|
-| **Server** | Exposes tools, resources, and prompts to MCP clients |
-| **Client** | Connects to MCP servers and invokes capabilities |
-| **Tool** | Executable function the LLM can call |
-| **Resource** | Data source the LLM can read |
-| **Prompt** | Reusable prompt template |
+- [`references/patterns.md`](references/patterns.md) - current server/client patterns, transports, capabilities, filters, and chat-client integration
+- [`references/security.md`](references/security.md) - safe error handling, auth boundaries, stdio logging hygiene, and defensive tool/resource patterns
 
 ## Package Selection
 
-| Package | Use Case |
-|---------|----------|
-| `ModelContextProtocol.Core` | Minimal dependencies, low-level APIs |
-| `ModelContextProtocol` | Main package with DI and hosting |
-| `ModelContextProtocol.AspNetCore` | HTTP-based MCP servers |
+| Package | Choose when |
+|---------|-------------|
+| `ModelContextProtocol.Core` | You only need a client or low-level server APIs and want the smallest dependency set. |
+| `ModelContextProtocol` | You want the main SDK package with hosting, DI, attribute discovery, and stdio server support. Start here for most projects. |
+| `ModelContextProtocol.AspNetCore` | You are hosting a remote MCP server in ASP.NET Core over HTTP. This includes the main package. |
+
+## Transport Selection
+
+| Transport | Use when | Notes |
+|-----------|----------|-------|
+| `StdioClientTransport` / `WithStdioServerTransport()` | The MCP server should run as a local child process. | Best for local tooling and editor/agent integrations. |
+| `HttpClientTransport` + `HttpTransportMode.StreamableHttp` | The server is remote or should be reachable over HTTP. | Recommended HTTP transport; supports streaming and session resumption. |
+| `HttpTransportMode.Sse` | You must connect to an older SSE-only server. | Legacy compatibility only; do not choose this for new servers. |
+
+```mermaid
+flowchart LR
+    A["Need MCP interoperability in .NET"] --> B{"Role?"}
+    B -->|"Expose MCP surface"| C{"Where will it run?"}
+    B -->|"Consume an MCP server"| D{"Transport?"}
+    C -->|"Local child process"| E["ModelContextProtocol\nAddMcpServer()\nWithStdioServerTransport()"]
+    C -->|"Remote HTTP endpoint"| F["ModelContextProtocol.AspNetCore\nAddMcpServer()\nWithHttpTransport()\nMapMcp()"]
+    D -->|"stdio"| G["StdioClientTransport\nMcpClient.CreateAsync()"]
+    D -->|"HTTP"| H["HttpClientTransport\nAutoDetect or StreamableHttp"]
+    E --> I["Register tools/resources/prompts"]
+    F --> I
+    G --> J["Check ServerCapabilities\nbefore optional features"]
+    H --> J
+```
 
 ## Workflow
 
-1. **Define tools and resources** — what capabilities to expose
-2. **Create MCP server** — host tools for AI agents
-3. **Register with DI** — use hosting extensions
-4. **Handle requests** — implement tool logic
-5. **Test with clients** — verify with MCP Inspector or real agents
+1. Pick the package and transport first.
+   - Local child-process server: `ModelContextProtocol` + `WithStdioServerTransport()`.
+   - Remote server: `ModelContextProtocol.AspNetCore` + `WithHttpTransport()` + `MapMcp()`.
+   - Client-only app: start with `ModelContextProtocol` or `ModelContextProtocol.Core`.
 
-## MCP Server Setup
+2. Model the MCP surface explicitly.
+   - Tools: `[McpServerToolType]` + `[McpServerTool]`
+   - Resources: `[McpServerResourceType]` + `[McpServerResource]`
+   - Prompts: `[McpServerPromptType]` + `[McpServerPrompt]`
+   - Use custom handlers or filters only for cross-cutting behavior, protocol extensions, or advanced routing.
 
-### Basic Server with Tools
+3. Prefer attribute discovery for straightforward servers.
+
 ```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
+using System.ComponentModel;
+
 var builder = Host.CreateApplicationBuilder(args);
-
-builder.Services.AddMcpServer()
-    .WithStdioTransport()
-    .WithTools<WeatherTools>()
-    .WithTools<FileTools>();
-
-var host = builder.Build();
-await host.RunAsync();
-```
-
-### Tool Definition
-```csharp
-public class WeatherTools
+builder.Logging.AddConsole(options =>
 {
-    [McpTool("get_weather")]
-    [Description("Gets current weather for a city")]
-    public async Task<WeatherResult> GetWeatherAsync(
-        [Description("City name, e.g., 'Seattle'")] string city,
-        [Description("Unit: 'celsius' or 'fahrenheit'")] string unit = "celsius",
-        CancellationToken cancellationToken = default)
-    {
-        var weather = await FetchWeatherAsync(city, cancellationToken);
-        return new WeatherResult
-        {
-            Temperature = unit == "celsius" ? weather.TempC : weather.TempF,
-            Condition = weather.Condition,
-            Unit = unit
-        };
-    }
+    options.LogToStandardErrorThreshold = LogLevel.Trace;
+});
 
-    [McpTool("get_forecast")]
-    [Description("Gets weather forecast for upcoming days")]
-    public async Task<ForecastResult> GetForecastAsync(
-        [Description("City name")] string city,
-        [Description("Number of days (1-7)")] int days = 3,
-        CancellationToken cancellationToken = default)
-    {
-        // Implementation
-    }
+builder.Services
+    .AddMcpServer()
+    .WithStdioServerTransport()
+    .WithToolsFromAssembly();
+
+await builder.Build().RunAsync();
+
+[McpServerToolType]
+public static class EchoTool
+{
+    [McpServerTool, Description("Echoes the message back to the client.")]
+    public static string Echo(string message) => $"hello {message}";
 }
 ```
 
-### Resource Definition
-```csharp
-public class DocumentResources
-{
-    [McpResource("documents/{id}")]
-    [Description("Gets a document by ID")]
-    public async Task<DocumentContent> GetDocumentAsync(
-        string id,
-        CancellationToken cancellationToken = default)
-    {
-        var doc = await _documentService.GetAsync(id, cancellationToken);
-        return new DocumentContent
-        {
-            MimeType = "text/plain",
-            Text = doc.Content
-        };
-    }
-
-    [McpResourceList("documents")]
-    [Description("Lists all available documents")]
-    public async Task<IEnumerable<ResourceInfo>> ListDocumentsAsync(
-        CancellationToken cancellationToken = default)
-    {
-        var docs = await _documentService.GetAllAsync(cancellationToken);
-        return docs.Select(d => new ResourceInfo
-        {
-            Uri = $"documents/{d.Id}",
-            Name = d.Title,
-            Description = d.Summary
-        });
-    }
-}
-```
-
-## HTTP Transport (ASP.NET Core)
+4. For HTTP servers, use the ASP.NET Core transport and map the endpoint directly.
 
 ```csharp
+using ModelContextProtocol.Server;
+using System.ComponentModel;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddMcpServer()
-    .WithTools<WeatherTools>()
-    .WithResources<DocumentResources>();
+builder.Services
+    .AddMcpServer()
+    .WithHttpTransport()
+    .WithToolsFromAssembly();
 
 var app = builder.Build();
-
 app.MapMcp("/mcp");
-
 app.Run();
+
+[McpServerToolType]
+public static class EchoTool
+{
+    [McpServerTool, Description("Echoes the message back to the client.")]
+    public static string Echo(string message) => $"hello {message}";
+}
 ```
 
-## MCP Client
+5. When consuming a server, use `McpClient.CreateAsync(...)` and stay capability-aware.
 
-### Connecting to Server
 ```csharp
-var client = await McpClient.ConnectAsync(
-    new StdioTransportOptions
-    {
-        Command = "dotnet",
-        Arguments = ["run", "--project", "MyMcpServer"]
-    });
+using ModelContextProtocol.Client;
+using ModelContextProtocol.Protocol;
 
-// List available tools
-var tools = await client.ListToolsAsync();
-foreach (var tool in tools)
+var transport = new StdioClientTransport(new StdioClientTransportOptions
 {
-    Console.WriteLine($"Tool: {tool.Name} - {tool.Description}");
-}
-
-// Call a tool
-var result = await client.CallToolAsync("get_weather", new
-{
-    city = "Seattle",
-    unit = "celsius"
+    Name = "Everything",
+    Command = "npx",
+    Arguments = ["-y", "@modelcontextprotocol/server-everything"],
 });
-```
 
-### HTTP Client
-```csharp
-var client = await McpClient.ConnectAsync(
-    new HttpTransportOptions
-    {
-        BaseUrl = "https://myserver.com/mcp"
-    });
-```
+await using var client = await McpClient.CreateAsync(transport);
 
-## Tool Patterns
+IList<McpClientTool> tools = await client.ListToolsAsync();
 
-### Tool with Complex Input
-```csharp
-public class DatabaseTools(IDbConnection db)
+if (client.ServerCapabilities.Prompts is not null)
 {
-    [McpTool("query_products")]
-    [Description("Searches products by criteria")]
-    public async Task<ProductSearchResult> SearchProductsAsync(
-        [Description("Product name filter")] string? name = null,
-        [Description("Minimum price")] decimal? minPrice = null,
-        [Description("Maximum price")] decimal? maxPrice = null,
-        [Description("Category ID")] int? categoryId = null,
-        [Description("Max results (1-100)")] int limit = 10,
-        CancellationToken cancellationToken = default)
-    {
-        // Validate inputs
-        if (limit < 1 || limit > 100)
-            throw new ArgumentException("Limit must be between 1 and 100");
-
-        var products = await db.QueryProductsAsync(
-            name, minPrice, maxPrice, categoryId, limit, cancellationToken);
-
-        return new ProductSearchResult
-        {
-            Products = products,
-            TotalCount = products.Count
-        };
-    }
+    var prompts = await client.ListPromptsAsync();
 }
 ```
 
-### Tool with Error Handling
-```csharp
-[McpTool("create_order")]
-[Description("Creates a new order")]
-public async Task<OrderResult> CreateOrderAsync(
-    [Description("Product ID")] string productId,
-    [Description("Quantity")] int quantity,
-    CancellationToken cancellationToken = default)
-{
-    try
-    {
-        if (quantity < 1)
-            return OrderResult.Error("Quantity must be at least 1");
+6. Treat optional features as negotiated capabilities, not assumptions.
+   - Client capabilities: configure `McpClientOptions.Capabilities` for roots, sampling, and elicitation.
+   - Server capabilities are inferred from registered features.
+   - Check `client.ServerCapabilities` before using completions, logging, prompt list-change notifications, or resource subscriptions.
+   - Use `client.NegotiatedProtocolVersion` or `server.NegotiatedProtocolVersion` only when version-specific behavior matters.
 
-        var product = await _productService.GetAsync(productId, cancellationToken);
-        if (product is null)
-            return OrderResult.Error($"Product '{productId}' not found");
+7. Keep HTTP guidance current.
+   - Streamable HTTP is the recommended transport for remote servers.
+   - `MapMcp()` also serves SSE compatibility endpoints for older clients.
+   - HTTP clients can use `AutoDetect` by default, or force `StreamableHttp` / `Sse`.
+   - Session resumption is available for Streamable HTTP through `McpClient.ResumeSessionAsync(...)`.
 
-        if (product.Stock < quantity)
-            return OrderResult.Error($"Insufficient stock. Available: {product.Stock}");
+8. Respect current error and serialization rules.
+   - Tool exceptions normally come back as `CallToolResult.IsError == true`.
+   - Throw `McpProtocolException` only for protocol-level JSON-RPC failures.
+   - `McpClientTool` inherits from `AIFunction`, so discovered tools can be passed directly into `IChatClient`.
+   - Experimental APIs use `MCPEXP...` diagnostics; suppress them intentionally, not globally by accident.
+   - If you use a custom `JsonSerializerContext`, prepend `McpJsonUtilities.DefaultOptions.TypeInfoResolver` so MCP protocol types keep the SDK's contract.
 
-        var order = await _orderService.CreateAsync(productId, quantity, cancellationToken);
-        return OrderResult.Success(order);
-    }
-    catch (Exception ex)
-    {
-        return OrderResult.Error($"Failed to create order: {ex.Message}");
-    }
-}
-```
+## Anti-Patterns To Avoid
 
-## Prompt Templates
-
-```csharp
-public class PromptTemplates
-{
-    [McpPrompt("code_review")]
-    [Description("Template for code review requests")]
-    public PromptContent CodeReviewPrompt(
-        [Description("Programming language")] string language,
-        [Description("Code to review")] string code)
-    {
-        return new PromptContent
-        {
-            Messages =
-            [
-                new PromptMessage
-                {
-                    Role = "user",
-                    Content = $"""
-                        Please review the following {language} code:
-
-                        ```{language}
-                        {code}
-                        ```
-
-                        Focus on:
-                        - Code quality and readability
-                        - Potential bugs
-                        - Performance issues
-                        - Security concerns
-                        """
-                }
-            ]
-        };
-    }
-}
-```
-
-## Anti-Patterns to Avoid
-
-| Anti-Pattern | Why It's Bad | Better Approach |
-|--------------|--------------|-----------------|
-| Vague tool descriptions | LLM can't decide when to call | Be specific and actionable |
-| No input validation | Hallucinated parameters crash | Validate and return errors |
-| Blocking operations | Timeout issues | Use async throughout |
-| Exposing sensitive data | Security risk | Filter and sanitize |
-| Giant tool responses | Token waste | Return essential data only |
-| Missing cancellation | Can't stop long operations | Honor CancellationToken |
-
-## Security Best Practices
-
-1. **Validate all inputs:**
-   ```csharp
-   if (!Regex.IsMatch(filename, @"^[\w\-\.]+$"))
-       throw new ArgumentException("Invalid filename");
-   ```
-
-2. **Sanitize file paths:**
-   ```csharp
-   var safePath = Path.GetFullPath(userPath);
-   if (!safePath.StartsWith(_allowedRoot))
-       throw new UnauthorizedAccessException();
-   ```
-
-3. **Rate limiting:**
-   ```csharp
-   builder.Services.AddMcpServer()
-       .WithRateLimiting(options =>
-       {
-           options.MaxRequestsPerMinute = 60;
-       });
-   ```
-
-4. **Audit logging:**
-   ```csharp
-   [McpTool("delete_file")]
-   public async Task<bool> DeleteFileAsync(string path)
-   {
-       _logger.LogInformation("Delete requested: {Path} by {Client}", path, _context.ClientId);
-       // ...
-   }
-   ```
-
-## Testing
-
-```csharp
-public class WeatherToolsTests
-{
-    [Fact]
-    public async Task GetWeather_ReturnsWeatherForCity()
-    {
-        var tools = new WeatherTools(Mock.Of<IWeatherService>(s =>
-            s.GetCurrentAsync("Seattle", default) == Task.FromResult(
-                new Weather { TempC = 15, Condition = "Cloudy" })));
-
-        var result = await tools.GetWeatherAsync("Seattle", "celsius");
-
-        Assert.Equal(15, result.Temperature);
-        Assert.Equal("Cloudy", result.Condition);
-    }
-}
-```
+| Anti-pattern | Why it causes trouble | Better approach |
+|--------------|-----------------------|-----------------|
+| Picking HTTP transport for a purely local child-process scenario | Adds unnecessary hosting, auth, and deployment surface | Use stdio for local/editor-hosted integrations |
+| Treating SSE as the default remote transport | Locks new work to legacy behavior | Prefer Streamable HTTP and keep SSE only for backward compatibility |
+| Writing tools without `[Description]` metadata | Hosts and models lose schema clarity | Describe tool purpose and parameters explicitly |
+| Returning huge binary/text payloads from every tool call | Bloats context and slows hosts | Return focused content and move large data to resources |
+| Logging to stdout on stdio servers | Corrupts the protocol stream | Send logs to stderr |
+| Assuming prompts/resources/logging/completions exist | Breaks against partial implementations | Check negotiated capabilities first |
+| Using filters for normal business logic | Makes handlers opaque and hard to reason about | Keep filters for cross-cutting policy, audit, or protocol plumbing |
 
 ## Deliver
 
-- MCP server exposing tools for AI agent integration
-- Clear, specific tool descriptions for LLM understanding
-- Proper input validation and error handling
-- Secure resource access patterns
+- a correctly packaged MCP server or client that matches the deployment topology
+- explicit tool/resource/prompt definitions with descriptions and bounded payloads
+- capability-aware handling for optional MCP features
+- validation notes for transport, auth boundary, and host/client interoperability
 
 ## Validate
 
-- Tools have descriptive names and documentation
-- All inputs are validated before processing
-- Errors return meaningful messages, not exceptions
-- Sensitive operations are logged
-- Server works with MCP Inspector
-- Integration with target AI agent is tested
+- chosen package matches the topology: `Core`, `ModelContextProtocol`, or `AspNetCore`
+- stdio servers do not write logs or diagnostics to stdout
+- HTTP servers use `MapMcp()` and are tested at the final route, for example `/mcp`
+- tools, resources, and prompts use current `[McpServer*]` attributes or documented handler/filter alternatives
+- client code checks `ServerCapabilities` before using subscriptions, completions, logging, or prompt/resource list-change flows
+- Streamable HTTP is the default for new remote servers; SSE is used only for legacy compatibility
+- experimental APIs and custom serialization settings are reviewed intentionally rather than copied blindly

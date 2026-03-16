@@ -1,663 +1,319 @@
 # .NET Aspire Patterns Reference
 
-This reference provides detailed patterns for AppHost orchestration, service discovery, and integrations in .NET Aspire applications.
+Use this reference when the task is clearly about current Aspire application-host design, CLI-first workflows, `ServiceDefaults`, testing, or upgrade checkpoints.
 
-## AppHost Patterns
+## Table of Contents
 
-### Basic Application Structure
+- [CLI-first setup flows](#cli-first-setup-flows)
+- [AppHost shapes](#apphost-shapes)
+- [Current AppHost modeling patterns](#current-apphost-modeling-patterns)
+- [Dependency and configuration flow](#dependency-and-configuration-flow)
+- [ServiceDefaults boundaries](#servicedefaults-boundaries)
+- [Closed-box testing](#closed-box-testing)
+- [Upgrade checkpoints](#upgrade-checkpoints)
+- [Anti-patterns](#anti-patterns)
+
+## CLI-first setup flows
+
+### Create a new starter application
+
+Use the current Aspire CLI when the user wants a fresh distributed-app baseline:
+
+```bash
+aspire new aspire-starter --name MyShop
+cd MyShop
+aspire run
+```
+
+This gives you the modern baseline:
+
+- an AppHost for orchestration
+- a ServiceDefaults project for cross-cutting infrastructure
+- sample service projects wired into the AppHost
+- the Aspire Dashboard for local observability
+
+### Enlist an existing solution
+
+When the repo already has working services and you want to add orchestration instead of recreating the solution:
+
+```bash
+aspire init
+```
+
+Use `aspire init` when you need one of these:
+
+- an AppHost added to an existing solution
+- a file-based AppHost created quickly
+- Aspire support layered onto code that already exists
+
+### Add capabilities with the CLI
+
+Use the CLI to add official integrations or starter assets instead of hand-editing packages when the command exists:
+
+```bash
+aspire add <integration-or-starter>
+```
+
+Use `aspire add` when it improves repeatability, especially for:
+
+- common first-party integrations
+- starter resources that should match current Aspire conventions
+- reducing hand-written AppHost or project-file drift
+
+## AppHost shapes
+
+Current Aspire supports two valid AppHost styles.
+
+### Project-based AppHost
+
+Use this when the repo already uses the normal solution and project structure:
+
+```xml
+<Project Sdk="Aspire.AppHost.Sdk/<version>">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyShop.Api\MyShop.Api.csproj" />
+    <ProjectReference Include="..\MyShop.Web\MyShop.Web.csproj" />
+  </ItemGroup>
+</Project>
+```
+
+Prefer the SDK-style AppHost in current projects. Do not create new 13-era examples that manually model the older AppHost package layout as if it were the default.
+
+### File-based AppHost
+
+Use this when a lightweight single-file orchestration layer is the better fit:
 
 ```csharp
 var builder = DistributedApplication.CreateBuilder(args);
 
-// Infrastructure first
-var cache = builder.AddRedis("cache");
-var db = builder.AddPostgres("postgres").AddDatabase("appdb");
-var messaging = builder.AddRabbitMQ("messaging");
+var postgres = builder.AddPostgres("db")
+    .AddDatabase("appdata");
 
-// Services with dependencies
-var catalogApi = builder.AddProject<Projects.Catalog_Api>("catalog-api")
-    .WithReference(db)
-    .WithReference(cache);
-
-var orderApi = builder.AddProject<Projects.Order_Api>("order-api")
-    .WithReference(db)
-    .WithReference(messaging)
-    .WithReference(catalogApi);
-
-var webApp = builder.AddProject<Projects.Web_App>("webapp")
-    .WithReference(catalogApi)
-    .WithReference(orderApi)
-    .WithExternalHttpEndpoints();
+builder.AddProject<Projects.MyShop_Api>("api")
+    .WithReference(postgres)
+    .WaitFor(postgres);
 
 builder.Build().Run();
 ```
 
-### Resource Configuration Patterns
+File-based AppHosts are useful for experimentation, smaller repos, and incremental adoption. They do not automatically include a ServiceDefaults project, so create one when the services need it.
 
-#### PostgreSQL with Volumes and Parameters
+## Current AppHost modeling patterns
+
+### Minimal multi-service topology
 
 ```csharp
+var builder = DistributedApplication.CreateBuilder(args);
+
 var postgres = builder.AddPostgres("postgres")
-    .WithDataVolume("postgres-data")
-    .WithPgAdmin();
+    .AddDatabase("catalog")
+    .WithDataVolume();
 
-var catalogDb = postgres.AddDatabase("catalog");
-var orderDb = postgres.AddDatabase("orders");
-```
+var cache = builder.AddRedis("cache");
 
-#### Redis with Persistence
+var api = builder.AddProject<Projects.MyShop_Api>("api")
+    .WithReference(postgres)
+    .WithReference(cache)
+    .WaitFor(postgres)
+    .WaitFor(cache);
 
-```csharp
-var redis = builder.AddRedis("cache")
-    .WithDataVolume("redis-data")
-    .WithPersistence(TimeSpan.FromMinutes(5), 100);
-```
-
-#### SQL Server with Custom Configuration
-
-```csharp
-var sqlServer = builder.AddSqlServer("sql")
-    .WithDataVolume("sql-data")
-    .AddDatabase("appdb");
-```
-
-#### RabbitMQ with Management UI
-
-```csharp
-var rabbitmq = builder.AddRabbitMQ("messaging")
-    .WithManagementPlugin()
-    .WithDataVolume("rabbitmq-data");
-```
-
-### Multi-Project Orchestration
-
-#### Domain-Separated Services
-
-```csharp
-// Shared infrastructure
-var redis = builder.AddRedis("cache");
-var postgres = builder.AddPostgres("db");
-
-// Catalog domain
-var catalogDb = postgres.AddDatabase("catalog");
-var catalogApi = builder.AddProject<Projects.Catalog_Api>("catalog-api")
-    .WithReference(catalogDb)
-    .WithReference(redis);
-
-// Inventory domain
-var inventoryDb = postgres.AddDatabase("inventory");
-var inventoryApi = builder.AddProject<Projects.Inventory_Api>("inventory-api")
-    .WithReference(inventoryDb)
-    .WithReference(catalogApi);
-
-// Orders domain
-var ordersDb = postgres.AddDatabase("orders");
-var ordersApi = builder.AddProject<Projects.Orders_Api>("orders-api")
-    .WithReference(ordersDb)
-    .WithReference(inventoryApi)
-    .WithReference(catalogApi);
-```
-
-#### External Service References
-
-```csharp
-// Reference external APIs
-var weatherApi = builder.AddConnectionString("weather-api");
-
-var dashboard = builder.AddProject<Projects.Dashboard>("dashboard")
-    .WithReference(weatherApi);
-```
-
-### Environment and Configuration
-
-#### Environment Variables
-
-```csharp
-var api = builder.AddProject<Projects.Api>("api")
-    .WithEnvironment("ASPNETCORE_ENVIRONMENT", "Development")
-    .WithEnvironment("FeatureFlags__NewUI", "true")
-    .WithEnvironment(context =>
-    {
-        context.EnvironmentVariables["CUSTOM_VAR"] = "value";
-    });
-```
-
-#### Conditional Configuration
-
-```csharp
-var isDevelopment = builder.Environment.IsDevelopment();
-
-var api = builder.AddProject<Projects.Api>("api");
-
-if (isDevelopment)
-{
-    api.WithEnvironment("EnableSwagger", "true");
-}
-```
-
-#### Secrets and Parameters
-
-```csharp
-var apiKey = builder.AddParameter("api-key", secret: true);
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithEnvironment("ApiKey", apiKey);
-```
-
-### Container and Executable Resources
-
-#### Custom Container Images
-
-```csharp
-var maildev = builder.AddContainer("maildev", "maildev/maildev")
-    .WithHttpEndpoint(port: 1080, targetPort: 1080, name: "ui")
-    .WithEndpoint(port: 1025, targetPort: 1025, name: "smtp");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(maildev.GetEndpoint("smtp"));
-```
-
-#### Dockerfile Build
-
-```csharp
-var customService = builder.AddDockerfile("custom", "../path/to/dockerfile")
-    .WithHttpEndpoint(port: 8080);
-```
-
-#### External Executables
-
-```csharp
-var localTool = builder.AddExecutable("tool", "mytool", ".")
-    .WithArgs("--mode", "server");
-```
-
-## Service Discovery Patterns
-
-### Basic Service Discovery
-
-```csharp
-// AppHost configuration
-var api = builder.AddProject<Projects.Api>("api");
-var web = builder.AddProject<Projects.Web>("web")
+builder.AddProject<Projects.MyShop_Web>("web")
     .WithReference(api);
+
+builder.Build().Run();
 ```
 
-```csharp
-// Client service registration
-builder.Services.AddHttpClient<IApiClient, ApiClient>(client =>
-{
-    // "api" resolves via service discovery
-    client.BaseAddress = new Uri("https+http://api");
-});
-```
+What matters:
 
-### Named Endpoints
+- infrastructure resources are modeled explicitly
+- consuming services get their config through `WithReference(...)`
+- startup ordering is intentional through `WaitFor(...)`
+- the AppHost stays at topology level
 
-```csharp
-// AppHost with named endpoints
-var api = builder.AddProject<Projects.Api>("api")
-    .WithHttpEndpoint(port: 5000, name: "public")
-    .WithHttpEndpoint(port: 5001, name: "internal");
-```
+### Persistent local resources
+
+If the slow path is repeated container bootstrap rather than code changes, keep state across local AppHost restarts:
 
 ```csharp
-// Client targeting specific endpoint
-builder.Services.AddHttpClient<IPublicApiClient, PublicApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https+http://_public.api");
-});
-
-builder.Services.AddHttpClient<IInternalApiClient, InternalApiClient>(client =>
-{
-    client.BaseAddress = new Uri("https+http://_internal.api");
-});
-```
-
-### Service Discovery with Load Balancing
-
-```csharp
-// Register service discovery with selection strategy
-builder.Services.AddServiceDiscovery()
-    .AddConfigurationServiceEndpointProvider();
-
-builder.Services.ConfigureHttpClientDefaults(http =>
-{
-    http.AddServiceDiscovery();
-    http.AddStandardResilienceHandler();
-});
-```
-
-### gRPC Service Discovery
-
-```csharp
-// AppHost
-var grpcService = builder.AddProject<Projects.GrpcService>("grpc-service")
-    .WithHttpEndpoint(port: 5001, name: "grpc");
-```
-
-```csharp
-// Client registration
-builder.Services.AddGrpcClient<Greeter.GreeterClient>(options =>
-{
-    options.Address = new Uri("https://_grpc.grpc-service");
-});
-```
-
-## Integration Patterns
-
-### Caching with Redis
-
-#### AppHost Configuration
-
-```csharp
-var redis = builder.AddRedis("cache")
-    .WithRedisCommander();
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(redis);
-```
-
-#### Service Configuration
-
-```csharp
-// Program.cs
-builder.AddRedisClient("cache");
-
-// Or with output caching
-builder.AddRedisOutputCache("cache");
-
-// Or with distributed caching
-builder.AddRedisDistributedCache("cache");
-```
-
-#### Usage Pattern
-
-```csharp
-public class CatalogService
-{
-    private readonly IDistributedCache _cache;
-    private readonly IConnectionMultiplexer _redis;
-
-    public CatalogService(
-        IDistributedCache cache,
-        IConnectionMultiplexer redis)
-    {
-        _cache = cache;
-        _redis = redis;
-    }
-
-    public async Task<Product?> GetProductAsync(int id)
-    {
-        var cacheKey = $"product:{id}";
-        var cached = await _cache.GetStringAsync(cacheKey);
-
-        if (cached is not null)
-        {
-            return JsonSerializer.Deserialize<Product>(cached);
-        }
-
-        // Fetch from database and cache
-        var product = await FetchFromDatabase(id);
-        await _cache.SetStringAsync(cacheKey,
-            JsonSerializer.Serialize(product),
-            new DistributedCacheEntryOptions
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10)
-            });
-
-        return product;
-    }
-}
-```
-
-### Database Integrations
-
-#### PostgreSQL with Entity Framework Core
-
-```csharp
-// AppHost
 var postgres = builder.AddPostgres("postgres")
+    .WithDataVolume()
+    .WithLifetime(ContainerLifetime.Persistent)
     .AddDatabase("catalog");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(postgres);
 ```
 
+Use persistence deliberately. It is helpful for realistic local development, but it can hide initialization bugs if the team forgets the difference between a cold start and a reused container.
+
+### Publish-mode resource switching
+
+Use publish-mode branching when local development should use containers or emulators while published environments should use managed Azure resources:
+
 ```csharp
-// Service Program.cs
-builder.AddNpgsqlDbContext<CatalogDbContext>("catalog");
+var builder = DistributedApplication.CreateBuilder(args);
+
+var cache = builder.ExecutionContext.IsPublishMode
+    ? builder.AddAzureRedis("cache")
+    : builder.AddRedis("cache").WithDataVolume();
+
+var database = builder.ExecutionContext.IsPublishMode
+    ? builder.AddAzurePostgresFlexibleServer("db").AddDatabase("catalog")
+    : builder.AddPostgres("db").AddDatabase("catalog");
+
+builder.AddProject<Projects.MyShop_Api>("api")
+    .WithReference(cache)
+    .WithReference(database)
+    .WaitFor(cache)
+    .WaitFor(database);
 ```
 
-#### SQL Server with Entity Framework Core
+This pattern is better than trying to maintain separate hand-written local and cloud topologies.
+
+## Dependency and configuration flow
+
+Official Aspire guidance treats integrations as two related but independent layers:
+
+- hosting integrations extend `IDistributedApplicationBuilder` and model resources in the AppHost
+- client integrations wire client libraries into DI, health checks, resiliency, and telemetry
+
+Use that split intentionally.
+
+### `WithReference` is the default wiring mechanism
+
+`WithReference(...)` is the normal way to pass endpoints, connection strings, credentials, or other configuration between resources.
+
+Use it instead of:
+
+- hardcoded URLs
+- copy-pasted connection strings
+- manually synchronized environment variables
+
+### `WaitFor` is for startup order, not configuration
+
+`WaitFor(...)` solves a different problem than `WithReference(...)`.
+
+- `WithReference(...)` injects configuration and expresses the dependency edge
+- `WaitFor(...)` delays startup until the dependency is ready or healthy
+
+Use both when the consuming service should not even begin until the dependency is available.
+
+### Named endpoints
+
+Use named endpoints when a service exposes more than one surface:
 
 ```csharp
-// AppHost
-var sql = builder.AddSqlServer("sql")
-    .AddDatabase("orders");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(sql);
+var api = builder.AddProject<Projects.MyShop_Api>("api")
+    .WithHttpEndpoint(port: 5001, name: "public")
+    .WithHttpEndpoint(port: 5002, name: "internal");
 ```
 
+Named endpoints are useful for:
+
+- separating public versus internal traffic
+- gRPC and HTTP on the same service
+- routing test-only or admin endpoints distinctly
+
+## ServiceDefaults boundaries
+
+The current ServiceDefaults template exists to centralize cross-cutting infrastructure, not shared business code.
+
+### Keep it focused
+
+Good content for `ServiceDefaults`:
+
+- OpenTelemetry logging, metrics, and tracing
+- health checks
+- service discovery
+- `HttpClient` resilience defaults
+- default endpoint mapping for health endpoints
+
+Bad content for `ServiceDefaults`:
+
+- domain models
+- repository implementations
+- DTOs
+- application-specific utilities unrelated to cross-cutting infrastructure
+
+### Typical structure
+
 ```csharp
-// Service Program.cs
-builder.AddSqlServerDbContext<OrdersDbContext>("orders");
-```
-
-### Messaging with RabbitMQ
-
-#### AppHost Configuration
-
-```csharp
-var rabbitmq = builder.AddRabbitMQ("messaging")
-    .WithManagementPlugin();
-
-var producer = builder.AddProject<Projects.Producer>("producer")
-    .WithReference(rabbitmq);
-
-var consumer = builder.AddProject<Projects.Consumer>("consumer")
-    .WithReference(rabbitmq);
-```
-
-#### Service Configuration
-
-```csharp
-// Program.cs
-builder.AddRabbitMQClient("messaging");
-```
-
-#### Publisher Pattern
-
-```csharp
-public class OrderPublisher
+public static class Extensions
 {
-    private readonly IConnection _connection;
-
-    public OrderPublisher(IConnection connection)
+    public static TBuilder AddServiceDefaults<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
     {
-        _connection = connection;
-    }
+        builder.ConfigureOpenTelemetry();
+        builder.AddDefaultHealthChecks();
 
-    public async Task PublishOrderCreatedAsync(Order order)
-    {
-        using var channel = await _connection.CreateChannelAsync();
-
-        await channel.ExchangeDeclareAsync("orders", ExchangeType.Topic);
-
-        var body = JsonSerializer.SerializeToUtf8Bytes(order);
-
-        await channel.BasicPublishAsync(
-            exchange: "orders",
-            routingKey: "order.created",
-            body: body);
-    }
-}
-```
-
-#### Consumer Pattern
-
-```csharp
-public class OrderConsumer : BackgroundService
-{
-    private readonly IConnection _connection;
-
-    public OrderConsumer(IConnection connection)
-    {
-        _connection = connection;
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        using var channel = await _connection.CreateChannelAsync();
-
-        await channel.ExchangeDeclareAsync("orders", ExchangeType.Topic);
-        var queueName = await channel.QueueDeclareAsync();
-        await channel.QueueBindAsync(queueName, "orders", "order.*");
-
-        var consumer = new AsyncEventingBasicConsumer(channel);
-        consumer.ReceivedAsync += async (model, ea) =>
+        builder.Services.AddServiceDiscovery();
+        builder.Services.ConfigureHttpClientDefaults(http =>
         {
-            var order = JsonSerializer.Deserialize<Order>(ea.Body.Span);
-            // Process order
-            await channel.BasicAckAsync(ea.DeliveryTag, false);
-        };
-
-        await channel.BasicConsumeAsync(queueName, false, consumer);
-
-        await Task.Delay(Timeout.Infinite, stoppingToken);
-    }
-}
-```
-
-### Azure Service Integrations
-
-#### Azure Storage
-
-```csharp
-// AppHost
-var storage = builder.AddAzureStorage("storage");
-var blobs = storage.AddBlobs("blobs");
-var queues = storage.AddQueues("queues");
-var tables = storage.AddTables("tables");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(blobs)
-    .WithReference(queues);
-```
-
-```csharp
-// Service Program.cs
-builder.AddAzureBlobClient("blobs");
-builder.AddAzureQueueClient("queues");
-```
-
-#### Azure Service Bus
-
-```csharp
-// AppHost
-var serviceBus = builder.AddAzureServiceBus("messaging");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(serviceBus);
-```
-
-```csharp
-// Service Program.cs
-builder.AddAzureServiceBusClient("messaging");
-```
-
-#### Azure Key Vault
-
-```csharp
-// AppHost
-var keyVault = builder.AddAzureKeyVault("secrets");
-
-var api = builder.AddProject<Projects.Api>("api")
-    .WithReference(keyVault);
-```
-
-```csharp
-// Service Program.cs
-builder.AddAzureKeyVaultClient("secrets");
-```
-
-## Health Check Patterns
-
-### ServiceDefaults Health Configuration
-
-```csharp
-public static IHostApplicationBuilder AddDefaultHealthChecks(
-    this IHostApplicationBuilder builder)
-{
-    builder.Services.AddHealthChecks()
-        .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"]);
-
-    return builder;
-}
-```
-
-### Custom Health Checks
-
-```csharp
-builder.Services.AddHealthChecks()
-    .AddCheck("self", () => HealthCheckResult.Healthy(), tags: ["live"])
-    .AddNpgSql(connectionString, name: "postgres", tags: ["ready"])
-    .AddRedis(redisConnectionString, name: "redis", tags: ["ready"])
-    .AddRabbitMQ(rabbitConnectionString, name: "rabbitmq", tags: ["ready"]);
-```
-
-### Health Check Endpoints
-
-```csharp
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/alive", new HealthCheckOptions
-{
-    Predicate = r => r.Tags.Contains("live")
-});
-app.MapHealthChecks("/ready", new HealthCheckOptions
-{
-    Predicate = r => r.Tags.Contains("ready")
-});
-```
-
-## Resilience Patterns
-
-### Standard Resilience Handler
-
-```csharp
-builder.Services.ConfigureHttpClientDefaults(http =>
-{
-    http.AddStandardResilienceHandler();
-});
-```
-
-### Custom Resilience Policies
-
-```csharp
-builder.Services.AddHttpClient<ICatalogClient, CatalogClient>()
-    .AddResilienceHandler("catalog", builder =>
-    {
-        builder
-            .AddRetry(new HttpRetryStrategyOptions
-            {
-                MaxRetryAttempts = 3,
-                Delay = TimeSpan.FromMilliseconds(500),
-                BackoffType = DelayBackoffType.Exponential
-            })
-            .AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
-            {
-                SamplingDuration = TimeSpan.FromSeconds(10),
-                FailureRatio = 0.5,
-                MinimumThroughput = 10,
-                BreakDuration = TimeSpan.FromSeconds(30)
-            })
-            .AddTimeout(TimeSpan.FromSeconds(5));
-    });
-```
-
-## OpenTelemetry Configuration
-
-### Standard Configuration
-
-```csharp
-public static IHostApplicationBuilder ConfigureOpenTelemetry(
-    this IHostApplicationBuilder builder)
-{
-    builder.Logging.AddOpenTelemetry(logging =>
-    {
-        logging.IncludeFormattedMessage = true;
-        logging.IncludeScopes = true;
-    });
-
-    builder.Services.AddOpenTelemetry()
-        .WithMetrics(metrics =>
-        {
-            metrics.AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddRuntimeInstrumentation();
-        })
-        .WithTracing(tracing =>
-        {
-            tracing.AddAspNetCoreInstrumentation()
-                .AddHttpClientInstrumentation()
-                .AddGrpcClientInstrumentation();
+            http.AddStandardResilienceHandler();
+            http.AddServiceDiscovery();
         });
 
-    builder.AddOpenTelemetryExporters();
-
-    return builder;
-}
-```
-
-### Custom Metrics
-
-```csharp
-public class OrderMetrics
-{
-    private readonly Counter<int> _ordersCreated;
-    private readonly Histogram<double> _orderProcessingTime;
-
-    public OrderMetrics(IMeterFactory meterFactory)
-    {
-        var meter = meterFactory.Create("Orders");
-        _ordersCreated = meter.CreateCounter<int>("orders.created");
-        _orderProcessingTime = meter.CreateHistogram<double>("orders.processing_time");
-    }
-
-    public void OrderCreated() => _ordersCreated.Add(1);
-
-    public void RecordProcessingTime(double milliseconds) =>
-        _orderProcessingTime.Record(milliseconds);
-}
-```
-
-## Testing Patterns
-
-### Integration Testing with Aspire
-
-```csharp
-public class IntegrationTests : IClassFixture<DistributedApplicationFixture>
-{
-    private readonly DistributedApplication _app;
-
-    public IntegrationTests(DistributedApplicationFixture fixture)
-    {
-        _app = fixture.App;
-    }
-
-    [Fact]
-    public async Task ApiReturnsProducts()
-    {
-        var httpClient = _app.CreateHttpClient("api");
-
-        var response = await httpClient.GetAsync("/products");
-
-        response.EnsureSuccessStatusCode();
-        var products = await response.Content.ReadFromJsonAsync<Product[]>();
-        Assert.NotEmpty(products);
+        return builder;
     }
 }
 ```
 
-### Test Fixture
+Current official guidance also keeps health endpoints and tracing filters aligned with these defaults. Do not fork this pattern casually unless the repo truly needs a custom shared-hosting baseline.
 
-```csharp
-public class DistributedApplicationFixture : IAsyncLifetime
-{
-    public DistributedApplication App { get; private set; } = null!;
+## Closed-box testing
 
-    public async Task InitializeAsync()
-    {
-        var appHost = await DistributedApplicationTestingBuilder
-            .CreateAsync<Projects.MyApp_AppHost>();
+Use Aspire testing when the requirement is to exercise the distributed system as a system instead of unit-testing a single component.
 
-        App = await appHost.BuildAsync();
-        await App.StartAsync();
-    }
+Prefer Aspire testing for:
 
-    public async Task DisposeAsync()
-    {
-        await App.DisposeAsync();
-    }
-}
+- end-to-end flows across multiple services
+- verifying resource startup and wiring
+- validating service discovery and real HTTP or messaging paths
+- regression tests around the AppHost topology
+
+Do not reach for Aspire testing when:
+
+- a plain xUnit or NUnit test against one class is enough
+- the service logic can be verified entirely in-process
+- the AppHost topology is irrelevant to the assertion
+
+Testing is especially important for:
+
+- ensuring `WithReference(...)` and `WaitFor(...)` match the intended runtime graph
+- catching broken resource names or renamed endpoints
+- proving a version upgrade did not silently break orchestration
+
+## Upgrade checkpoints
+
+When modernizing older Aspire solutions, verify these points explicitly:
+
+1. The team is using the current Aspire CLI, and the upgrade path starts there.
+2. The AppHost project uses the current SDK-style layout rather than retaining older manual AppHost package wiring by inertia.
+3. The AppHost target framework is aligned with current tooling expectations for Aspire 13-era projects.
+4. The repo has removed assumptions about the old workload-based setup when those assumptions no longer apply.
+5. ServiceDefaults remains a narrow infrastructure project instead of having accumulated random shared code over time.
+
+Use:
+
+```bash
+aspire update
 ```
+
+Pair the CLI upgrade with a review of:
+
+- AppHost project structure
+- project references
+- integration package versions
+- test coverage for the distributed topology
+- local run and dashboard behavior
+
+## Anti-Patterns
+
+- Treating the AppHost like an ordinary application project with business logic, service implementations, or repo-specific glue.
+- Using `WithEnvironment(...)` as the first answer when `WithReference(...)` or a normal integration already models the dependency correctly.
+- Assuming `WithExternalHttpEndpoints()` belongs on every web project. It should follow runtime needs, especially publish targets such as App Service.
+- Modeling a large topology with vague resource names like `service1` and `db2`, then expecting logs and traces to remain understandable.
+- Carrying an obsolete 8.x or 9.x setup pattern into new samples or new repos without a compatibility reason.

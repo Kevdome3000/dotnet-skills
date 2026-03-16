@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import glob
 import hashlib
 import html
 import json
@@ -28,6 +29,75 @@ def load_json(path: Path, default: Any) -> Any:
 def dump_json(path: Path, data: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+
+
+def resolve_config_paths(config_reference: str) -> list[Path]:
+    if any(char in config_reference for char in "*?[]"):
+        paths = [Path(path_str) for path_str in sorted(glob.glob(config_reference))]
+        if not paths:
+            raise ValueError(f"No config files matched pattern: {config_reference}")
+        return paths
+
+    base_path = Path(config_reference)
+    if not base_path.exists():
+        raise ValueError(f"Config file not found: {config_reference}")
+
+    paths = [base_path]
+    sibling_pattern = f"{base_path.stem}*{base_path.suffix}"
+    excluded_names = {
+        base_path.name,
+        f"{base_path.stem}-state{base_path.suffix}",
+    }
+    for sibling in sorted(base_path.parent.glob(sibling_pattern)):
+        if sibling == base_path:
+            continue
+        if sibling.name in excluded_names:
+            continue
+        paths.append(sibling)
+    return paths
+
+
+def merge_raw_configs(config_paths: list[Path]) -> dict[str, Any]:
+    merged: dict[str, Any] = {
+        "github_releases": [],
+        "documentation": [],
+    }
+    labels_source: Path | None = None
+    watch_issue_label_source: Path | None = None
+
+    for path in config_paths:
+        raw_config = load_json(path, default={})
+        if not isinstance(raw_config, dict):
+            raise ValueError(f"Config file {path} must contain a JSON object")
+
+        if "watch_issue_label" in raw_config:
+            value = raw_config["watch_issue_label"]
+            if watch_issue_label_source is None:
+                merged["watch_issue_label"] = value
+                watch_issue_label_source = path
+            elif merged.get("watch_issue_label") != value:
+                raise ValueError(
+                    f"Conflicting watch_issue_label between {watch_issue_label_source} and {path}"
+                )
+
+        if "labels" in raw_config:
+            value = raw_config["labels"]
+            if labels_source is None:
+                merged["labels"] = value
+                labels_source = path
+            elif merged.get("labels") != value:
+                raise ValueError(f"Conflicting labels between {labels_source} and {path}")
+
+        for key in ("github_releases", "documentation"):
+            value = raw_config.get(key, [])
+            if value in (None, []):
+                continue
+            if not isinstance(value, list):
+                raise ValueError(f"{key} in {path} must be a list")
+            merged[key].extend(value)
+
+    merged.setdefault("labels", [])
+    return merged
 
 
 def slugify(value: str) -> str:
@@ -534,16 +604,17 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    config_path = Path(args.config)
+    config_paths = resolve_config_paths(args.config)
     state_path = Path(args.state)
 
-    raw_config = load_json(config_path, default={})
+    raw_config = merge_raw_configs(config_paths)
     config = normalize_config(raw_config)
     if args.validate_config:
+        config_paths_text = ", ".join(f"`{path}`" for path in config_paths)
         summary = [
             "# Upstream Watch Config",
             "",
-            f"- Config: `{config_path}`",
+            f"- Config files: {config_paths_text}",
             f"- GitHub release watches: `{sum(1 for watch in config['watches'] if watch['kind'] == 'github_release')}`",
             f"- Documentation watches: `{sum(1 for watch in config['watches'] if watch['kind'] == 'http_document')}`",
             f"- Total watches: `{len(config['watches'])}`",
@@ -563,7 +634,7 @@ def main() -> int:
     summary = [
         "# Upstream Watch",
         "",
-        f"- Config: `{config_path}`",
+        f"- Config files: {', '.join(f'`{path}`' for path in config_paths)}",
         f"- State: `{state_path}`",
         f"- Dry run: `{args.dry_run}`",
         f"- Sync state only: `{args.sync_state_only}`",

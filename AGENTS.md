@@ -74,6 +74,15 @@ Do not record:
 - temporary exceptions
 - requirements that are already captured elsewhere without change
 
+### Provided Source Links
+
+- When a user provides one or more source URLs for a skill, agent, or durable documentation task, inspect those URLs directly before editing the repository.
+- Prefer Playwright for user-provided website and documentation links so the page structure, navigation, and primary content are reviewed from the live source.
+- For GitHub repository links, inspect the repository page and the relevant primary materials such as `README`, docs, samples, releases, or package references before turning the source into a skill.
+- For Microsoft Learn or other official documentation sites, review the relevant navigation and primary guidance pages from the provided documentation set before writing or materially revising a skill.
+- Do not rely on memory or third-party summaries when the user has already provided authoritative source links.
+- When a skill is built from a large official documentation set, include a references file that maps the documentation tree with direct links to the relevant pages, including quickstarts, samples, and example-oriented pages instead of only a small curated subset.
+
 ## Global Skills
 
 List only the skills this repository actually uses for its own maintenance workflows.
@@ -133,7 +142,8 @@ Other important repository files:
 - [`.github/workflows/catalog-check.yml`](.github/workflows/catalog-check.yml): CI validation for generated catalog outputs.
 - [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml): release workflow for remote `catalog-v*` assets consumed by the tool.
 - [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml): release workflow for the installable `dotnet-skills` package.
-- [`.github/upstream-watch.json`](.github/upstream-watch.json): human-maintained upstream watch configuration with two lists: `github_releases` and `documentation`.
+- [`.github/upstream-watch.json`](.github/upstream-watch.json): base upstream watch metadata file for labels and shared defaults.
+- [`.github/upstream-watch*.json`](.github/): optional upstream watch config shards that hold the human-maintained `github_releases` and `documentation` lists.
 - [`.github/upstream-watch-state.json`](.github/upstream-watch-state.json): machine-maintained baseline state.
 - [`.github/workflows/upstream-watch.yml`](.github/workflows/upstream-watch.yml): scheduled workflow.
 - [`tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj`](tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj): publishable `.NET` tool that installs the catalog through `dotnet skills ...`.
@@ -170,6 +180,7 @@ Before adding a new skill:
 2. Confirm the framework or feature is important enough to justify a dedicated skill.
 3. Prefer official Microsoft or first-party documentation to shape the content.
 4. Check whether the capability is already covered indirectly by a broader skill such as `dotnet`, `dotnet-architecture`, or `dotnet-aspire`.
+5. For `.NET`-scoped skills, prefer `.NET` and C# API references, samples, and watch coverage. Do not add Python-only API references or Python-only upstream watches unless the user explicitly asks for cross-language coverage.
 
 When creating a new skill:
 
@@ -178,7 +189,7 @@ When creating a new skill:
 3. Add `agents/` only when the skill needs one or more tightly coupled specialist agents that should live next to that skill.
 4. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
 5. Update any related [`README.md`](README.md) notes and regenerate the catalog outputs.
-6. If the skill tracks a major framework or Microsoft surface, update the relevant list in [`.github/upstream-watch.json`](.github/upstream-watch.json).
+6. If the skill tracks a major framework or Microsoft surface, update the relevant upstream watch shard under [`.github/upstream-watch*.json`](.github/).
 
 ## When Adding or Updating an Agent
 
@@ -198,8 +209,9 @@ When creating a new agent:
 1. Choose whether it belongs in `agents/<agent-slug>/AGENT.md` or `skills/<skill-slug>/agents/<agent-slug>/AGENT.md`.
 2. Keep each agent in its own folder; flat loose agent files in the repo are not the canonical source layout.
 3. Add `AGENT.md` with a clear role and routing scope.
-4. Reference the relevant `dotnet-*` skills it is expected to orchestrate.
-5. Keep validation explicit: what a good completion looks like, what the agent should hand off, and what it should refuse.
+4. Prefer concise, role-based agent slugs. Avoid awkward names that simply repeat the full parent skill slug with a generic suffix like `-specialist` when a shorter slug such as `agent-framework-router` or `aspire-orchestrator` would be clearer.
+5. Reference the relevant `dotnet-*` skills it is expected to orchestrate.
+6. Keep validation explicit: what a good completion looks like, what the agent should hand off, and what it should refuse.
 
 ## `SKILL.md` Requirements
 
@@ -231,6 +243,11 @@ Content rules:
 - `version` must use semantic versioning and must be bumped when the skill guidance materially changes.
 - `category` must match the supported README catalog categories.
 - When a skill explains non-trivial implementation details, integration flow, component boundaries, or decision logic, add at least one Mermaid diagram instead of leaving the explanation text-only.
+- When mirroring or bundling official documentation into a skill's `references/`, also extract the main operational guidance into `SKILL.md` or curated reference summaries. Do not leave the skill usable only as a raw documentation dump.
+- When mirroring official docs into a skill snapshot, keep only high-signal, skill-useful markdown. Do not vendor project files, snippets trees, media folders, images, TOC scaffolding, DocFX support files, or Python-only pages unless they are directly necessary for the skill.
+- If a mirrored Learn page still contains raw `:::code`, `:::image`, or similar source-asset directives after those assets were excluded, strip those directives from the local snapshot instead of keeping broken references.
+- Do not leave orphaned reference files in a skill. Every meaningful file under `references/` must be reachable through an explicit Markdown link path from `SKILL.md` or from an index file that `SKILL.md` links directly.
+- The top-level `dotnet-ai` orchestration agent should treat Microsoft Agent Framework and Microsoft.Extensions.AI as a combined primary surface when tasks span agent orchestration and `IChatClient`-based provider composition.
 
 ## Diagramming Rules
 
@@ -345,11 +362,14 @@ For GitHub automation:
 
 The upstream automation exists so the skill catalog stays current without requiring manual ecosystem monitoring.
 
-Human-maintained configuration lives directly in [`.github/upstream-watch.json`](.github/upstream-watch.json).
+Human-maintained upstream watch configuration lives in a small base file plus optional shard files in the same `.github/` folder:
 
-Keep the file obvious.
+- [`.github/upstream-watch.json`](.github/upstream-watch.json) for shared metadata such as `watch_issue_label` and `labels`
+- [`.github/upstream-watch*.json`](.github/) for shard files such as `upstream-watch.ai.json`, `upstream-watch.data.json`, or `upstream-watch-agent-framework.json`
 
-It should contain exactly two human-maintained lists:
+Keep the layout obvious.
+
+Every shard may contain the same two human-maintained lists:
 
 - `github_releases`
 - `documentation`
@@ -373,7 +393,15 @@ Optional fields are allowed only when needed:
 - `exclude_tag_regex`
 - `include_prereleases`
 
-`scripts/upstream_watch.py` derives `kind`, source coordinates, and default metadata at runtime.
+`scripts/upstream_watch.py` loads the base file plus every matching `upstream-watch*.json` shard except `upstream-watch-state.json`, then derives `kind`, source coordinates, and default metadata at runtime.
+
+Sharding rules:
+
+- Prefer a small number of semantic shards such as `ai`, `data`, `platform`, `managedcode`, or `agent-framework`
+- Keep shard names semantic and review-friendly
+- Do not create numbered fragments such as `10/20/30`
+- Do not introduce `.d` directory indirection for this config
+- Keep `watch_issue_label` and `labels` in the base `upstream-watch.json` file unless there is a strong reason not to
 
 Supported kinds:
 
@@ -488,7 +516,7 @@ This repository should behave like a maintainable documentation-and-automation s
 - Canonical `dotnet-*` skill IDs in the repository, with short aliases in CLI commands.
 - Agent-aware install flows that understand Codex, Claude, Copilot, and Gemini instead of assuming one shared folder layout.
 - Official agent standards and native agent layouts instead of repo-local pseudo-standards.
-- One human-maintained upstream watch file with two obvious lists: `github_releases` and `documentation`.
+- One obvious upstream watch config surface: a small base file plus optional shard files with the same two obvious lists: `github_releases` and `documentation`.
 - Minimal watch entries: `source` plus related skills, with optional overrides only when really needed.
 - English-only durable docs and skill content.
 - Catalog manifest generation in CI release workflows instead of relying on contributor-local regeneration.
