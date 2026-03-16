@@ -15,6 +15,12 @@ MANIFEST_PATH = ROOT / "catalog" / "skills.json"
 
 BEGIN_MARKER = "<!-- BEGIN GENERATED CATALOG -->"
 END_MARKER = "<!-- END GENERATED CATALOG -->"
+README_SKILLS_BADGE_PATTERN = re.compile(
+    r"(\[!\[Skills\]\(https://img\.shields\.io/badge/skills-)([^-)]+)(-blue\)\]\(#catalog\))"
+)
+README_SKILLS_INTRO_PATTERN = re.compile(
+    r"(This catalog fixes that\. \*\*)([^*]+)(\*\* covering the entire \.NET ecosystem)"
+)
 
 CATEGORY_ORDER = [
     "Core",
@@ -141,31 +147,49 @@ def render_catalog(skills: list[dict[str, str]]) -> str:
     return "\n".join(lines)
 
 
-def update_readme(rendered_catalog: str) -> bool:
-    readme = README_PATH.read_text()
+def apply_readme_count_metadata(readme: str, skill_count: int) -> str:
+    badge_updated, badge_replacements = README_SKILLS_BADGE_PATTERN.subn(
+        lambda match: f"{match.group(1)}{skill_count}{match.group(3)}",
+        readme,
+        count=1,
+    )
+    if badge_replacements != 1:
+        raise ValueError("README.md is missing the generated skills badge pattern")
+
+    intro_updated, intro_replacements = README_SKILLS_INTRO_PATTERN.subn(
+        lambda match: f"{match.group(1)}{skill_count} skills{match.group(3)}",
+        badge_updated,
+        count=1,
+    )
+    if intro_replacements != 1:
+        raise ValueError("README.md is missing the generated intro skill count pattern")
+
+    return intro_updated
+
+
+def render_readme(readme: str, rendered_catalog: str, skill_count: int) -> str:
+    updated = apply_readme_count_metadata(readme, skill_count)
     pattern = re.compile(
         rf"{re.escape(BEGIN_MARKER)}.*?{re.escape(END_MARKER)}",
         flags=re.DOTALL,
     )
-    if not pattern.search(readme):
+    if not pattern.search(updated):
         raise ValueError("README.md is missing generated catalog markers")
 
-    updated = pattern.sub(rendered_catalog, readme)
+    return pattern.sub(rendered_catalog, updated)
+
+
+def update_readme(rendered_catalog: str, skill_count: int) -> bool:
+    readme = README_PATH.read_text()
+    updated = render_readme(readme, rendered_catalog, skill_count)
     changed = updated != readme
     README_PATH.write_text(updated)
     return changed
 
 
-def check_readme(rendered_catalog: str) -> bool:
+def check_readme(rendered_catalog: str, skill_count: int) -> bool:
     readme = README_PATH.read_text()
-    pattern = re.compile(
-        rf"{re.escape(BEGIN_MARKER)}.*?{re.escape(END_MARKER)}",
-        flags=re.DOTALL,
-    )
-    match = pattern.search(readme)
-    if not match:
-        raise ValueError("README.md is missing generated catalog markers")
-    return match.group(0) == rendered_catalog
+    return render_readme(readme, rendered_catalog, skill_count) == readme
 
 
 def write_manifest(skills: list[dict[str, str]]) -> None:
@@ -219,7 +243,7 @@ def main() -> int:
         return 0
 
     if args.check:
-        readme_ok = check_readme(rendered_catalog)
+        readme_ok = check_readme(rendered_catalog, len(skills))
         manifest_ok = check_manifest(skills)
         if not readme_ok or not manifest_ok:
             if not readme_ok:
@@ -230,7 +254,7 @@ def main() -> int:
         print("Catalog is up to date.")
         return 0
 
-    update_readme(rendered_catalog)
+    update_readme(rendered_catalog, len(skills))
     write_manifest(skills)
     print(f"Generated catalog for {len(skills)} skills.")
     return 0
