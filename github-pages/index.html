@@ -729,46 +729,64 @@
 
     /* Platforms Section */
     .agents-section {
-      background: var(--bg-secondary);
-      border-radius: var(--radius-lg);
-      padding: 42px 32px;
+      background: linear-gradient(180deg, #f9fafc 0%, #f6f8fb 100%);
+      border-radius: 28px;
+      padding: 38px 28px 34px;
       margin: 48px 0;
       text-align: center;
+      border: 1px solid rgba(226, 232, 240, 0.9);
     }
 
     .agents-section h2 {
       font-size: 1.75rem;
-      font-weight: 600;
-      margin-bottom: 12px;
+      font-weight: 700;
+      margin-bottom: 10px;
       color: var(--text-primary);
     }
 
     .agents-section > p {
       color: var(--text-secondary);
-      margin-bottom: 28px;
+      margin: 0 auto 24px;
+      max-width: 700px;
+      font-size: 1.02rem;
     }
 
-    .agents-grid {
+    .agents-section .agents-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 20px;
-      max-width: 1040px;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 18px;
+      max-width: 1180px;
       margin: 0 auto;
+      align-items: stretch;
     }
 
-    .agent-card {
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #ffffff 100%);
-      border: 1px solid var(--border-color);
+    .agents-section .agent-card {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, #ffffff 100%);
+      border: 1px solid rgba(214, 223, 235, 0.95);
       border-radius: 22px;
-      padding: 24px;
+      padding: 22px 22px 20px;
       text-align: left;
       transition: all 0.2s;
-      box-shadow: var(--shadow-sm);
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .agent-card:hover {
-      border-color: var(--accent-primary);
-      box-shadow: var(--shadow-md);
+    .agents-section .agent-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(255, 126, 93, 0.85), rgba(99, 102, 241, 0.45));
+      opacity: 0.9;
+    }
+
+    .agents-section .agent-card:hover {
+      border-color: rgba(255, 126, 93, 0.55);
+      box-shadow: 0 14px 34px rgba(15, 23, 42, 0.09);
       transform: translateY(-2px);
     }
 
@@ -776,7 +794,7 @@
       display: flex;
       align-items: center;
       gap: 14px;
-      margin-bottom: 16px;
+      margin-bottom: 2px;
     }
 
     .agent-logo {
@@ -830,42 +848,50 @@
       line-height: 1.25;
     }
 
-    .agent-summary {
+    .agents-section .agent-summary {
       color: var(--text-secondary);
-      font-size: 0.92rem;
-      line-height: 1.6;
-      margin-bottom: 18px;
-      min-height: 72px;
+      font-size: 0.95rem;
+      line-height: 1.58;
+      margin-bottom: 0;
+      min-height: 0;
     }
 
-    .agent-path-grid {
+    .agents-section .agent-path-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
+      margin-top: auto;
     }
 
-    .agent-path-item {
-      background: var(--bg-secondary);
+    .agents-section .agent-path-item {
+      background: rgba(248, 250, 252, 0.96);
+      border: 1px solid rgba(226, 232, 240, 0.95);
       border-radius: 14px;
-      padding: 12px;
+      padding: 12px 14px;
+      display: grid;
+      grid-template-columns: 58px minmax(0, 1fr);
+      gap: 12px;
+      align-items: center;
     }
 
-    .agent-path-item code {
+    .agents-section .agent-path-item code {
       display: block;
-      margin-top: 6px;
-      color: var(--text-secondary);
-      font-size: 0.78rem;
+      margin-top: 0;
+      color: var(--text-primary);
+      font-size: 0.82rem;
       font-family: 'SF Mono', 'Fira Code', monospace;
-      line-height: 1.55;
-      word-break: break-all;
+      line-height: 1.35;
+      white-space: nowrap;
+      word-break: normal;
+      overflow-wrap: normal;
     }
 
-    .agent-path-item .path-label {
-      font-size: 0.7rem;
+    .agents-section .agent-path-item .path-label {
+      font-size: 0.68rem;
       color: var(--text-muted);
       font-family: 'Inter', sans-serif;
       text-transform: uppercase;
       letter-spacing: 0.08em;
+      line-height: 1.2;
     }
 
     /* CTA Section */
@@ -1234,8 +1260,14 @@
         display: none;
       }
 
-      .agent-path-grid {
+      .agents-section .agent-path-item {
         grid-template-columns: 1fr;
+        gap: 6px;
+      }
+
+      .agents-section .agent-path-item code {
+        white-space: normal;
+        overflow-wrap: anywhere;
       }
 
       .nav-links {
@@ -1295,6 +1327,10 @@
         <div class="stat">
           <div class="stat-value" id="skill-count">62</div>
           <div class="stat-label">Skills</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="agent-count">6</div>
+          <div class="stat-label">Agents</div>
         </div>
         <div class="stat">
           <div class="stat-value">4</div>
@@ -1489,8 +1525,60 @@
             <td>dotnet skills install blazor --agent claude</td>
             <td>Install for a specific platform</td>
           </tr>
+          <tr>
+            <td>dotnet skills agent list</td>
+            <td>List available orchestration agents</td>
+          </tr>
+          <tr>
+            <td>dotnet skills agent install router ai</td>
+            <td>Install orchestration agents</td>
+          </tr>
+          <tr>
+            <td>dotnet skills agent install --all --auto</td>
+            <td>Install all agents to all detected platforms</td>
+          </tr>
         </tbody>
       </table>
+    </section>
+
+    <!-- Orchestration Agents Section -->
+    <section class="about-section" id="agents">
+      <h2>Orchestration Agents</h2>
+      <p style="text-align: center; color: var(--text-secondary); margin-bottom: 24px;">
+        Higher-level agents that route work to the right skills. Install them to get intelligent task routing.
+      </p>
+      <div class="agents-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px;">
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-router</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Broad .NET triage agent that classifies repos and routes work to the right skills.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install router</code>
+        </div>
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-ai</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">AI-focused agent for Semantic Kernel, Agent Framework, MCP, and ML.NET.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install ai</code>
+        </div>
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-build</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Build-focused agent for restore, build, test, packaging, and CI failures.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install build</code>
+        </div>
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-data</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Data-access agent for EF Core, EF6, migrations, and persistence strategy.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install data</code>
+        </div>
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-modernization</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Modernization agent for upgrades, migrations, and legacy code transformation.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install modernization</code>
+        </div>
+        <div class="agent-card" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 20px;">
+          <h3 style="font-size: 1.1rem; margin-bottom: 8px;">dotnet-review</h3>
+          <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">Review agent for code review, analyzers, testing, and architecture.</p>
+          <code style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px;">dotnet skills agent install review</code>
+        </div>
+      </div>
     </section>
 
     <section class="search-section" id="catalog">
@@ -1517,7 +1605,7 @@
 
     <section class="agents-section">
       <h2>Supported Platforms</h2>
-      <p>Install the same catalog into the coding platform your team already uses.</p>
+      <p>One catalog, native install locations, and no manual remapping between personal and repo-local setups.</p>
       <div class="agents-grid">
         <div class="agent-card">
           <div class="agent-brand">
@@ -1527,15 +1615,15 @@
               <div class="agent-name">Claude Code</div>
             </div>
           </div>
-          <p class="agent-summary">Uses Claude's native project and home-directory layouts, so installs stay where Claude Code expects them.</p>
+          <p class="agent-summary">Installs into Claude Code's native agent folders, whether you want a machine-wide setup or a checked-in repo path.</p>
           <div class="agent-path-grid">
             <div class="agent-path-item">
               <div class="path-label">Global</div>
-              <code>~/.claude/agents/</code>
+              <code>~/.claude/agents</code>
             </div>
             <div class="agent-path-item">
               <div class="path-label">Project</div>
-              <code>.claude/agents/</code>
+              <code>.claude/agents</code>
             </div>
           </div>
         </div>
@@ -1547,15 +1635,15 @@
               <div class="agent-name">GitHub Copilot</div>
             </div>
           </div>
-          <p class="agent-summary">Targets Copilot skill folders directly, whether you want a personal install or a repo-local `.github/skills` setup.</p>
+          <p class="agent-summary">Targets Copilot skill folders directly for both personal installs and checked-in repository workflows.</p>
           <div class="agent-path-grid">
             <div class="agent-path-item">
               <div class="path-label">Global</div>
-              <code>~/.copilot/skills/</code>
+              <code>~/.copilot/skills</code>
             </div>
             <div class="agent-path-item">
               <div class="path-label">Project</div>
-              <code>.github/skills/</code>
+              <code>.github/skills</code>
             </div>
           </div>
         </div>
@@ -1567,15 +1655,15 @@
               <div class="agent-name">Gemini</div>
             </div>
           </div>
-          <p class="agent-summary">Keeps Gemini installs aligned between your personal environment and repo-local `.gemini/skills` folders.</p>
+          <p class="agent-summary">Keeps Gemini installs consistent between your personal environment and repo-local project folders.</p>
           <div class="agent-path-grid">
             <div class="agent-path-item">
               <div class="path-label">Global</div>
-              <code>~/.gemini/skills/</code>
+              <code>~/.gemini/skills</code>
             </div>
             <div class="agent-path-item">
               <div class="path-label">Project</div>
-              <code>.gemini/skills/</code>
+              <code>.gemini/skills</code>
             </div>
           </div>
         </div>
@@ -1587,15 +1675,15 @@
               <div class="agent-name">Codex</div>
             </div>
           </div>
-          <p class="agent-summary">Matches Codex skill locations for both personal use and checked-in repo workflows without extra adapter steps.</p>
+          <p class="agent-summary">Matches Codex skill locations for both home-directory installs and checked-in repo workflows without extra adapters.</p>
           <div class="agent-path-grid">
             <div class="agent-path-item">
               <div class="path-label">Global</div>
-              <code>~/.codex/skills/</code>
+              <code>~/.codex/skills</code>
             </div>
             <div class="agent-path-item">
               <div class="path-label">Project</div>
-              <code>.codex/skills/</code>
+              <code>.codex/skills</code>
             </div>
           </div>
         </div>

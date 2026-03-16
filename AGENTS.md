@@ -13,9 +13,10 @@ This file defines how AI agents work in this repository.
 
 - Root `AGENTS.md` holds the global workflow, repository structure, release and automation policy, and skill-catalog maintenance rules.
 - This repository currently uses only the root `AGENTS.md`; add a nearer local `AGENTS.md` only when a subtree needs stricter or more specialized rules.
-- The repository has two equally important responsibilities:
+- The repository has three equally important responsibilities:
   1. Maintain a high-quality `skills/` catalog for modern and legacy `.NET`.
-  2. Maintain automation that watches official upstream releases and documentation so the catalog can be refreshed when the ecosystem changes.
+  2. Maintain repo-owned orchestration `agents/` that route broader tasks into the right skills or narrower agents.
+  3. Maintain automation that watches official upstream releases and documentation so the catalog can be refreshed when the ecosystem changes.
 
 If this repository contains executable code, it must exist only to distribute or install the skill catalog itself, for example as a publishable `dotnet tool`.
 Do not turn this repository into a general application or unrelated tooling codebase.
@@ -27,6 +28,7 @@ Follow official or documented agent standards where they exist; do not present a
 
 - Solution root: `.`
 - Areas with specialized responsibilities:
+  - `agents/`: top-level orchestration agents that sit above the skill catalog, one folder per agent
   - `skills/`: canonical skill catalog
   - `tools/ManagedCode.DotnetSkills/`: publishable `dotnet-skills` installer tool
   - `scripts/`: catalog generation and upstream-watch automation
@@ -86,13 +88,28 @@ If work touches `.NET` code in this repository:
 ## Canonical Layout
 
 The canonical skill tree is [`skills/`](/Users/ksemenenko/Developer/dotnet-skills/skills).
+The canonical top-level agent tree is [`agents/`](/Users/ksemenenko/Developer/dotnet-skills/agents).
 
 Expected layout:
 
 ```text
+agents/
+├── README.md
+└── <agent-slug>/
+    ├── AGENT.md
+    ├── scripts/        # optional
+    ├── references/     # optional
+    └── assets/         # optional
+
 skills/<skill-slug>/
 ├── SKILL.md
 ├── scripts/            # optional
+├── agents/             # optional skill-scoped agents
+│   └── <agent-slug>/
+│       ├── AGENT.md
+│       ├── scripts/    # optional
+│       ├── references/ # optional
+│       └── assets/     # optional
 ├── references/         # optional
 └── assets/             # optional
 ```
@@ -104,6 +121,7 @@ Other important repository files:
 - [`.github/copilot-instructions.md`](/Users/ksemenenko/Developer/dotnet-skills/.github/copilot-instructions.md): Copilot adapter that points GitHub Copilot to the repository-wide rules.
 - [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md): public catalog and repository overview.
 - [`CONTRIBUTING.md`](/Users/ksemenenko/Developer/dotnet-skills/CONTRIBUTING.md): contributor workflow for skills, versions, descriptions, and watch entries.
+- [`agents/README.md`](/Users/ksemenenko/Developer/dotnet-skills/agents/README.md): index of repo-owned orchestration agents and layout conventions.
 - [`catalog/skills.json`](/Users/ksemenenko/Developer/dotnet-skills/catalog/skills.json): machine-readable generated skill manifest used for release packaging and tool fallback content.
 - [`.github/workflows/catalog-check.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/catalog-check.yml): CI validation for generated catalog outputs.
 - [`.github/workflows/publish-catalog.yml`](/Users/ksemenenko/Developer/dotnet-skills/.github/workflows/publish-catalog.yml): release workflow for remote `catalog-v*` assets consumed by the tool.
@@ -150,9 +168,31 @@ When creating a new skill:
 
 1. Create `skills/<skill-slug>/`.
 2. Add `SKILL.md`.
-3. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
-4. Update any related [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) notes and regenerate the catalog outputs.
-5. If the skill tracks a major framework or Microsoft surface, update the relevant list in [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
+3. Add `agents/` only when the skill needs one or more tightly coupled specialist agents that should live next to that skill.
+4. Add `references/` only if extra material is genuinely useful and not better kept in `SKILL.md`.
+5. Update any related [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) notes and regenerate the catalog outputs.
+6. If the skill tracks a major framework or Microsoft surface, update the relevant list in [`.github/upstream-watch.json`](/Users/ksemenenko/Developer/dotnet-skills/.github/upstream-watch.json).
+
+## When Adding or Updating an Agent
+
+Agents are a parallel orchestration layer above the skill catalog.
+
+Use these placement rules:
+
+1. Put broad, reusable routing agents in [`agents/`](/Users/ksemenenko/Developer/dotnet-skills/agents).
+2. Put tightly coupled specialist agents in `skills/<skill-slug>/agents/<agent-slug>/AGENT.md` when they only make sense next to one skill or one framework surface.
+3. Use top-level agents when they orchestrate a group of related skills; use skill-scoped agents when they should travel with one specific skill and rely on that skill for detailed implementation guidance.
+4. Keep agents focused on triage, routing, orchestration, and bounded role behavior; keep detailed implementation guidance in `SKILL.md`.
+5. Make the linked skill set explicit, so reviewers can see what the agent is expected to orchestrate.
+6. Update [`README.md`](/Users/ksemenenko/Developer/dotnet-skills/README.md) and [`CONTRIBUTING.md`](/Users/ksemenenko/Developer/dotnet-skills/CONTRIBUTING.md) when the public agent catalog shape changes.
+
+When creating a new agent:
+
+1. Choose whether it belongs in `agents/<agent-slug>/AGENT.md` or `skills/<skill-slug>/agents/<agent-slug>/AGENT.md`.
+2. Keep each agent in its own folder; flat loose agent files in the repo are not the canonical source layout.
+3. Add `AGENT.md` with a clear role and routing scope.
+4. Reference the relevant `dotnet-*` skills it is expected to orchestrate.
+5. Keep validation explicit: what a good completion looks like, what the agent should hand off, and what it should refuse.
 
 ## `SKILL.md` Requirements
 
@@ -238,6 +278,8 @@ Rules:
 - Keep only the manual base version in the project file; CI must derive the publish version automatically by appending the GitHub run number as the numeric patch segment.
 - Do not require or document local `dotnet tool install --add-source ...` smoke tests for contributors; validate installability in CI instead and keep user-facing docs focused on the public NuGet install flow.
 - Keep canonical skill IDs namespaced as `dotnet-*` in the repository, but let the CLI accept short aliases such as `aspire` or `orleans` in commands.
+- Treat repo-owned orchestration agents as a parallel catalog layer; do not force the first rollout of agents into the current `dotnet-skills` CLI lifecycle before the repo structure and docs are stable.
+- Canonical repo-owned agents live in folder-per-agent layouts with `AGENT.md`; runtime-specific `.agent.md` or native Claude files are adapters, not the source of truth.
 - The installer must account for Codex, Claude, Copilot, and Gemini target layouts instead of assuming only one global skills directory.
 - `SKILL.md` is the canonical skill contract; vendor-specific files are adapters.
 - For Copilot, use the native `SKILL.md` layout in `.github/skills` or `~/.copilot/skills`.
@@ -254,6 +296,7 @@ Rules:
 - Automatic catalog versions should use the numeric calendar-plus-run format `<year>.<month>.<day>.<run>`; do not add letter prefixes such as `r` or `ci` in release tags or titles.
 - The NuGet tool publish workflow must ignore `catalog-v*` releases so catalog content publishes never trigger package pushes by accident.
 - The tool should use the newest non-draft `catalog-v*` GitHub release by default and fall back to bundled content only when the remote catalog is unavailable.
+- The bare `dotnet skills` usage view is still a normal startup path and must surface the same automatic self-update notice as other startup commands, unless update checks are explicitly suppressed.
 - Local `dotnet build` and `dotnet pack` for the tool may generate a temporary manifest in `obj/` from `skills/*/SKILL.md`; release CI remains the canonical place that generates checked catalog outputs and release assets.
 
 ## GitHub Pages Rules
@@ -272,6 +315,7 @@ Rules:
 - Dark terminal-like aesthetic with monospace fonts is the intended design language.
 - When the site refers to Claude Code, GitHub Copilot, Gemini, and Codex, present them as supported platforms or assistants that consume the catalog, not as repository-owned "AI agents".
 - Supported-platform sections on the site should use clearly differentiated brand-like tiles or logos instead of generic repeated cards.
+- Supported-platform path examples must stay readable at a glance: avoid aggressive word-breaking, tiny dual-column chips, or layouts that split short filesystem paths into visual fragments.
 - Footer copyright years on the public site must be generated from the build year during page generation; do not hardcode stale years in the HTML template.
 - The public landing page should use tighter spacing rhythm than the current default: avoid oversized shell padding, overly tall card interiors, or loose gaps between onboarding steps and sidebar blocks.
 
@@ -378,6 +422,13 @@ For skill and docs changes:
 - `python3 scripts/generate_catalog.py --validate-only`
 - run `python3 scripts/generate_catalog.py` locally only when you explicitly need a preview of the generated README and manifest
 
+For agent and docs changes:
+
+- Verify the new agent folder exists in `agents/<agent>/` or `skills/<skill>/agents/<agent>/`.
+- Verify `AGENT.md` exists inside that folder.
+- Verify the placement matches the intended scope: broad agents top-level, tightly coupled agents under a skill.
+- Verify README and contributing docs explain the new agent surface accurately.
+
 For dotnet tool changes:
 
 - `dotnet build dotnet-skills.slnx`
@@ -434,6 +485,8 @@ This repository should behave like a maintainable documentation-and-automation s
 - English-only durable docs and skill content.
 - Catalog manifest generation in CI release workflows instead of relying on contributor-local regeneration.
 - Compact, readable CLI output that favors grouped summaries and short status views over giant wrapped tables.
+- Top-level orchestration agents for broad `.NET` routing, with optional skill-scoped specialist agents that live next to the relevant skill when they are tightly coupled.
+- Folder-per-agent source layout, so every agent can carry its own references, assets, scripts, and future adapter metadata.
 - The public landing page Quick Start section must look polished and intentionally composed; it should be one of the strongest visual sections on the site, not a loose grid of equally weighted cards.
 - Public site copy should frame Claude Code, GitHub Copilot, Gemini, and Codex as supported platforms with recognizable brand-style presentation, not as "AI agents".
 - Public landing page spacing should feel deliberate and compact; excessive whitespace between cards, sections, and step content is a regression.
@@ -448,6 +501,8 @@ This repository should behave like a maintainable documentation-and-automation s
 - User-facing command examples that require the `dotnet-` prefix when the CLI can resolve a short alias.
 - Local contributor workflows built around `dotnet tool install --add-source artifacts/nuget`.
 - Treating checked-in `catalog/skills.json` as the source of truth instead of `skills/*/SKILL.md`.
+- Forcing every new agent into either only the top-level catalog or only the skill tree; broad agents and skill-scoped agents are both valid when used deliberately.
+- Flat loose `.agent.md` files as the canonical repo source format for agents.
 - Default CLI views that dump the entire catalog as a wide multi-line table with heavily wrapped descriptions.
 - Weak or awkward Quick Start layout on the public landing page, especially when the onboarding steps look visually scattered or poorly prioritized.
 - Misleading public site wording that calls the supported platforms "AI agents" instead of showing them as platforms that use the skill catalog.

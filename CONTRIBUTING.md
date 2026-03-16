@@ -13,6 +13,7 @@ The goal is to make usage of a library or project explicit, concrete, and reusab
 Please contribute:
 
 - New `dotnet-*` skills for important libraries, frameworks, and integrations.
+- New orchestration agents in `agents/` for broad routing roles, or in `skills/<skill>/agents/` for tightly coupled specialist behavior.
 - Improvements to existing skills when usage guidance is incomplete or outdated.
 - Upstream watch entries for projects that should trigger refresh issues when a new release or documentation change happens.
 - Documentation improvements when a skill description, version, category, or compatibility statement is unclear.
@@ -120,6 +121,41 @@ skills/<skill-slug>/
 ```
 
 `SKILL.md` is the only required file. It uses the universal Agent Skills format with YAML frontmatter (name, description) that works across Claude, Copilot, Gemini, and Codex.
+
+## Required Files For A New Agent
+
+Agent placement depends on scope:
+
+- broad orchestration agents live in `agents/<agent-slug>/AGENT.md`
+- tightly coupled specialist agents live in `skills/<skill-slug>/agents/<agent-slug>/AGENT.md`
+- top-level agents usually orchestrate a group of related skills, while skill-scoped agents usually ship as a narrow companion to one skill
+
+Use this decision rule:
+
+- if the agent routes across multiple skills or domains, put it in `agents/`
+- if the agent only makes sense next to one skill or one framework surface, put it under that skill
+
+A minimal top-level layout:
+
+```text
+agents/
+├── README.md
+└── <agent-name>/
+    ├── AGENT.md
+    ├── scripts/       # optional
+    ├── references/    # optional
+    └── assets/        # optional
+```
+
+An agent file should:
+
+- define the role clearly
+- say when to invoke it
+- list the `dotnet-*` skills it is expected to orchestrate
+- explain its boundaries and what it should hand off
+
+Keep detailed implementation instructions in `SKILL.md`. Use agents for routing, triage, and bounded role behavior.
+Do not store agents as loose flat `.agent.md` source files in the repo; folder-per-agent is the canonical source layout here.
 
 ## README and Catalog
 
