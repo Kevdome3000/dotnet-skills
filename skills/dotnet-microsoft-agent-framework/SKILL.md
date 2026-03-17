@@ -1,6 +1,6 @@
 ---
 name: dotnet-microsoft-agent-framework
-version: "1.4.0"
+version: "1.5.0"
 category: "AI"
 description: "Build .NET AI agents and multi-agent workflows with Microsoft Agent Framework using the right agent type, threads, tools, workflows, hosting protocols, and enterprise guardrails."
 compatibility: "Requires preview-era Microsoft Agent Framework packages and a .NET application that truly needs agentic or workflow orchestration."
@@ -11,9 +11,10 @@ compatibility: "Requires preview-era Microsoft Agent Framework packages and a .N
 ## Trigger On
 
 - building or reviewing `.NET` code that uses `Microsoft.Agents.*`, `Microsoft.Extensions.AI`, `AIAgent`, `AgentThread`, or Agent Framework hosting packages
-- choosing between `ChatClientAgent`, Responses agents, hosted agents, custom agents, workflows, or durable agents
+- choosing between `ChatClientAgent`, Responses agents, hosted agents, custom agents, Anthropic agents, workflows, or durable agents
 - adding tools, MCP, A2A, OpenAI-compatible hosting, AG-UI, DevUI, background responses, or OpenTelemetry
 - migrating from Semantic Kernel agent APIs or aligning AutoGen-style multi-agent patterns to Agent Framework
+- using Anthropic Claude models (haiku, sonnet, opus) via `AnthropicClient` or through Azure Foundry with `AnthropicFoundryClient`
 
 ## Workflow
 
@@ -65,6 +66,7 @@ flowchart LR
 | OpenAI-style future-facing APIs, background responses, or richer response state | Responses-based agent | Better fit for new OpenAI-compatible integrations |
 | Simple client-managed chat history | Chat Completions agent | Keeps request/response simple |
 | Service-hosted agents and service-owned threads/tools | Azure AI Foundry Agent or other hosted agent | Managed runtime is the requirement |
+| Anthropic Claude models (haiku, sonnet, opus) directly or via Azure Foundry | `AnthropicClient.AsAIAgent(...)` or `AnthropicFoundryClient.AsAIAgent(...)` | Use `Microsoft.Agents.AI.Anthropic`; add `Anthropic.Foundry` for Azure-hosted Claude |
 | Typed multi-step orchestration | `Workflow` | Control flow stays explicit and testable |
 | Week-long or failure-resilient Azure execution | Durable agent on Azure Functions | Durable Task gives replay and persisted state |
 | Agent-to-agent interoperability | A2A hosting or A2A proxy agent | This is protocol-level delegation, not local inference |
