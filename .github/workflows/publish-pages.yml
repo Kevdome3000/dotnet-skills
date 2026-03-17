@@ -1,17 +1,12 @@
-name: Publish GitHub Pages
+name: Publish GitHub Pages (fallback)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "skills/**"
-      - "agents/**"
-      - "github-pages/**"
-      - "scripts/generate_pages.py"
-      - "scripts/generate_catalog.py"
-      - "scripts/generate_agent_catalog.py"
-      - ".github/workflows/publish-pages.yml"
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: "Optional reason for manual rerender/deploy of GitHub Pages"
+        required: false
+        type: string
   workflow_dispatch:
 
 permissions:

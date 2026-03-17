@@ -60,7 +60,7 @@ The bare `dotnet skills` usage view and `help` path also perform the automatic s
 
 Use `dotnet skills version --no-check` when you only want the local installed tool version without calling NuGet. Set `DOTNET_SKILLS_SKIP_UPDATE_CHECK=1` if you want to suppress automatic update notices during normal command startup.
 
-Catalog releases are published automatically from `main` when `skills/` or catalog-generation inputs change. Automatic catalog versions use a numeric calendar-plus-run format such as `2026.3.15.42`. The tool reads the newest non-draft `catalog-v*` release by default, and `--catalog-version` is only for intentional pinning.
+Catalog releases are published automatically in `.github/workflows/publish-catalog.yml` and include a `catalog-v*` release plus regeneration/deployment of GitHub Pages in the same run. Automatic catalog versions use a numeric calendar-plus-run format such as `2026.3.15.42`. The tool reads the newest non-draft `catalog-v*` release by default, and `--catalog-version` is only for intentional pinning.
 
 ## Agent Support
 

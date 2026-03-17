@@ -12,9 +12,16 @@ on:
 
 permissions:
   contents: write
+  pages: write
+  id-token: write
 
 env:
   CATALOG_TAG_PREFIX: "catalog-v"
+  DOTNET_SKILLS_SITE_URL: https://managedcode.github.io/dotnet-skills/
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   publish:
@@ -35,6 +42,13 @@ jobs:
           latest_tag=$(git tag --list "${{ env.CATALOG_TAG_PREFIX }}*" --sort=-v:refname | head -n 1)
           main_ref="origin/main"
 
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.catalog_version }}" ]]; then
+            echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
+            echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+            echo "override=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           if [[ -z "$latest_tag" ]]; then
             if [[ "$(git rev-list --count "$main_ref")" -gt 0 ]]; then
               echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
@@ -42,6 +56,7 @@ jobs:
               echo "has_new_commits=false" >> "$GITHUB_OUTPUT"
             fi
             echo "latest_tag=" >> "$GITHUB_OUTPUT"
+            echo "override=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
@@ -54,6 +69,7 @@ jobs:
           fi
 
           echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
+          echo "override=false" >> "$GITHUB_OUTPUT"
 
       - name: Skip release when main has no new commits
         if: steps.changes.outputs.has_new_commits != 'true'
@@ -140,3 +156,26 @@ jobs:
           fi
 
           gh release upload "$tag" artifacts/catalog-release/dotnet-skills-manifest.json artifacts/catalog-release/dotnet-skills-catalog.zip --clobber
+
+      - name: Generate GitHub Pages payload
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: python3 scripts/generate_agent_catalog.py
+
+      - name: Render GitHub Pages
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: python3 scripts/generate_pages.py
+
+      - name: Setup Pages
+        if: steps.changes.outputs.has_new_commits == 'true'
+        uses: actions/configure-pages@v5
+
+      - name: Upload GitHub Pages artifact
+        if: steps.changes.outputs.has_new_commits == 'true'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "artifacts/github-pages"
+
+      - name: Deploy GitHub Pages
+        id: pages_deploy
+        if: steps.changes.outputs.has_new_commits == 'true'
+        uses: actions/deploy-pages@v4

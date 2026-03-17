@@ -251,13 +251,17 @@ The workflow resolves the publish version in CI as `<VersionPrefix>.<GITHUB_RUN_
 
 Skill content releases are separate from NuGet tool releases.
 
-Catalog releases are published automatically by [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) on pushes to `main` when catalog-source inputs change.
+Catalog releases are published automatically by [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) and include:
+
+- building and publishing the `catalog-v*` release assets
+- generating `artifacts/github-pages`
+- deploying GitHub Pages in the same release run
 
 Rules:
 
 - catalog release tags must use `catalog-v<version>`
 - the automatic catalog version format is `<year>.<month>.<day>.<run>`, for example `2026.3.15.42`
-- the normal flow is automatic on `main`; do not treat manual dispatch as the primary release path
+- the normal flow is automatic by schedule; do not treat manual dispatch as the primary release path
 - the workflow generates fresh catalog outputs in CI from `skills/*/SKILL.md`
 - the tool resolves the latest remote catalog from the newest non-draft `catalog-v*` GitHub release
 - the workflow uploads two assets:
