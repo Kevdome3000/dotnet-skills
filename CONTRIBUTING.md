@@ -219,7 +219,7 @@ This repository also publishes an installable `.NET` tool for consumers of the c
 
 The tool is for distribution of the catalog itself, not for general repo maintenance.
 It now uses remote GitHub catalog releases by default and only falls back to the bundled catalog when remote sync is unavailable.
-Do not publish a new NuGet package for every catalog-only change.
+Do not trigger ad-hoc publish runs for every merge; the unified `04:00` UTC release workflow publishes the tool, catalog release, and site together.
 
 CLI naming rule:
 
@@ -237,21 +237,19 @@ Agent target rule:
 - for Codex, use `.codex/skills` for explicit `--agent codex` installs and keep `.agents/skills` only as the legacy shared fallback
 - for Gemini, use `.gemini/skills` for explicit `--agent gemini` installs, but keep compatibility with existing shared `.agents/skills` layouts during auto-detect
 
-Publishing is handled by [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml).
+Publishing is handled by [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml).
 
 Preferred publish model:
 
 1. Add the `NUGET_API_KEY` repository secret
 2. Keep only the manual base version in [`tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj`](tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj) as `<VersionPrefix>major.minor</VersionPrefix>`
-3. Let [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml) publish automatically from `main` when tool-source inputs change, or trigger it manually only for a backfill or rerun
+3. Let [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) publish automatically at `04:00` UTC after merges to `main`, or trigger it manually only for a backfill or rerun
 
 The workflow resolves the publish version in CI as `<VersionPrefix>.<GITHUB_RUN_NUMBER>` and pushes the produced `.nupkg` to NuGet. For example, a checked-in `0.0` base version becomes `0.0.412` on run `412`.
 
 ## Catalog Releases
 
-Skill content releases are separate from NuGet tool releases.
-
-Catalog releases are published automatically by [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) and include:
+The nightly release workflow also handles catalog and site publishing. It includes:
 
 - building and publishing the `catalog-v*` release assets
 - generating `artifacts/github-pages`

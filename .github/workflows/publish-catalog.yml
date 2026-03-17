@@ -1,4 +1,4 @@
-name: Publish Catalog Release
+name: Release
 
 on:
   schedule:
@@ -18,14 +18,25 @@ permissions:
 env:
   CATALOG_TAG_PREFIX: "catalog-v"
   DOTNET_SKILLS_SITE_URL: https://managedcode.github.io/dotnet-skills/
+  DOTNET_VERSION: "10.0.x"
+  SOLUTION_FILE: "dotnet-skills.slnx"
+  TOOL_PROJECT: "tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj"
+  PACKAGE_SOURCE: "https://api.nuget.org/v3/index.json"
+  PACKAGE_OUTPUT_GLOB: "artifacts/nuget/*.nupkg"
 
 concurrency:
-  group: "pages"
+  group: "release"
   cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
+    environment: release
+    outputs:
+      should_release: ${{ steps.changes.outputs.has_new_commits }}
+      catalog_version: ${{ steps.version.outputs.version }}
+      catalog_tag: ${{ steps.version.outputs.tag }}
+      package_version: ${{ steps.package_version.outputs.package_version }}
 
     steps:
       - name: Check out repository
@@ -42,44 +53,39 @@ jobs:
           latest_tag=$(git tag --list "${{ env.CATALOG_TAG_PREFIX }}*" --sort=-v:refname | head -n 1)
           main_ref="origin/main"
 
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && -n "${{ inputs.catalog_version }}" ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
             echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
             echo "override=true" >> "$GITHUB_OUTPUT"
+            echo "reason=manual_dispatch" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           if [[ -z "$latest_tag" ]]; then
-            echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
+            if [[ "$(git rev-list --count "$main_ref")" -gt 0 ]]; then
+              echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "has_new_commits=false" >> "$GITHUB_OUTPUT"
+            fi
             echo "latest_tag=" >> "$GITHUB_OUTPUT"
             echo "override=false" >> "$GITHUB_OUTPUT"
             echo "reason=initial_catalog_release" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          changed_files="$(git diff --name-only "$latest_tag" "$main_ref")"
+          commits_since_tag=$(git rev-list --count "${latest_tag}..${main_ref}")
 
-          has_new_commits=false
-          while IFS= read -r file; do
-            case "$file" in
-              skills/*|agents/*|scripts/generate_catalog.py|scripts/generate_agent_catalog.py|scripts/generate_pages.py|github-pages/index.html|README.md|.github/upstream-watch*.json|.github/workflows/publish-catalog.yml|.github/workflows/publish-pages.yml)
-                has_new_commits=true
-                break
-                ;;
-            esac
-          done <<< "$changed_files"
-
-          echo "has_new_commits=$has_new_commits" >> "$GITHUB_OUTPUT"
-          echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
-          echo "override=false" >> "$GITHUB_OUTPUT"
-          echo "reason=$([ "$has_new_commits" = "true" ] && echo relevant_changes || echo no_relevant_changes)" >> "$GITHUB_OUTPUT"
-          echo "Changed files since last catalog tag:"
-          echo "$changed_files"
+          if [[ "$commits_since_tag" -gt 0 ]]; then
+            echo "has_new_commits=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_new_commits=false" >> "$GITHUB_OUTPUT"
+          fi
 
           echo "latest_tag=$latest_tag" >> "$GITHUB_OUTPUT"
           echo "override=false" >> "$GITHUB_OUTPUT"
+          echo "reason=$([ "$commits_since_tag" -gt 0 ] && echo commits_since_last_release || echo no_new_commits)" >> "$GITHUB_OUTPUT"
 
-      - name: Skip release when main has no new commits
+      - name: Skip release when no new commits exist
         if: steps.changes.outputs.has_new_commits != 'true'
         shell: bash
         run: |
@@ -90,6 +96,12 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
+      - name: Set up .NET
+        if: steps.changes.outputs.has_new_commits == 'true'
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: Validate catalog version
         if: steps.changes.outputs.has_new_commits == 'true'
@@ -117,6 +129,44 @@ jobs:
         if: steps.changes.outputs.has_new_commits == 'true'
         run: python3 scripts/generate_catalog.py
 
+      - name: Determine package version
+        if: steps.changes.outputs.has_new_commits == 'true'
+        id: package_version
+        shell: bash
+        run: |
+          base_version=$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' "${{ env.TOOL_PROJECT }}" | head -n 1 | tr -d '[:space:]')
+
+          if [[ -z "$base_version" ]]; then
+            echo "VersionPrefix is required in ${{ env.TOOL_PROJECT }}." >&2
+            exit 1
+          fi
+
+          if [[ ! "$base_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+            echo "VersionPrefix must use <major>.<minor>. Got: $base_version" >&2
+            exit 1
+          fi
+
+          version="${base_version}.${GITHUB_RUN_NUMBER}"
+
+          echo "base_version=$base_version" >> "$GITHUB_OUTPUT"
+          echo "package_version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build dotnet tool
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: dotnet build "${{ env.SOLUTION_FILE }}" -c Release -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.package_version.outputs.package_version }}"
+
+      - name: Run dotnet tests
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: dotnet test "${{ env.SOLUTION_FILE }}" -c Release --no-build -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.package_version.outputs.package_version }}"
+
+      - name: Pack dotnet tool
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: dotnet pack "${{ env.SOLUTION_FILE }}" -c Release --no-build -p:ContinuousIntegrationBuild=true -p:Version="${{ steps.package_version.outputs.package_version }}"
+
+      - name: Smoke test installable tool
+        if: steps.changes.outputs.has_new_commits == 'true'
+        run: bash scripts/smoke_test_tool.sh artifacts/nuget
+
       - name: Package catalog release assets
         if: steps.changes.outputs.has_new_commits == 'true'
         shell: bash
@@ -139,6 +189,14 @@ jobs:
           path: artifacts/catalog-release/*
           if-no-files-found: error
 
+      - name: Upload NuGet package artifact
+        if: steps.changes.outputs.has_new_commits == 'true'
+        uses: actions/upload-artifact@v6
+        with:
+          name: managedcode-dotnet-skills-${{ steps.package_version.outputs.package_version }}
+          path: ${{ env.PACKAGE_OUTPUT_GLOB }}
+          if-no-files-found: error
+
       - name: Create or update catalog release
         if: steps.changes.outputs.has_new_commits == 'true'
         env:
@@ -148,9 +206,10 @@ jobs:
           tag='${{ steps.version.outputs.tag }}'
           title="Catalog ${{ steps.version.outputs.version }}"
           notes=$(cat <<EOF
-          Automated catalog release for dotnet-skills content.
+          Automated nightly release for dotnet-skills.
 
           Source commit: ${{ github.sha }}
+          Tool package version: ${{ steps.package_version.outputs.package_version }}
           Assets:
           - dotnet-skills-manifest.json
           - dotnet-skills-catalog.zip
@@ -164,6 +223,46 @@ jobs:
           fi
 
           gh release upload "$tag" artifacts/catalog-release/dotnet-skills-manifest.json artifacts/catalog-release/dotnet-skills-catalog.zip --clobber
+
+      - name: Publish to NuGet
+        if: steps.changes.outputs.has_new_commits == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${{ secrets.NUGET_API_KEY }}" ]]; then
+            echo "NUGET_API_KEY is required for NuGet publish." >&2
+            exit 1
+          fi
+
+          shopt -s nullglob
+          packages=( ${{ env.PACKAGE_OUTPUT_GLOB }} )
+          if [[ ${#packages[@]} -eq 0 ]]; then
+            echo "No NuGet packages found for publish." >&2
+            exit 1
+          fi
+
+          for package in "${packages[@]}"; do
+            exit_code=0
+            echo "Publishing $package..."
+            result=$(dotnet nuget push "$package" \
+              --api-key "${{ secrets.NUGET_API_KEY }}" \
+              --source "${{ env.PACKAGE_SOURCE }}" \
+              --skip-duplicate 2>&1) || exit_code=$?
+
+            echo "$result"
+
+            if [[ "$exit_code" -eq 0 ]]; then
+              continue
+            fi
+
+            if echo "$result" | grep -qi "already exists"; then
+              echo "Package already exists, skipping."
+              continue
+            fi
+
+            exit "$exit_code"
+          done
 
       - name: Generate GitHub Pages payload
         if: steps.changes.outputs.has_new_commits == 'true'
@@ -183,7 +282,15 @@ jobs:
         with:
           path: "artifacts/github-pages"
 
+  deploy-pages:
+    if: needs.release.outputs.should_release == 'true'
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
       - name: Deploy GitHub Pages
-        id: pages_deploy
-        if: steps.changes.outputs.has_new_commits == 'true'
+        id: deployment
         uses: actions/deploy-pages@v4

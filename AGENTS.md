@@ -46,7 +46,7 @@ Follow official or documented agent standards where they exist; do not present a
 ## Path And Linking Rules
 
 - Never commit personal or machine-specific absolute filesystem paths such as `/Users/...`, `/home/...`, or `C:\Users\...` in repository docs, generated site files, manifests, examples, or contributor guidance.
-- In repository-facing Markdown, prefer repo-relative links such as `README.md`, `skills/`, or `.github/workflows/publish-tool.yml` instead of workstation-local absolute paths.
+- In repository-facing Markdown, prefer repo-relative links such as `README.md`, `skills/`, or `.github/workflows/publish-catalog.yml` instead of workstation-local absolute paths.
 - For path examples, use portable placeholders such as `~/...`, `/path/to/...`, `<repo-root>/...`, or product-native paths that are not tied to one contributor machine.
 - Before committing docs or generated artifacts, scan the diff for leaked local paths and remove them.
 
@@ -151,9 +151,8 @@ Other important repository files:
 - [`CONTRIBUTING.md`](CONTRIBUTING.md): contributor workflow for skills, versions, descriptions, and watch entries.
 - [`agents/README.md`](agents/README.md): index of repo-owned orchestration agents and layout conventions.
 - [`catalog/skills.json`](catalog/skills.json): machine-readable generated skill manifest used for release packaging and tool fallback content.
-- [`.github/workflows/catalog-check.yml`](.github/workflows/catalog-check.yml): CI validation for generated catalog outputs.
-- [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml): release workflow for remote `catalog-v*` assets consumed by the tool.
-- [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml): release workflow for the installable `dotnet-skills` package.
+- [`.github/workflows/catalog-check.yml`](.github/workflows/catalog-check.yml): pull-request validation workflow for generated catalog outputs and tool smoke checks.
+- [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml): unified 04:00 UTC release workflow for `catalog-v*` assets, NuGet tool publish, and GitHub Pages deployment.
 - [`.github/upstream-watch.json`](.github/upstream-watch.json): base upstream watch metadata file for labels and shared defaults.
 - [`.github/upstream-watch*.json`](.github/): optional upstream watch config shards that hold the human-maintained `github_releases` and `documentation` lists.
 - [`.github/upstream-watch-state.json`](.github/upstream-watch-state.json): machine-maintained baseline state.
@@ -166,7 +165,6 @@ Other important repository files:
 - [`scripts/upstream_watch.py`](scripts/upstream_watch.py): watch runner.
 - [`github-pages/index.html`](github-pages/index.html): template for the public skills directory website.
 - [`scripts/generate_pages.py`](scripts/generate_pages.py): generates the GitHub Pages site with embedded skills and agents data.
-- [`.github/workflows/publish-pages.yml`](.github/workflows/publish-pages.yml): deploys the skills directory website to GitHub Pages.
 
 ## Skill Naming Rules
 
@@ -300,8 +298,7 @@ Generated catalog outputs:
 
 Canonical generation point:
 
-- [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) for remote catalog releases
-- [`.github/workflows/publish-tool.yml`](.github/workflows/publish-tool.yml) for the bundled fallback catalog inside the published `.nupkg`
+- [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) for remote catalog releases, the bundled fallback catalog inside the published `.nupkg`, and GitHub Pages deployment
 
 ## Dotnet Tool Rules
 
@@ -331,12 +328,13 @@ Rules:
 - For Codex, use the native `.codex/skills` layout for explicit Codex installs, and keep `.agents/skills` only as a legacy shared fallback when no platform-specific folder exists.
 - When `--agent` is omitted for skill installation, the tool must install into every already existing platform folder it detects in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`. Only when none of those folders exist may it fall back to creating `.agents/skills` in the current project.
 - Auto-install must not create an extra `.agents/skills` fallback when one or more platform-specific folders such as `.codex`, `.claude`, `.github`, or `.gemini` already exist. In that case it writes only to the folders that are already present.
-- Use the same NuGet publish pattern as other ManagedCode repositories: publish from `publish-tool.yml` with `dotnet nuget push` and the `NUGET_API_KEY` secret inside the shell step.
+- Use the same NuGet publish pattern as other ManagedCode repositories: publish from `publish-catalog.yml` with `dotnet nuget push` and the `NUGET_API_KEY` secret inside the shell step.
 - Do not reference `secrets.*` in GitHub Actions `if:` expressions for NuGet publish branching; keep secret-dependent logic inside the shell step instead.
 - Publish workflows should derive the package version from the checked-in base version plus the CI run number instead of relying on a manually typed patch version.
-- The tool publish workflow should run automatically on `main` for tool-source changes; keep `workflow_dispatch` only as a fallback rerun path, not the primary publish path.
-- Remote skill content should be published separately from the tool through `publish-catalog.yml` as `catalog-v*` GitHub releases with `dotnet-skills-manifest.json` and `dotnet-skills-catalog.zip` assets.
-- Catalog releases must be published automatically from `main` when `skills/*/SKILL.md` or other catalog-source inputs change; manual dispatch may exist only as a fallback or backfill path, not as the primary workflow.
+- Keep exactly two primary workflows for release mechanics: `catalog-check.yml` for pull-request validation and `publish-catalog.yml` for the unified nightly release.
+- The unified release workflow must run at `04:00` UTC, publish the NuGet tool, create/update the `catalog-v*` GitHub release, and deploy GitHub Pages in the same pipeline.
+- The unified release workflow should publish when `main` has new commits since the last `catalog-v*` release; manual dispatch may exist only as a fallback or backfill path, not as the primary workflow.
+- Remote skill content and the NuGet tool should be released from the same scheduled workflow, with `catalog-v*` release assets staying `dotnet-skills-manifest.json` and `dotnet-skills-catalog.zip`.
 - Automatic catalog versions should use the numeric calendar-plus-run format `<year>.<month>.<day>.<run>`; do not add letter prefixes such as `r` or `ci` in release tags or titles.
 - The NuGet tool publish workflow must ignore `catalog-v*` releases so catalog content publishes never trigger package pushes by accident.
 - The tool should use the newest non-draft `catalog-v*` GitHub release by default and fall back to bundled content only when the remote catalog is unavailable.
@@ -352,7 +350,7 @@ Rules:
 - The website source lives in `github-pages/index.html` as a template with a `SKILLS_DATA_PLACEHOLDER` marker.
 - `scripts/generate_pages.py` reads `catalog/skills.json` and `catalog/agents.json` and injects the public catalog data into the template.
 - The generated site is output to `artifacts/github-pages/` which is gitignored.
-- `publish-pages.yml` runs on `main` when `skills/`, `agents/`, `github-pages/`, or page-generation scripts change.
+- GitHub Pages deployment runs inside `publish-catalog.yml` as part of the unified nightly release.
 - The website displays the full skill catalog with search, category filters, installation commands, and a visible orchestration-agents section sourced from the repo catalog.
 - Keep the website focused on skill discovery and installation; do not expand it into unrelated documentation.
 - The website must show the `dotnet skills install <skill>` command pattern for each skill.
@@ -497,6 +495,7 @@ For catalog release changes:
 
 - Verify [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) still publishes `catalog-v*` releases.
 - Verify the release assets remain `dotnet-skills-manifest.json` and `dotnet-skills-catalog.zip`.
+- Verify the same workflow still publishes the NuGet tool and deploys GitHub Pages.
 
 For GitHub Pages changes:
 
@@ -504,7 +503,7 @@ For GitHub Pages changes:
 - `python3 -m py_compile scripts/generate_pages.py`
 - `python3 scripts/generate_pages.py`
 - Verify `artifacts/github-pages/index.html` was generated with embedded skills data
-- Verify [`.github/workflows/publish-pages.yml`](.github/workflows/publish-pages.yml) still deploys to GitHub Pages
+- Verify [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml) still deploys GitHub Pages in the nightly release
 
 For automation changes:
 
