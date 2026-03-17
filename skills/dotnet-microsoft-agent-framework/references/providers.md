@@ -31,9 +31,9 @@ If you start from the SDK alone, you usually miss the thread and hosting consequ
 | --- | --- | --- | --- | --- |
 | Any `IChatClient` | `new ChatClientAgent(chatClient, ...)` or `chatClient.AsAIAgent(...)` | Depends on provider | Broadest integration surface | Tooling and history are only as good as the concrete client |
 | Azure OpenAI Chat Completions | `AzureOpenAIClient(...).GetChatClient(...).AsAIAgent(...)` | Local or custom store | Simple chat flows | You own conversation persistence |
-| Azure OpenAI Responses | `AzureOpenAIClient(...).GetOpenAIResponseClient(...).AsAIAgent(...)` | Service-backed or local, depending on mode | New OpenAI-style apps | Preview packages and mode-specific behavior |
+| Azure OpenAI Responses | `AzureOpenAIClient(...).GetResponsesClient(...).AsAIAgent(...)` | Service-backed or local, depending on mode | New OpenAI-style apps | Preview packages and mode-specific behavior |
 | OpenAI Chat Completions | `OpenAIClient(...).GetChatClient(...).AsAIAgent(...)` | Local or custom store | Straightforward request/response chat | No service-backed history by default |
-| OpenAI Responses | `OpenAIClient(...).GetOpenAIResponseClient(...).AsAIAgent(...)` | Service-backed or local, depending on mode | Long-running or richer response flows | Requires discipline about state mode |
+| OpenAI Responses | `OpenAIClient(...).GetResponsesClient(...).AsAIAgent(...)` | Service-backed or local, depending on mode | Long-running or richer response flows | Requires discipline about state mode |
 | Azure AI Foundry Agents | `PersistentAgentsClient.CreateAIAgentAsync(...)` | Service-stored only | Managed agent resources and managed tools | Lower portability and provider-specific lifecycle |
 | OpenAI Assistants | provider-specific assistant client `CreateAIAgentAsync(...)` | Service-stored only | Existing assistant workloads | Not the forward-looking default |
 | A2A proxy agent | A2A client/proxy agent | Remote service-managed | Calling remote agents | Not a model provider choice |

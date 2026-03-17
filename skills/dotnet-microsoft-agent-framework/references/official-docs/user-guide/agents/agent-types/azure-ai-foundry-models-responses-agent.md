@@ -5,7 +5,7 @@ zone_pivot_groups: programming-languages
 author: jozkee
 ms.topic: tutorial
 ms.author: dacantu
-ms.date: 10/22/2025
+ms.date: 03/17/2026
 ms.service: agent-framework
 ---
 
@@ -36,12 +36,14 @@ using System.ClientModel.Primitives;
 using Azure.Identity;
 using Microsoft.Agents.AI;
 using OpenAI;
+using OpenAI.Responses;
 
-var clientOptions = new OpenAIClientOptions() { Endpoint = new Uri("https://<myresource>.services.ai.azure.com/openai/v1/") };
+var clientOptions = new OpenAIClientOptions() { Endpoint = new Uri("https://ai-foundry-<myresource>.services.ai.azure.com/openai/v1/") };
 
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
-OpenAIClient client = new OpenAIClient(new BearerTokenPolicy(new AzureCliCredential(), "https://ai.azure.com/.default"), clientOptions);
-#pragma warning restore OPENAI001
+// WARNING: DefaultAzureCredential is convenient for development but requires careful consideration in production.
+// In production, consider using a specific credential (e.g., ManagedIdentityCredential) to avoid
+// latency issues, unintended credential probing, and potential security risks from fallback mechanisms.
+OpenAIClient client = new OpenAIClient(new BearerTokenPolicy(new DefaultAzureCredential(), "https://ai.azure.com/.default"), clientOptions);
 // You can optionally authenticate with an API key
 // OpenAIClient client = new OpenAIClient(new ApiKeyCredential("<your_api_key>"), clientOptions);
 ```
@@ -49,12 +51,10 @@ OpenAIClient client = new OpenAIClient(new BearerTokenPolicy(new AzureCliCredent
 A client for responses can then be created using the model deployment name.
 
 ```csharp
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates.
-var responseClient = client.GetOpenAIResponseClient("gpt-4o-mini");
-#pragma warning restore OPENAI001
+var responseClient = client.GetResponsesClient("gpt-4o-mini");
 ```
 
-Finally, the agent can be created using the `AsAIAgent` extension method on the `ResponseClient`.
+Finally, the agent can be created using the `AsAIAgent` extension method on the `ResponsesClient`.
 
 ```csharp
 AIAgent agent = responseClient.AsAIAgent(
