@@ -7,7 +7,6 @@ on:
         description: "Optional reason for manual rerender/deploy of GitHub Pages"
         required: false
         type: string
-  workflow_dispatch:
 
 permissions:
   contents: read
