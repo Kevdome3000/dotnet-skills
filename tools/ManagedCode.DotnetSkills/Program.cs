@@ -801,6 +801,7 @@ internal static class Program
 
     private static async Task<int> RunAgentListAsync(string[] args)
     {
+        string? targetPath = null;
         string? projectDirectory = null;
         var agent = AgentPlatform.Auto;
         var scope = InstallScope.Project;
@@ -809,6 +810,9 @@ internal static class Program
         {
             switch (args[index])
             {
+                case "--target":
+                    targetPath = ReadValue(args, ++index, "--target");
+                    break;
                 case "--agent":
                     agent = SkillInstallTarget.ParseAgent(ReadValue(args, ++index, "--agent"));
                     break;
@@ -826,7 +830,7 @@ internal static class Program
         await MaybeShowToolUpdateAsync(null);
 
         var agentCatalog = AgentCatalogPackage.LoadBundled();
-        var layout = AgentInstallTarget.Resolve(null, agent, scope, projectDirectory);
+        var layout = AgentInstallTarget.Resolve(targetPath, agent, scope, projectDirectory);
         var installer = new AgentInstaller(agentCatalog);
         var installedAgents = installer.GetInstalledAgents(layout);
 
@@ -837,6 +841,7 @@ internal static class Program
     private static async Task<int> RunAgentInstallAsync(string[] args)
     {
         var requestedAgents = new List<string>();
+        string? targetPath = null;
         string? projectDirectory = null;
         var installAll = false;
         var force = false;
@@ -857,6 +862,9 @@ internal static class Program
                 case "--auto":
                     autoDetectAll = true;
                     break;
+                case "--target":
+                    targetPath = ReadValue(args, ++index, "--target");
+                    break;
                 case "--agent":
                     agent = SkillInstallTarget.ParseAgent(ReadValue(args, ++index, "--agent"));
                     break;
@@ -873,6 +881,11 @@ internal static class Program
         }
 
         await MaybeShowToolUpdateAsync(null);
+
+        if (autoDetectAll && !string.IsNullOrWhiteSpace(targetPath))
+        {
+            throw new InvalidOperationException("Use either --auto or --target for agent installation, not both.");
+        }
 
         var agentCatalog = AgentCatalogPackage.LoadBundled();
         var installer = new AgentInstaller(agentCatalog);
@@ -893,7 +906,7 @@ internal static class Program
             layouts = AgentInstallTarget.ResolveAllDetected(projectDirectory, scope);
             if (layouts.Count == 0)
             {
-                Console.WriteLine("No agent platforms detected. Use --agent to specify a target platform.");
+                Console.WriteLine("No native agent platforms detected. Create a native agent directory first or use --agent/--target.");
                 return 1;
             }
 
@@ -903,7 +916,7 @@ internal static class Program
         else
         {
             // Install to single platform
-            var layout = AgentInstallTarget.Resolve(null, agent, scope, projectDirectory);
+            var layout = AgentInstallTarget.Resolve(targetPath, agent, scope, projectDirectory);
             summary = installer.Install(selectedAgents, layout, force);
             ConsoleUi.RenderAgentInstallSummary(agentCatalog, layout, selectedAgents, summary);
         }
@@ -914,6 +927,7 @@ internal static class Program
     private static async Task<int> RunAgentRemoveAsync(string[] args)
     {
         var requestedAgents = new List<string>();
+        string? targetPath = null;
         string? projectDirectory = null;
         var removeAll = false;
         var agent = AgentPlatform.Auto;
@@ -925,6 +939,9 @@ internal static class Program
             {
                 case "--all":
                     removeAll = true;
+                    break;
+                case "--target":
+                    targetPath = ReadValue(args, ++index, "--target");
                     break;
                 case "--agent":
                     agent = SkillInstallTarget.ParseAgent(ReadValue(args, ++index, "--agent"));
@@ -949,7 +966,7 @@ internal static class Program
         await MaybeShowToolUpdateAsync(null);
 
         var agentCatalog = AgentCatalogPackage.LoadBundled();
-        var layout = AgentInstallTarget.Resolve(null, agent, scope, projectDirectory);
+        var layout = AgentInstallTarget.Resolve(targetPath, agent, scope, projectDirectory);
         var installer = new AgentInstaller(agentCatalog);
         var installedAgents = installer.GetInstalledAgents(layout);
 

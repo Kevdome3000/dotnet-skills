@@ -16,7 +16,7 @@ public sealed class SkillInstallerTests
     }
 
     [Fact]
-    public void InstallAndRemove_RawSkillPayloads_TracksInstalledVersions()
+    public void InstallAndRemove_SkillDirectories_TracksInstalledVersions()
     {
         var catalog = TestCatalog.Load();
         var installer = new SkillInstaller(catalog);
@@ -28,10 +28,11 @@ public sealed class SkillInstallerTests
         var installed = installer.GetInstalledSkills(layout);
 
         Assert.Equal(2, installSummary.InstalledCount);
+        Assert.Equal(0, installSummary.GeneratedAdapters);
         Assert.Equal(2, installed.Count);
         Assert.All(installed, record => Assert.True(record.IsCurrent));
         Assert.Contains(installed, record => record.Skill.Name == "dotnet-aspire");
-        Assert.True(File.Exists(System.IO.Path.Combine(tempDirectory.Path, "dotnet-aspire", "SKILL.md")));
+        Assert.True(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-aspire", "SKILL.md")));
 
         var removeSummary = installer.Remove([selected[0]], layout);
         var remaining = installer.GetInstalledSkills(layout);
@@ -39,11 +40,11 @@ public sealed class SkillInstallerTests
         Assert.Equal(1, removeSummary.RemovedCount);
         Assert.Empty(removeSummary.MissingSkills);
         Assert.DoesNotContain(remaining, record => record.Skill.Name == "dotnet-aspire");
-        Assert.True(File.Exists(System.IO.Path.Combine(tempDirectory.Path, "dotnet-orleans", "SKILL.md")));
+        Assert.True(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-orleans", "SKILL.md")));
     }
 
     [Fact]
-    public void InstallAndRemove_ClaudeSubagents_UsesGeneratedAdapterVersion()
+    public void Install_ClaudeLayout_UsesNativeSkillDirectory()
     {
         var catalog = TestCatalog.Load();
         var installer = new SkillInstaller(catalog);
@@ -52,16 +53,9 @@ public sealed class SkillInstallerTests
         var selected = installer.SelectSkills(["aspire"], installAll: false);
 
         installer.Install(selected, layout, force: false);
-        var installed = installer.GetInstalledSkills(layout);
 
-        var record = Assert.Single(installed);
-        Assert.Equal("dotnet-aspire", record.Skill.Name);
-        Assert.Equal(record.Skill.Version, record.InstalledVersion);
-        Assert.True(File.Exists(System.IO.Path.Combine(tempDirectory.Path, "dotnet-aspire.md")));
-
-        var removeSummary = installer.Remove(selected, layout);
-
-        Assert.Equal(1, removeSummary.RemovedCount);
-        Assert.False(File.Exists(System.IO.Path.Combine(tempDirectory.Path, "dotnet-aspire.md")));
+        Assert.Equal(SkillInstallMode.SkillDirectories, layout.Mode);
+        Assert.True(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-aspire", "SKILL.md")));
+        Assert.False(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-aspire.md")));
     }
 }

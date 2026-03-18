@@ -68,21 +68,26 @@ Catalog releases are published automatically in `.github/workflows/publish-catal
 
 | Agent | Global | Project |
 |-------|--------|---------|
-| Claude | `~/.claude/agents/` | `.claude/agents/` |
+| Claude | `~/.claude/skills/` | `.claude/skills/` |
 | Copilot | `~/.copilot/skills/` | `.github/skills/` |
 | Gemini | `~/.gemini/skills/` | `.gemini/skills/` |
-| Codex | `~/.codex/skills/` | `.codex/skills/` |
+| Codex | `$CODEX_HOME/skills/` (default: `~/.codex/skills/`) | `.codex/skills/` |
+| Default fallback | `~/.agents/skills/` | `.agents/skills/` |
 
 ### Orchestration Agents Installation Paths
 
 | Agent | Global | Project |
 |-------|--------|---------|
 | Claude | `~/.claude/agents/` | `.claude/agents/` |
-| Copilot | — | `.github/agents/` |
+| Copilot | `~/.copilot/agents/` | `.github/agents/` |
 | Gemini | `~/.gemini/agents/` | `.gemini/agents/` |
-| Codex | `~/.agents/skills/` | `.agents/skills/` |
+| Codex | `$CODEX_HOME/agents/` (default: `~/.codex/agents/`) | `.codex/agents/` |
 
-When `--agent` is omitted for skill installation, the tool checks for `.codex/`, `.claude/`, `.github/`, `.gemini/`, and `.agents/` directories in that order, installs into every already existing platform target it finds, and falls back to `.agents/skills/` only when no platform folder exists.
+`dotnet skills agent install --auto` writes only to already existing native agent directories. It does not use `.agents` as a shared agent target; if no native agent directory exists yet, specify `--agent` or `--target`.
+
+`dotnet skills agent ... --target <path>` requires an explicit `--agent` because the generated file format depends on the selected platform.
+
+When `--agent` is omitted for skill installation, the tool checks for `.codex/`, `.claude/`, `.github/`, and `.gemini/` directories in that order, installs into every already existing native platform target it finds, and creates `.agents/skills/` only when no native platform folder exists.
 
 ## Orchestration Agents
 

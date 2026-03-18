@@ -10,6 +10,12 @@ internal static class TestCatalog
         return SkillCatalogPackage.LoadFromDirectory(repositoryRoot, "repository source", "test");
     }
 
+    public static AgentCatalogPackage LoadAgents()
+    {
+        var repositoryRoot = ResolveRepositoryRoot();
+        return AgentCatalogPackage.LoadFromDirectory(repositoryRoot, "repository source");
+    }
+
     private static DirectoryInfo ResolveRepositoryRoot()
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);

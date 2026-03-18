@@ -17,8 +17,7 @@ internal enum InstallScope
 
 internal enum SkillInstallMode
 {
-    RawSkillPayloads,
-    ClaudeSubagents,
+    SkillDirectories,
 }
 
 internal sealed record SkillInstallLayout(
@@ -34,7 +33,7 @@ internal sealed record SkillInstallLayout(
     {
         AgentPlatform.Auto => "Restart your agent session to pick up new skills.",
         AgentPlatform.Codex => "Restart Codex to pick up new skills.",
-        AgentPlatform.Claude => "Restart Claude Code or start a new session to pick up the generated subagents.",
+        AgentPlatform.Claude => "Restart Claude Code or start a new session to pick up new skills.",
         AgentPlatform.Copilot => "Restart Copilot CLI or your IDE agent session to pick up new skills.",
         AgentPlatform.Gemini => "Run /skills reload or restart Gemini CLI to pick up new skills.",
         _ => "Restart your agent session to pick up new skills.",
@@ -54,22 +53,15 @@ internal static class SkillInstallTarget
             return ResolveExplicit(agent, scope, explicitTargetPath);
         }
 
+        var context = InstallPathContext.Create(projectDirectory);
+
         if (agent == AgentPlatform.Auto)
         {
-            return scope switch
-            {
-                InstallScope.Global => ResolveAutoGlobal(),
-                InstallScope.Project => ResolveAutoProject(projectDirectory),
-                _ => throw new InvalidOperationException($"Unsupported install scope: {scope}"),
-            };
+            return ResolveDetected(context, scope)[0];
         }
 
-        return scope switch
-        {
-            InstallScope.Global => ResolveGlobal(agent),
-            InstallScope.Project => ResolveProject(agent, projectDirectory),
-            _ => throw new InvalidOperationException($"Unsupported install scope: {scope}"),
-        };
+        var strategy = InstallPlatformRegistry.Get(agent);
+        return strategy.CreateSkillLayout(scope, strategy.GetSkillRoot(context, scope), isExplicitTarget: false);
     }
 
     public static AgentPlatform ParseAgent(string value) => value.ToLowerInvariant() switch
@@ -97,233 +89,52 @@ internal static class SkillInstallTarget
 
     public static IReadOnlyList<SkillInstallLayout> ResolveAllDetected(string? projectDirectory, InstallScope scope)
     {
-        return scope switch
-        {
-            InstallScope.Global => ResolveAllDetectedGlobal(),
-            InstallScope.Project => ResolveAllDetectedProject(projectDirectory),
-            _ => throw new InvalidOperationException($"Unsupported install scope: {scope}"),
-        };
+        return ResolveDetected(InstallPathContext.Create(projectDirectory), scope);
     }
 
     private static SkillInstallLayout ResolveExplicit(AgentPlatform agent, InstallScope scope, string explicitTargetPath)
     {
-        var targetRoot = new DirectoryInfo(Path.GetFullPath(explicitTargetPath));
-        var mode = agent == AgentPlatform.Claude
-            ? SkillInstallMode.ClaudeSubagents
-            : SkillInstallMode.RawSkillPayloads;
-
-        return new SkillInstallLayout(agent, scope, mode, targetRoot, IsExplicitTarget: true);
-    }
-
-    private static SkillInstallLayout ResolveAutoGlobal()
-    {
-        return ResolveAllDetectedGlobal()[0];
-    }
-
-    private static SkillInstallLayout ResolveGlobal(AgentPlatform agent)
-    {
-        var userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-
-        return agent switch
+        var targetRoot = InstallPathContext.ResolveExplicitRoot(explicitTargetPath);
+        if (agent == AgentPlatform.Auto)
         {
-            AgentPlatform.Auto => ResolveAutoGlobal(),
-            AgentPlatform.Codex => new SkillInstallLayout(agent, InstallScope.Global, SkillInstallMode.RawSkillPayloads, ResolveCodexGlobal(userHome), IsExplicitTarget: false),
-            AgentPlatform.Claude => new SkillInstallLayout(
-                agent,
-                InstallScope.Global,
-                SkillInstallMode.ClaudeSubagents,
-                new DirectoryInfo(Path.Combine(userHome, ".claude", "agents")),
-                IsExplicitTarget: false),
-            AgentPlatform.Copilot => new SkillInstallLayout(agent, InstallScope.Global, SkillInstallMode.RawSkillPayloads, new DirectoryInfo(Path.Combine(userHome, ".copilot", "skills")), IsExplicitTarget: false),
-            AgentPlatform.Gemini => new SkillInstallLayout(agent, InstallScope.Global, SkillInstallMode.RawSkillPayloads, new DirectoryInfo(Path.Combine(userHome, ".gemini", "skills")), IsExplicitTarget: false),
-            _ => throw new InvalidOperationException($"Unsupported agent: {agent}"),
-        };
-    }
-
-    private static SkillInstallLayout ResolveAutoProject(string? projectDirectory)
-    {
-        return ResolveAllDetectedProject(projectDirectory)[0];
-    }
-
-    private static SkillInstallLayout ResolveProject(AgentPlatform agent, string? projectDirectory)
-    {
-        var rootDirectory = ResolveProjectRoot(projectDirectory);
-
-        return agent switch
-        {
-            AgentPlatform.Auto => ResolveAutoProject(rootDirectory),
-            AgentPlatform.Codex => new SkillInstallLayout(agent, InstallScope.Project, SkillInstallMode.RawSkillPayloads, new DirectoryInfo(Path.Combine(rootDirectory, ".codex", "skills")), IsExplicitTarget: false),
-            AgentPlatform.Claude => new SkillInstallLayout(
-                agent,
-                InstallScope.Project,
-                SkillInstallMode.ClaudeSubagents,
-                new DirectoryInfo(Path.Combine(rootDirectory, ".claude", "agents")),
-                IsExplicitTarget: false),
-            AgentPlatform.Copilot => new SkillInstallLayout(agent, InstallScope.Project, SkillInstallMode.RawSkillPayloads, new DirectoryInfo(Path.Combine(rootDirectory, ".github", "skills")), IsExplicitTarget: false),
-            AgentPlatform.Gemini => new SkillInstallLayout(agent, InstallScope.Project, SkillInstallMode.RawSkillPayloads, new DirectoryInfo(Path.Combine(rootDirectory, ".gemini", "skills")), IsExplicitTarget: false),
-            _ => throw new InvalidOperationException($"Unsupported agent: {agent}"),
-        };
-    }
-
-    private static string ResolveProjectRoot(string? projectDirectory) => string.IsNullOrWhiteSpace(projectDirectory)
-        ? Path.GetFullPath(Directory.GetCurrentDirectory())
-        : Path.GetFullPath(projectDirectory);
-
-    private static DirectoryInfo ResolveCodexGlobal(string userHome)
-    {
-        var codexHome = Environment.GetEnvironmentVariable("CODEX_HOME");
-        if (!string.IsNullOrWhiteSpace(codexHome))
-        {
-            return new DirectoryInfo(Path.Combine(codexHome, "skills"));
+            return new SkillInstallLayout(AgentPlatform.Auto, scope, SkillInstallMode.SkillDirectories, targetRoot, IsExplicitTarget: true);
         }
 
-        return new DirectoryInfo(Path.Combine(userHome, ".codex", "skills"));
+        return InstallPlatformRegistry.Get(agent).CreateSkillLayout(scope, targetRoot, isExplicitTarget: true);
     }
 
-    private static DirectoryInfo ResolveGeminiGlobal(string userHome)
+    private static IReadOnlyList<SkillInstallLayout> ResolveDetected(InstallPathContext context, InstallScope scope)
     {
-        return new DirectoryInfo(Path.Combine(userHome, ".gemini", "skills"));
-    }
-
-    private static DirectoryInfo ResolveGeminiProject(string rootDirectory)
-    {
-        return new DirectoryInfo(Path.Combine(rootDirectory, ".gemini", "skills"));
-    }
-
-    private static IReadOnlyList<SkillInstallLayout> ResolveAllDetectedGlobal()
-    {
-        var userHome = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var layouts = new List<SkillInstallLayout>();
-        var codexRoot = ResolveCodexGlobal(userHome);
-
-        if (codexRoot.Parent is not null && Directory.Exists(codexRoot.Parent.FullName))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Codex,
-                InstallScope.Global,
-                SkillInstallMode.RawSkillPayloads,
-                codexRoot,
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(userHome, ".claude")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Claude,
-                InstallScope.Global,
-                SkillInstallMode.ClaudeSubagents,
-                new DirectoryInfo(Path.Combine(userHome, ".claude", "agents")),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(userHome, ".copilot")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Copilot,
-                InstallScope.Global,
-                SkillInstallMode.RawSkillPayloads,
-                new DirectoryInfo(Path.Combine(userHome, ".copilot", "skills")),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(userHome, ".gemini")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Gemini,
-                InstallScope.Global,
-                SkillInstallMode.RawSkillPayloads,
-                ResolveGeminiGlobal(userHome),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(userHome, ".agents")))
-        {
-            layouts.Add(CreateLegacyGlobalLayout(userHome));
-        }
+        var layouts = ResolveNativeLayouts(context, scope);
 
         if (layouts.Count > 0)
         {
             return layouts;
         }
 
-        return [CreateLegacyGlobalLayout(userHome)];
+        return [CreateDefaultFallbackLayout(context, scope)];
     }
 
-    private static IReadOnlyList<SkillInstallLayout> ResolveAllDetectedProject(string? projectDirectory)
+    private static IReadOnlyList<SkillInstallLayout> ResolveNativeLayouts(InstallPathContext context, InstallScope scope)
     {
-        var rootDirectory = ResolveProjectRoot(projectDirectory);
-        var layouts = new List<SkillInstallLayout>();
-
-        if (Directory.Exists(Path.Combine(rootDirectory, ".codex")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Codex,
-                InstallScope.Project,
-                SkillInstallMode.RawSkillPayloads,
-                new DirectoryInfo(Path.Combine(rootDirectory, ".codex", "skills")),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(rootDirectory, ".claude")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Claude,
-                InstallScope.Project,
-                SkillInstallMode.ClaudeSubagents,
-                new DirectoryInfo(Path.Combine(rootDirectory, ".claude", "agents")),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(rootDirectory, ".github")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Copilot,
-                InstallScope.Project,
-                SkillInstallMode.RawSkillPayloads,
-                new DirectoryInfo(Path.Combine(rootDirectory, ".github", "skills")),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(rootDirectory, ".gemini")))
-        {
-            layouts.Add(new SkillInstallLayout(
-                AgentPlatform.Gemini,
-                InstallScope.Project,
-                SkillInstallMode.RawSkillPayloads,
-                ResolveGeminiProject(rootDirectory),
-                IsExplicitTarget: false));
-        }
-
-        if (Directory.Exists(Path.Combine(rootDirectory, ".agents")))
-        {
-            layouts.Add(CreateLegacyProjectLayout(rootDirectory));
-        }
-
-        if (layouts.Count > 0)
-        {
-            return layouts;
-        }
-
-        return [CreateLegacyProjectLayout(rootDirectory)];
+        return InstallPlatformRegistry.StrategiesInDetectionOrder
+            .Where(strategy => strategy.HasNativeRoot(context, scope))
+            .Select(strategy => strategy.CreateSkillLayout(scope, strategy.GetSkillRoot(context, scope), isExplicitTarget: false))
+            .DistinctBy(layout => layout.PrimaryRoot.FullName, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
     }
 
-    private static SkillInstallLayout CreateLegacyGlobalLayout(string userHome)
+    private static SkillInstallLayout CreateDefaultFallbackLayout(InstallPathContext context, InstallScope scope)
     {
+        var root = scope == InstallScope.Project
+            ? new DirectoryInfo(Path.Combine(context.ProjectRoot.FullName, ".agents", "skills"))
+            : new DirectoryInfo(Path.Combine(context.UserHome.FullName, ".agents", "skills"));
+
         return new SkillInstallLayout(
             AgentPlatform.Auto,
-            InstallScope.Global,
-            SkillInstallMode.RawSkillPayloads,
-            new DirectoryInfo(Path.Combine(userHome, ".agents", "skills")),
-            IsExplicitTarget: false);
-    }
-
-    private static SkillInstallLayout CreateLegacyProjectLayout(string rootDirectory)
-    {
-        return new SkillInstallLayout(
-            AgentPlatform.Auto,
-            InstallScope.Project,
-            SkillInstallMode.RawSkillPayloads,
-            new DirectoryInfo(Path.Combine(rootDirectory, ".agents", "skills")),
+            scope,
+            SkillInstallMode.SkillDirectories,
+            root,
             IsExplicitTarget: false);
     }
 }

@@ -231,11 +231,18 @@ Agent target rule:
 
 - support Codex, Claude, Copilot, and Gemini target layouts through `--agent`
 - support global or repository-local installation through `--scope`
-- when `--agent` is omitted for skill installation, auto-detect existing repo roots in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`; install into every already existing platform target you find, and only fall back to `.agents/skills` when none exist
-- keep `--target` as an explicit override when a caller wants a custom path
-- for Claude, generate native `.claude/agents` subagent files from `SKILL.md`
-- for Codex, use `.codex/skills` for explicit `--agent codex` installs and keep `.agents/skills` only as the legacy shared fallback
-- for Gemini, use `.gemini/skills` for explicit `--agent gemini` installs, but keep compatibility with existing shared `.agents/skills` layouts during auto-detect
+- when `--agent` is omitted for skill installation, auto-detect native client roots in this order: `.codex`, `.claude`, `.github`, `.gemini`; install into every already existing native platform target you find, and only fall back to `.agents/skills` when none exist
+- keep `--target` as an explicit override when a caller wants a custom path, including agent commands
+- copy skills as native skill directories for every supported CLI; do not generate Claude-specific skill adapters
+- for Codex, use `.codex/skills` and `.codex/agents` for project installs, and `$CODEX_HOME/skills` and `$CODEX_HOME/agents` (default `~/.codex/...`) for global installs
+- for Claude, use `.claude/skills` and `.claude/agents` for project installs, and `~/.claude/skills` and `~/.claude/agents` for global installs
+- for Copilot, use `.github/skills` and `.github/agents` for project installs, and `~/.copilot/skills` and `~/.copilot/agents` for global installs
+- for Gemini, use `.gemini/skills` and `.gemini/agents` for project installs, and `~/.gemini/skills` and `~/.gemini/agents` for global installs
+- for orchestration agents, auto-detect only vendor-native agent locations such as `.codex/agents`, `.claude/agents`, `.github/agents`, and `.gemini/agents`
+- do not treat `.agents` as a shared agent-install target and do not map it to Codex
+- if no native agent directory exists, require an explicit `--agent` or `--target` instead of inventing a fallback
+- if a caller uses `dotnet skills agent ... --target <path>`, require an explicit `--agent`; agent payload formats are platform-specific and must not be guessed
+- when installing Codex globally, honor `CODEX_HOME` for both skills and agents
 
 Publishing is handled by [`.github/workflows/publish-catalog.yml`](.github/workflows/publish-catalog.yml).
 

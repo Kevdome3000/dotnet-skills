@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace ManagedCode.DotnetSkills.Runtime;
 
 internal sealed class AgentInstaller(AgentCatalogPackage catalog)
@@ -48,14 +46,14 @@ internal sealed class AgentInstaller(AgentCatalogPackage catalog)
 
             switch (layout.Mode)
             {
-                case AgentInstallMode.ClaudeSubagents:
-                    WriteClaudeSubagent(destinationFile, sourceDirectory, agent);
+                case AgentInstallMode.MarkdownAgentFiles:
+                    WriteMarkdownAgent(destinationFile, sourceDirectory);
                     break;
-                case AgentInstallMode.CopilotAgents:
+                case AgentInstallMode.CopilotAgentFiles:
                     WriteCopilotAgent(destinationFile, sourceDirectory, agent);
                     break;
-                case AgentInstallMode.RawAgentPayloads:
-                    WriteRawAgent(destinationFile, sourceDirectory, agent);
+                case AgentInstallMode.CodexRoleFiles:
+                    WriteCodexRole(destinationFile, sourceDirectory, agent);
                     break;
                 default:
                     throw new InvalidOperationException($"Unsupported install mode: {layout.Mode}");
@@ -70,16 +68,20 @@ internal sealed class AgentInstaller(AgentCatalogPackage catalog)
     public AgentInstallSummary InstallToMultiple(IReadOnlyList<AgentEntry> agents, IReadOnlyList<AgentInstallLayout> layouts, bool force)
     {
         var totalInstalled = 0;
-        var allSkipped = new List<string>();
+        var allSkipped = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var layout in layouts)
         {
             var summary = Install(agents, layout, force);
             totalInstalled += summary.InstalledCount;
-            // Don't add to skipped if installed in another layout
+
+            foreach (var skipped in summary.SkippedExisting)
+            {
+                allSkipped.Add(skipped);
+            }
         }
 
-        return new AgentInstallSummary(totalInstalled, allSkipped);
+        return new AgentInstallSummary(totalInstalled, allSkipped.OrderBy(name => name, StringComparer.Ordinal).ToArray());
     }
 
     public AgentRemoveSummary Remove(IReadOnlyList<AgentEntry> agents, AgentInstallLayout layout)
@@ -138,36 +140,23 @@ internal sealed class AgentInstaller(AgentCatalogPackage catalog)
         return false;
     }
 
-    private static void WriteClaudeSubagent(FileInfo destinationFile, DirectoryInfo sourceDirectory, AgentEntry agent)
+    private static void WriteMarkdownAgent(FileInfo destinationFile, DirectoryInfo sourceDirectory)
     {
-        var agentMarkdown = ExtractAgentMarkdown(sourceDirectory);
-        var skillsList = agent.Skills.Count > 0
-            ? $"\nskills:\n{string.Join("\n", agent.Skills.Select(s => $"  - {s}"))}"
-            : "";
+        var agentFile = new FileInfo(Path.Combine(sourceDirectory.FullName, "AGENT.md"));
+        if (!agentFile.Exists)
+        {
+            throw new InvalidOperationException($"AGENT.md not found in {sourceDirectory.FullName}");
+        }
 
-        var contents =
-            $"""
-            ---
-            name: {agent.Name}
-            description: "{EscapeYaml(agent.Description)}"
-            tools: {(string.IsNullOrEmpty(agent.Tools) ? "Read, Glob, Grep, Bash" : agent.Tools)}
-            model: {agent.Model}{skillsList}
-            ---
-
-            {agentMarkdown}
-            """;
-
-        File.WriteAllText(destinationFile.FullName, contents);
+        destinationFile.Directory?.Create();
+        File.Copy(agentFile.FullName, destinationFile.FullName, overwrite: true);
     }
 
     private static void WriteCopilotAgent(FileInfo destinationFile, DirectoryInfo sourceDirectory, AgentEntry agent)
     {
         var agentMarkdown = ExtractAgentMarkdown(sourceDirectory);
-
-        // Copilot uses different tool format
-        var tools = string.IsNullOrEmpty(agent.Tools)
-            ? "- codebase\n  - terminal"
-            : string.Join("\n", agent.Tools.Split(',', StringSplitOptions.TrimEntries).Select(t => $"  - {t.ToLowerInvariant()}"));
+        var tools = ParseTools(agent.Tools);
+        var toolLines = string.Join(Environment.NewLine, tools.Select(tool => $"  - {tool}"));
 
         var contents =
             $"""
@@ -175,25 +164,49 @@ internal sealed class AgentInstaller(AgentCatalogPackage catalog)
             name: {agent.Name}
             description: "{EscapeYaml(agent.Description)}"
             tools:
-            {tools}
+            {toolLines}
             ---
 
             {agentMarkdown}
             """;
 
+        destinationFile.Directory?.Create();
         File.WriteAllText(destinationFile.FullName, contents);
     }
 
-    private static void WriteRawAgent(FileInfo destinationFile, DirectoryInfo sourceDirectory, AgentEntry agent)
+    private static void WriteCodexRole(FileInfo destinationFile, DirectoryInfo sourceDirectory, AgentEntry agent)
     {
-        // Copy the AGENT.md as-is for platforms that support raw format
-        var agentFile = new FileInfo(Path.Combine(sourceDirectory.FullName, "AGENT.md"));
-        if (!agentFile.Exists)
+        var agentMarkdown = ExtractAgentMarkdown(sourceDirectory);
+        var lines = new List<string>
         {
-            throw new InvalidOperationException($"AGENT.md not found in {sourceDirectory.FullName}");
+            $"name = {ToTomlString(agent.Name)}",
+            $"description = {ToTomlString(agent.Description)}",
+        };
+
+        if (!string.IsNullOrWhiteSpace(agent.Model) &&
+            !string.Equals(agent.Model, "inherit", StringComparison.OrdinalIgnoreCase))
+        {
+            lines.Add($"model = {ToTomlString(agent.Model)}");
         }
 
-        File.Copy(agentFile.FullName, destinationFile.FullName, overwrite: true);
+        lines.Add($"developer_instructions = {ToTomlString(agentMarkdown)}");
+
+        destinationFile.Directory?.Create();
+        File.WriteAllText(destinationFile.FullName, string.Join(Environment.NewLine, lines) + Environment.NewLine);
+    }
+
+    private static IReadOnlyList<string> ParseTools(string tools)
+    {
+        if (string.IsNullOrWhiteSpace(tools))
+        {
+            return ["codebase", "terminal"];
+        }
+
+        return tools
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(tool => tool.ToLowerInvariant())
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
     }
 
     private static string ExtractAgentMarkdown(DirectoryInfo sourceDirectory)
@@ -220,7 +233,20 @@ internal sealed class AgentInstaller(AgentCatalogPackage catalog)
         return text[(markerIndex + marker.Length)..].Trim();
     }
 
-    private static string EscapeYaml(string value) => value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    private static string EscapeYaml(string value)
+    {
+        return value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    }
+
+    private static string ToTomlString(string value)
+    {
+        return "\"" + value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+            .Replace("\r", "\\r")
+            .Replace("\n", "\\n")
+            .Replace("\t", "\\t") + "\"";
+    }
 }
 
 internal sealed record AgentInstallSummary(int InstalledCount, IReadOnlyList<string> SkippedExisting);

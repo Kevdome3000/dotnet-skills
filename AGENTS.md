@@ -321,13 +321,19 @@ Rules:
 - Treat repo-owned orchestration agents as a parallel catalog layer; do not force the first rollout of agents into the current `dotnet-skills` CLI lifecycle before the repo structure and docs are stable.
 - Canonical repo-owned agents live in folder-per-agent layouts with `AGENT.md`; runtime-specific `.agent.md` or native Claude files are adapters, not the source of truth.
 - The installer must account for Codex, Claude, Copilot, and Gemini target layouts instead of assuming only one global skills directory.
+- When vendor-specific install behavior diverges, model it with separate per-platform strategy classes instead of growing one shared resolver or installer full of platform switches.
+- Do not duplicate home-directory or environment-root resolution helpers across resolvers. Keep shared path-context logic in one place and let per-platform strategies consume it.
 - `SKILL.md` is the canonical skill contract; vendor-specific files are adapters.
-- For Copilot, use the native `SKILL.md` layout in `.github/skills` or `~/.copilot/skills`.
-- For Gemini, use `.gemini/skills` for explicit Gemini installs, but keep compatibility with shared `.agents/skills` layouts when auto-detect finds them.
-- For Claude, generate native `.claude/agents` subagent files instead of pretending Claude consumes raw `SKILL.md` skill folders directly.
-- For Codex, use the native `.codex/skills` layout for explicit Codex installs, and keep `.agents/skills` only as a legacy shared fallback when no platform-specific folder exists.
-- When `--agent` is omitted for skill installation, the tool must install into every already existing platform folder it detects in this order: `.codex`, `.claude`, `.github`, `.gemini`, `.agents`. Only when none of those folders exist may it fall back to creating `.agents/skills` in the current project.
-- Auto-install must not create an extra `.agents/skills` fallback when one or more platform-specific folders such as `.codex`, `.claude`, `.github`, or `.gemini` already exist. In that case it writes only to the folders that are already present.
+- For Copilot, use the official skill and agent locations: project `.github/skills` and `.github/agents`, user `~/.copilot/skills` and `~/.copilot/agents`.
+- For Claude Code, use the official native paths: project `.claude/skills` and `.claude/agents`, user `~/.claude/skills` and `~/.claude/agents`.
+- For Codex, use the native per-platform buckets that `dotnet-skills` manages: project `.codex/skills` and `.codex/agents`, user `$CODEX_HOME/skills` and `$CODEX_HOME/agents` (default `~/.codex/skills` and `~/.codex/agents`). Keep `.agents/skills` only as the default fallback when no native client root exists.
+- For Gemini CLI, use the native paths: project `.gemini/skills` and `.gemini/agents`, user `~/.gemini/skills` and `~/.gemini/agents`.
+- When `--agent` is omitted for skill installation, detect existing native client roots in this order: `.codex`, `.claude`, `.github`, `.gemini`. Install into every detected native client target. Use `.agents/skills` only when none of those native roots exist yet.
+- Do not add `.agents/skills` alongside native client targets during auto-detect. `.agents/skills` is fallback-only, not an extra fan-out destination when a native CLI root already exists.
+- For repo-owned orchestration agents, auto-detect only vendor-native agent locations: `.codex/agents`, `.claude/agents`, `.github/agents`, and `.gemini/agents`.
+- Do not treat shared `.agents` directories as a portable agent target and do not map `.agents` to Codex.
+- If `dotnet skills agent install` runs in auto mode and no native agent directory exists yet, fail with a clear message that asks for an explicit `--agent` or `--target`.
+- If `dotnet skills agent ... --target <path>` is used, require an explicit `--agent`. Agent payload formats differ by platform, so auto mode must not guess a file format for a custom target.
 - Use the same NuGet publish pattern as other ManagedCode repositories: publish from `publish-catalog.yml` with `dotnet nuget push` and the `NUGET_API_KEY` secret inside the shell step.
 - Do not reference `secrets.*` in GitHub Actions `if:` expressions for NuGet publish branching; keep secret-dependent logic inside the shell step instead.
 - Publish workflows should derive the package version from the checked-in base version plus the CI run number instead of relying on a manually typed patch version.

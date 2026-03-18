@@ -130,7 +130,7 @@ internal static class ConsoleUi
 
         if (totalAdapters > 0)
         {
-            grid.AddRow(new Markup("[grey]Claude adapters[/]"), new Markup(totalAdapters.ToString()));
+            grid.AddRow(new Markup("[grey]Generated adapters[/]"), new Markup(totalAdapters.ToString()));
         }
 
         AnsiConsole.Write(new Panel(grid).Header("Summary").Expand());
@@ -360,6 +360,7 @@ internal static class ConsoleUi
         table.AddRow("[green]dotnet skills agent list[/]", "List available orchestration agents.");
         table.AddRow("[green]dotnet skills agent install router ai[/]", "Install orchestration agents by name.");
         table.AddRow("[green]dotnet skills agent install --all --auto[/]", "Install all agents to all detected platforms.");
+        table.AddRow("[green]dotnet skills agent install router --target /path/to/agents[/]", "Install agents to an explicit custom target.");
         AnsiConsole.Write(table);
         AnsiConsole.WriteLine();
 
@@ -376,7 +377,8 @@ internal static class ConsoleUi
             "- `--refresh` forces `install` or `update` to redownload the selected remote catalog first.",
             "- Short aliases work everywhere: `aspire` resolves to `dotnet-aspire`.",
             "- Set `DOTNET_SKILLS_SKIP_UPDATE_CHECK=1` to suppress automatic tool update notices on startup.",
-            "- Auto target detection probes `.codex`, `.claude`, `.github`, `.gemini`, and `.agents`; `install` writes to every existing platform target it finds, and falls back to `.agents/skills` only when no platform folder exists.");
+            "- Auto skill target detection probes `.codex`, `.claude`, `.github`, and `.gemini`; it writes to every existing native platform target it finds, and falls back to `.agents/skills` only when no native platform folder exists.",
+            "- Agent auto-detect uses only native agent roots. If none exist yet, specify `--agent` or `--target`.");
 
         AnsiConsole.Write(new Panel(new Markup(Escape(notes))).Header("Notes").Expand());
     }
@@ -468,7 +470,7 @@ internal static class ConsoleUi
 
         if (generatedAdapters > 0)
         {
-            grid.AddRow(new Markup("[grey]Claude adapters[/]"), new Markup(generatedAdapters.ToString()));
+            grid.AddRow(new Markup("[grey]Generated adapters[/]"), new Markup(generatedAdapters.ToString()));
         }
 
         return new Panel(grid).Header("Summary").Expand();
@@ -682,8 +684,7 @@ internal static class ConsoleUi
 
     private static string FormatInstallMode(SkillInstallMode mode) => mode switch
     {
-        SkillInstallMode.RawSkillPayloads => "Raw skill payloads",
-        SkillInstallMode.ClaudeSubagents => "Claude subagents",
+        SkillInstallMode.SkillDirectories => "Skill directories",
         _ => Escape(mode.ToString()),
     };
 
@@ -925,9 +926,9 @@ internal static class ConsoleUi
 
     private static string FormatAgentInstallMode(AgentInstallMode mode) => mode switch
     {
-        AgentInstallMode.RawAgentPayloads => "Raw agent payloads",
-        AgentInstallMode.ClaudeSubagents => "Claude subagents",
-        AgentInstallMode.CopilotAgents => "Copilot agents (.agent.md)",
+        AgentInstallMode.MarkdownAgentFiles => "Markdown agent files",
+        AgentInstallMode.CopilotAgentFiles => "Copilot agents (.agent.md)",
+        AgentInstallMode.CodexRoleFiles => "Codex role files (.toml)",
         _ => Escape(mode.ToString()),
     };
 }
