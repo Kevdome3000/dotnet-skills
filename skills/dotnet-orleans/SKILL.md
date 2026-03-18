@@ -1,71 +1,132 @@
 ---
 name: dotnet-orleans
-version: "1.2.0"
+version: "2.0.0"
 category: "Distributed"
-description: "Build or review distributed .NET applications with Orleans grains, silos, persistence, streaming, reminders, placement, testing, and cloud-native hosting."
-compatibility: "Prefer current Orleans releases with `UseOrleans`, `IPersistentState<TState>`, `RegisterGrainTimer`, modern providers, and production-grade clustering."
+description: "Build or review distributed .NET applications with Orleans grains, silos, persistence, streaming, reminders, placement, transactions, serialization, event sourcing, testing, and cloud-native hosting."
+compatibility: "Prefer current Orleans releases (10.x / 9.x) with `UseOrleans`, `IPersistentState<TState>`, `RegisterGrainTimer`, `[GenerateSerializer]`, modern providers, and production-grade clustering."
 ---
 
 # Microsoft Orleans
 
 ## Trigger On
 
-- building or reviewing `.NET` code that uses `Microsoft.Orleans.*`, `Grain`, `IGrainWith*`, `UseOrleans`, `UseOrleansClient`, `IGrainFactory`, or Orleans silo/client builders
+- building or reviewing `.NET` code that uses `Microsoft.Orleans.*`, `Grain`, `IGrainWith*`, `UseOrleans`, `UseOrleansClient`, `IGrainFactory`, `JournaledGrain`, `ITransactionalState`, or Orleans silo/client builders
 - modeling high-cardinality stateful entities such as users, carts, devices, rooms, orders, digital twins, sessions, or collaborative documents
-- choosing between grains, streams, reminders, stateless workers, persistence providers, placement strategies, and external client/frontend topologies
+- choosing between grains, streams, broadcast channels, reminders, stateless workers, persistence providers, placement strategies, transactions, event sourcing, and external client/frontend topologies
 - deploying or operating Orleans with Redis, Azure Storage, Cosmos DB, ADO.NET, .NET Aspire, Kubernetes, Azure Container Apps, or built-in/dashboard observability
+- designing grain serialization contracts, versioning grain interfaces, configuring custom placement, or implementing grain call filters and interceptors
 
 ## Workflow
 
-1. Decide whether Orleans is the right abstraction. Use it when the system has many loosely coupled interactive entities which can each stay small and single-threaded. Do not force Orleans onto shared-memory workloads, long batch jobs, or systems dominated by constant global coordination.
-2. Model grain boundaries around business identity, not around controllers, tables, or arbitrary CRUD slices. Prefer one grain per user, cart, device, room, order, or other durable entity.
-3. Keep grain APIs coarse-grained and fully asynchronous. Avoid `.Result`, `.Wait()`, blocking I/O, lock-based coordination, or long chatty call chains between grains.
-4. Use current Orleans state patterns. Prefer constructor-injected `IPersistentState<TState>` with named states and named providers. Treat `Grain<TState>` as legacy unless you are constrained by existing code.
-5. Pick the right runtime primitive deliberately:
-   - use standard grains for stateful request/response logic
-   - use `[StatelessWorker]` for pure stateless fan-out or compute helpers
-   - use Orleans streams for decoupled event flow and pub/sub
-   - use `RegisterGrainTimer` for activation-local periodic work
-   - use reminders for durable low-frequency wakeups which must survive deactivation or restarts
-6. Choose hosting intentionally. Use `UseOrleans` for silos and `UseOrleansClient` for separate clients. In Aspire, declare the Orleans resource in AppHost, wire clustering/storage/reminders there, and use `.AsClient()` for frontend-only consumers.
-7. Configure providers with production realism. In-memory storage, reminders, and stream providers are for development or tests only. Prefer managed identity and `DefaultAzureCredential` for Azure-backed providers when possible.
-8. Treat placement and activation movement as optimization tools, not defaults to cargo-cult. Start with the current runtime defaults and only add custom placement, rebalancing, or repartitioning when measurement shows a real locality or load problem.
-9. Make the cluster observable. Add logging, OpenTelemetry, health checks, and dashboard access deliberately. If you expose the Orleans Dashboard, secure it with ASP.NET Core authorization and treat it as an operational surface.
-10. Test the cluster behavior you actually depend on. Prefer `InProcessTestCluster` for new tests, add multi-silo coverage when placement, reminders, persistence, or failover behavior matters, and benchmark hot grains before claiming the design scales.
+1. **Decide whether Orleans fits.** Use it when the system has many loosely coupled interactive entities that can each stay small and single-threaded. Do not force Orleans onto shared-memory workloads, long batch jobs, or systems dominated by constant global coordination.
+
+2. **Model grain boundaries around business identity.** Prefer one grain per user, cart, device, room, order, or other durable entity. Never create unique grains per request — use `[StatelessWorker]` for stateless fan-out. Grain identity types:
+   - `IGrainWithGuidKey` — globally unique entities
+   - `IGrainWithIntegerKey` — relational DB integration
+   - `IGrainWithStringKey` — flexible string keys
+   - `IGrainWithGuidCompoundKey` / `IGrainWithIntegerCompoundKey` — composite identity with extension string
+
+3. **Design coarse-grained async APIs.** All grain interface methods must return `Task`, `Task<T>`, or `ValueTask<T>`. Use `IAsyncEnumerable<T>` for streaming responses. Avoid `.Result`, `.Wait()`, blocking I/O, lock-based coordination. Use `Task.WhenAll` for parallel cross-grain calls. Apply `[ResponseTimeout("00:00:05")]` on interface methods when needed.
+
+4. **Choose the right state pattern:**
+   - `IPersistentState<TState>` with `[PersistentState("name", "provider")]` for named persistent state (preferred)
+   - Multiple named states per grain for different storage providers
+   - `JournaledGrain<TState, TEvent>` for event-sourced grains
+   - `ITransactionalState<TState>` for ACID transactions across grains
+   - `Grain<TState>` is legacy — use only when constrained by existing code
+
+5. **Pick the right runtime primitive deliberately:**
+   - Standard grains for stateful request/response logic
+   - `[StatelessWorker]` for pure stateless fan-out or compute helpers
+   - Orleans streams for decoupled event flow and pub/sub with `[ImplicitStreamSubscription]`
+   - Broadcast channels for fire-and-forget fan-out with `[ImplicitChannelSubscription]`
+   - `RegisterGrainTimer` for activation-local periodic work (non-durable)
+   - Reminders via `IRemindable` for durable low-frequency wakeups
+   - Observers via `IGrainObserver` and `ObserverManager<T>` for one-way push notifications
+
+6. **Configure serialization correctly:**
+   - `[GenerateSerializer]` on all state and message types
+   - `[Id(N)]` on each serialized member for stable identification
+   - `[Alias("name")]` for safe type renaming
+   - `[Immutable]` to skip copy overhead on immutable types
+   - Use surrogates (`IConverter<TOriginal, TSurrogate>`) for types you don't own
+
+7. **Handle reentrancy and scheduling deliberately:**
+   - Default is non-reentrant single-threaded execution (safe but deadlock-prone with circular calls)
+   - `[Reentrant]` on grain class for full interleaving
+   - `[AlwaysInterleave]` on interface method for specific method interleaving
+   - `[ReadOnly]` for concurrent read-only methods
+   - `RequestContext.AllowCallChainReentrancy()` for scoped reentrancy
+   - Native `CancellationToken` support (last parameter, optional default)
+
+8. **Choose hosting intentionally.**
+   - `UseOrleans` for silos, `UseOrleansClient` for separate clients
+   - Co-hosted client runs in same process (reduced latency, no extra serialization)
+   - In Aspire, declare Orleans resource in AppHost, wire clustering/storage/reminders there, use `.AsClient()` for frontend-only consumers
+   - Prefer `TokenCredential` with `DefaultAzureCredential` for Azure-backed providers
+
+9. **Configure providers with production realism.**
+   - In-memory storage, reminders, and stream providers are dev/test only
+   - Persistence: Redis, Azure Table/Blob, Cosmos DB, ADO.NET, DynamoDB
+   - Reminders: Azure Table, Redis, Cosmos DB, ADO.NET
+   - Clustering: Azure Table, Redis, Cosmos DB, ADO.NET, Consul, Kubernetes
+   - Streams: Azure Event Hubs, Azure Queue, Memory (dev only)
+
+10. **Treat placement as an optimization tool, not a default to cargo-cult.**
+    - `ResourceOptimizedPlacement` is default since 9.2 (CPU, memory, activation count weighted)
+    - `RandomPlacement`, `PreferLocalPlacement`, `HashBasedPlacement`, `ActivationCountBasedPlacement`
+    - `SiloRoleBasedPlacement` for role-targeted placement
+    - Custom placement via `IPlacementDirector` + `PlacementStrategy` + `PlacementAttribute`
+    - Placement filtering (9.0+) for zone-aware and hardware-affinity placement
+    - Activation repartitioning and rebalancing are experimental
+
+11. **Make the cluster observable.**
+    - Standard `Microsoft.Extensions.Logging`
+    - `System.Diagnostics.Metrics` with meter `"Microsoft.Orleans"`
+    - OpenTelemetry export via `AddOtlpExporter` + `AddMeter("Microsoft.Orleans")`
+    - Distributed tracing via `AddActivityPropagation()` with sources `"Microsoft.Orleans.Runtime"` and `"Microsoft.Orleans.Application"`
+    - Orleans Dashboard for operational visibility (secure with ASP.NET Core auth)
+    - Health checks for cluster readiness
+
+12. **Test the cluster behavior you actually depend on.**
+    - `InProcessTestCluster` for new tests
+    - Multi-silo coverage when placement, reminders, persistence, or failover matters
+    - Benchmark hot grains before claiming the design scales
+    - Use memory providers in test, real providers in integration tests
 
 ## Architecture
 
 ```mermaid
 flowchart LR
-  A["Distributed requirement"] --> B{"Many independent interactive entities?"}
-  B -->|No| C["Prefer plain service / worker / ASP.NET Core app"]
+  A["Distributed requirement"] --> B{"Many independent<br/>interactive entities?"}
+  B -->|No| C["Plain service / worker / ASP.NET Core"]
   B -->|Yes| D["Model one grain per business identity"]
-  D --> E{"Needs durable state?"}
-  E -->|Yes| F["Use named `IPersistentState<TState>` providers"]
-  E -->|No| G["Keep activation state in memory only"]
-  D --> H{"Needs event fan-out or pub/sub?"}
-  H -->|Yes| I["Use Orleans streams"]
-  D --> J{"Needs periodic work?"}
-  J -->|Activation-local| K["Use `RegisterGrainTimer`"]
-  J -->|Durable wakeups| L["Use reminders"]
-  D --> M{"Separate frontend or API process?"}
-  M -->|Yes| N["Use `UseOrleansClient` / `.AsClient()`"]
-  M -->|No| O["Co-host client and silo if it stays simple"]
-  F --> P["Add testing, placement, observability, and deployment checks"]
-  G --> P
-  I --> P
-  K --> P
-  L --> P
-  N --> P
-  O --> P
+  D --> E{"State pattern?"}
+  E -->|"Persistent"| F["IPersistentState&lt;T&gt;"]
+  E -->|"Event-sourced"| F2["JournaledGrain&lt;S,E&gt;"]
+  E -->|"Transactional"| F3["ITransactionalState&lt;T&gt;"]
+  E -->|"In-memory only"| G["Activation state"]
+  D --> H{"Communication?"}
+  H -->|"Pub/sub"| I["Orleans streams"]
+  H -->|"Broadcast"| I2["Broadcast channels"]
+  H -->|"Push to client"| I3["Observers"]
+  H -->|"Request/response"| I4["Direct grain calls"]
+  D --> J{"Periodic work?"}
+  J -->|"Activation-local"| K["RegisterGrainTimer"]
+  J -->|"Durable wakeups"| L["Reminders"]
+  D --> M{"Client topology?"}
+  M -->|"Separate process"| N["UseOrleansClient / .AsClient()"]
+  M -->|"Same process"| O["Co-hosted silo+client"]
+  F & F2 & F3 & G & I & I2 & I3 & I4 & K & L & N & O --> P["Serialization → Placement → Observability → Testing → Deploy"]
 ```
 
 ## Deliver
 
 - a justified Orleans fit, or a clear rejection when the problem should stay as plain `.NET` code
 - grain boundaries, grain identities, and activation behavior aligned to the domain model
-- concrete choices for clustering, persistence, reminders, streams, placement, and hosting topology
-- an async-safe grain API surface with bounded state and reduced hot-spot risk
+- concrete choices for clustering, persistence, reminders, streams, placement, transactions, and hosting topology
+- serialization contracts with `[GenerateSerializer]`, `[Id]`, versioning via `[Alias]`, and immutability annotations
+- an async-safe grain API surface with bounded state, proper reentrancy, and reduced hot-spot risk
 - an explicit testing and observability plan for local development and production
 
 ## Validate
@@ -74,25 +135,32 @@ flowchart LR
 - grain interfaces are coarse enough to avoid chatty cross-grain traffic
 - no grain code blocks threads or mixes sync-over-async with runtime calls
 - state is bounded, version-tolerant, and persisted only through intentional provider-backed writes
-- timers are not being used where durable reminders are required, and reminders are not being used for high-frequency ticks
+- all state and message types use `[GenerateSerializer]` and `[Id(N)]` correctly
+- timers are not used where durable reminders are required; reminders are not used for high-frequency ticks
 - in-memory storage, reminders, and stream providers are confined to dev/test usage
-- Aspire projects register the required keyed backing resources before `UseOrleans()` or `UseOrleansClient()` relies on them
+- Aspire projects register required keyed backing resources before `UseOrleans()` or `UseOrleansClient()`
+- reentrancy is handled deliberately — circular call patterns use `[Reentrant]`, `[AlwaysInterleave]`, or `AllowCallChainReentrancy`
+- transactional grains are marked `[Reentrant]` and use `PerformRead`/`PerformUpdate`
 - hot grains, global coordinators, and affinity-heavy grains are measured and justified
 - tests cover multi-silo behavior, persistence, and failover-sensitive logic when those behaviors matter
+- deployment uses production clustering, real providers, and proper GC configuration
 
-When exact wording, API shape, or long-tail coverage matters, read the smallest relevant official Orleans reference file instead of relying on the summary alone.
+## Load References
 
-## References
+Open only what you need. Each reference is topic-focused for token economy:
 
-Open only what you need:
-
-- [official-docs-index.md](references/official-docs-index.md) - Full Orleans documentation map with direct links to the official Learn tree, quickstarts, samples, implementation details, and repository entry points
-- [grains.md](references/grains.md) - Grain modeling, persistence, event sourcing, reminders, transactions, and versioning links
-- [hosting.md](references/hosting.md) - Clients, Aspire, configuration, observability, dashboard, and deployment links
-- [implementation.md](references/implementation.md) - Runtime internals, testing, load balancing, messaging guarantees, and resource links
-- [examples.md](references/examples.md) - Quickstarts, samples browser entries, and official Orleans example hubs
-- [patterns.md](references/patterns.md) - grain modeling, persistence, coordination, and distribution patterns
-- [anti-patterns.md](references/anti-patterns.md) - blocking calls, unbounded state, chatty grains, and bottlenecks
+- references/official-docs-index.md — full Orleans documentation map with direct links to the official Learn tree
+- references/grains.md — grain modeling, persistence, event sourcing, reminders, transactions, versioning links
+- references/grain-api.md — grain identity, placement, lifecycle, reentrancy, cancellation API details with code
+- references/persistence-api.md — IPersistentState API, provider configuration, event sourcing, transactions with code
+- references/streaming-api.md — streams, broadcast channels, observers, IAsyncEnumerable patterns with code
+- references/serialization-api.md — GenerateSerializer, Id, Alias, surrogates, copier, immutability details
+- references/hosting.md — clients, Aspire, configuration, observability, dashboard, deployment links
+- references/configuration-api.md — silo/client config, GC tuning, deployment targets, observability setup with code
+- references/implementation.md — runtime internals, testing, load balancing, messaging guarantees
+- references/patterns.md — grain, persistence, streaming, coordination, and performance patterns with code
+- references/anti-patterns.md — blocking calls, unbounded state, chatty grains, bottlenecks, deadlocks with code
+- references/examples.md — quickstarts, samples browser entries, and official Orleans example hubs
 
 Official sources:
 
@@ -103,6 +171,8 @@ Official sources:
 - [Grain Placement](https://learn.microsoft.com/dotnet/orleans/grains/grain-placement)
 - [Timers and Reminders](https://learn.microsoft.com/dotnet/orleans/grains/timers-and-reminders)
 - [Streaming](https://learn.microsoft.com/dotnet/orleans/streaming/)
+- [Transactions](https://learn.microsoft.com/dotnet/orleans/grains/transactions)
+- [Serialization](https://learn.microsoft.com/dotnet/orleans/host/configuration-guide/serialization)
 - [Testing](https://learn.microsoft.com/dotnet/orleans/implementation/testing)
 - [Orleans Dashboard](https://learn.microsoft.com/dotnet/orleans/dashboard/)
 - [Orleans and .NET Aspire Integration](https://learn.microsoft.com/dotnet/orleans/host/aspire-integration)
