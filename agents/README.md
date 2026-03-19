@@ -19,6 +19,7 @@ Use these placement rules:
 - [`dotnet-router/AGENT.md`](../agents/dotnet-router/AGENT.md): first-stop router for broad or ambiguous `.NET` work
 - [`dotnet-build/AGENT.md`](../agents/dotnet-build/AGENT.md): build, restore, diagnostics, and CI-focused triage
 - [`dotnet-data/AGENT.md`](../agents/dotnet-data/AGENT.md): EF Core, EF6, migrations, and query issues
+- [`dotnet-frontend/AGENT.md`](../agents/dotnet-frontend/AGENT.md): frontend-focused triage for Blazor, Node-based web assets, linting, site audits, and file-structure drift inside `.NET` repos
 - [`dotnet-ai/AGENT.md`](../agents/dotnet-ai/AGENT.md): Semantic Kernel, Microsoft Agent Framework, Microsoft.Extensions.AI, MCP, and ML.NET
 - [`dotnet-modernization/AGENT.md`](../agents/dotnet-modernization/AGENT.md): upgrade, migration, and legacy modernization
 - [`dotnet-review/AGENT.md`](../agents/dotnet-review/AGENT.md): review orchestration across quality, testing, and architecture

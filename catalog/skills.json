@@ -73,6 +73,15 @@
       "path": "skills/dotnet-azure-functions/"
     },
     {
+      "name": "dotnet-biome",
+      "title": "Biome for Frontend Assets in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use Biome in .NET repositories that ship Node-based frontend assets and want a fast combined formatter-linter-import organizer for JavaScript, TypeScript, CSS, JSON, GraphQL, or HTML. Use when a repo prefers a modern all-in-one CLI over a larger ESLint plus Prettier style stack.",
+      "compatibility": "Requires a .NET repository with frontend assets managed through Node or a standalone Biome binary workflow; keep ownership explicit versus ESLint, Stylelint, and webhint.",
+      "path": "skills/dotnet-biome/"
+    },
+    {
       "name": "dotnet-blazor",
       "title": "Blazor",
       "version": "1.0.0",
@@ -80,6 +89,15 @@
       "description": "Build and review Blazor applications across server, WebAssembly, web app, and hybrid scenarios with correct component design, state flow, rendering, and hosting choices.",
       "compatibility": "Requires Blazor project (.NET 6+, preferably .NET 8+ for unified model).",
       "path": "skills/dotnet-blazor/"
+    },
+    {
+      "name": "dotnet-chous",
+      "title": "Chous for Frontend File-Structure Linting in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use Chous in .NET repositories that ship sizeable frontend codebases and want file-structure linting, naming convention enforcement, and folder-layout policy as a CLI gate. Use when the problem is frontend architecture drift in the file tree rather than semantic code issues inside the files.",
+      "compatibility": "Requires a repository with a meaningful frontend file tree and Node-based tooling or `npx`; Chous complements code linters and does not replace ESLint, Stylelint, or runtime site audits.",
+      "path": "skills/dotnet-chous/"
     },
     {
       "name": "dotnet-cloc",
@@ -163,6 +181,15 @@
       "path": "skills/dotnet-entity-framework6/"
     },
     {
+      "name": "dotnet-eslint",
+      "title": "ESLint for Frontend Assets in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use ESLint in .NET repositories that ship JavaScript, TypeScript, React, or other Node-based frontend assets. Use when a repo needs a configurable CLI lint gate for frontend correctness, import hygiene, unsafe patterns, or framework-specific rules.",
+      "compatibility": "Requires a .NET repository with Node-based frontend assets such as `package.json`, `ClientApp/`, `src/`, or separate web frontend folders.",
+      "path": "skills/dotnet-eslint/"
+    },
+    {
       "name": "dotnet-format",
       "title": "dotnet format",
       "version": "1.0.0",
@@ -179,6 +206,15 @@
       "description": "Build or review gRPC services and clients in .NET with correct contract-first design, streaming behavior, transport assumptions, and backend service integration.",
       "compatibility": "Requires ASP.NET Core gRPC or gRPC client projects.",
       "path": "skills/dotnet-grpc/"
+    },
+    {
+      "name": "dotnet-htmlhint",
+      "title": "HTMLHint for Static HTML in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use HTMLHint in .NET repositories that ship static HTML output or standalone frontend templates. Use when a repo needs a focused CLI lint gate for DOM structure, invalid attributes, and basic HTML correctness checks on static pages.",
+      "compatibility": "Requires a .NET repository with static HTML assets or generated frontend output; use on rendered output rather than raw Razor or Blazor source files.",
+      "path": "skills/dotnet-htmlhint/"
     },
     {
       "name": "dotnet-legacy-aspnet",
@@ -269,6 +305,15 @@
       "description": "Build or consume Model Context Protocol (MCP) servers and clients in .NET using the official MCP C# SDK, including stdio, Streamable HTTP, tools, prompts, resources, and capability negotiation.",
       "compatibility": "Requires the official MCP C# SDK packages (`ModelContextProtocol.Core`, `ModelContextProtocol`, or `ModelContextProtocol.AspNetCore`) on .NET 8+; current guidance targets the v1.1.x SDK.",
       "path": "skills/dotnet-mcp/"
+    },
+    {
+      "name": "dotnet-metalint",
+      "title": "Metalint for Aggregated Frontend Linting in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use Metalint in .NET repositories that ship Node-based frontend assets and want one CLI entrypoint over several underlying linters. Use when a repo wants to orchestrate ESLint, Stylelint, HTMLHint, and related frontend checks from a single checked-in `.metalint/` configuration.",
+      "compatibility": "Requires a .NET repository with a Node-based frontend and multiple underlying linters; Metalint is an orchestrator, not a replacement for the actual linter configs it delegates to.",
+      "path": "skills/dotnet-metalint/"
     },
     {
       "name": "dotnet-meziantou-analyzer",
@@ -478,6 +523,15 @@
       "path": "skills/dotnet-signalr/"
     },
     {
+      "name": "dotnet-sonarjs",
+      "title": "SonarJS Rules for Frontend Assets in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use SonarJS-derived rules in .NET repositories that ship JavaScript or TypeScript frontends and need deeper bug-risk, code-smell, or cognitive-complexity checks than a minimal ESLint baseline. Use when the repo wants `eslint-plugin-sonarjs` locally or already runs SonarQube or SonarCloud in CI.",
+      "compatibility": "Requires a .NET repository with JS or TS frontend assets; local developer loops normally use `eslint-plugin-sonarjs`, while full SonarQube or SonarCloud analysis should follow the repo's existing scanner pipeline and documented licensing posture.",
+      "path": "skills/dotnet-sonarjs/"
+    },
+    {
       "name": "dotnet-stryker",
       "title": "Stryker.NET",
       "version": "1.0.0",
@@ -494,6 +548,15 @@
       "description": "Use the open-source free `StyleCop.Analyzers` package for naming, layout, documentation, and style rules in .NET projects. Use when a repo wants stricter style conventions than the SDK analyzers alone provide.",
       "compatibility": "Requires a .NET SDK-based repository; respects the repo's `AGENTS.md` commands first.",
       "path": "skills/dotnet-stylecop-analyzers/"
+    },
+    {
+      "name": "dotnet-stylelint",
+      "title": "Stylelint for Stylesheets in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use Stylelint in .NET repositories that ship CSS, SCSS, or other stylesheet assets alongside web frontends. Use when a repo needs a dedicated CLI lint gate for selectors, properties, duplicate styles, naming conventions, or design-system rule enforcement.",
+      "compatibility": "Requires a .NET repository with stylesheet assets such as `wwwroot/`, `ClientApp/`, `src/`, or other frontend folders managed with Node tooling.",
+      "path": "skills/dotnet-stylelint/"
     },
     {
       "name": "dotnet-tunit",
@@ -530,6 +593,15 @@
       "description": "Build or maintain controller-based ASP.NET Core APIs when the project needs controller conventions, advanced model binding, validation extensions, OData, JsonPatch, or existing API patterns.",
       "compatibility": "Requires an ASP.NET Core API project that uses or should use controllers.",
       "path": "skills/dotnet-web-api/"
+    },
+    {
+      "name": "dotnet-webhint",
+      "title": "webhint for Browser-Facing Frontends in .NET Repositories",
+      "version": "1.0.0",
+      "category": "Code Quality",
+      "description": "Use webhint in .NET repositories that ship browser-facing frontends. Use when a repo needs CLI audits for accessibility, performance, security headers, PWA signals, SEO, or runtime page quality against a served site or built frontend output.",
+      "compatibility": "Requires a .NET repository with a browser-facing site or frontend build output; works best against a reachable local or deployed URL and a checked-in `.hintrc`.",
+      "path": "skills/dotnet-webhint/"
     },
     {
       "name": "dotnet-winforms",

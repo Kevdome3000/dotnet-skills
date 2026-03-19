@@ -33,6 +33,7 @@ compatibility: "Requires a .NET repository, solution, or project tree."
    - Legacy: `dotnet-legacy-aspnet`, `dotnet-wcf`, `dotnet-workflow-foundation`
 3. Route cross-cutting work to the companion skill instead of keeping it inside generic `.NET` advice:
    - project bootstrap or repo shape: `dotnet-project-setup`, `dotnet-architecture`
+   - frontend asset analysis in mixed `.NET` plus Node repos: `dotnet-eslint`, `dotnet-stylelint`, `dotnet-htmlhint`, `dotnet-webhint`, `dotnet-biome`, `dotnet-sonarjs`, `dotnet-metalint`, `dotnet-chous`
    - code review: `dotnet-code-review`
    - language features: `dotnet-modern-csharp`
    - testing: `dotnet-tunit`, `dotnet-xunit`, `dotnet-mstest`
@@ -46,6 +47,7 @@ compatibility: "Requires a .NET repository, solution, or project tree."
 
 - If the repo contains `Microsoft.NET.Sdk.Web`, start from a web skill, not generic `.NET`.
 - If the repo contains Blazor, Razor Components, or `.razor` pages, prefer `dotnet-blazor`.
+- If the repo contains `package.json`, frontend lint configs, or browser-facing asset pipelines inside the `.NET` solution, prefer the dedicated frontend analysis skills instead of generic `.NET`.
 - If the repo contains Orleans grains or silo hosting, prefer `dotnet-orleans`.
 - If the repo is mostly analyzers, CI, or coverage work, prefer the quality skill directly.
 - If the user asks about “which skill should I use?”, answer with the narrowest matching skill and explain why in one short sentence.

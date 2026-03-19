@@ -17,7 +17,7 @@ permissions:
 
 env:
   CATALOG_TAG_PREFIX: "catalog-v"
-  DOTNET_SKILLS_SITE_URL: https://managedcode.github.io/dotnet-skills/
+  DOTNET_SKILLS_SITE_URL: https://skills.managed-code.com/
   DOTNET_VERSION: "10.0.x"
   SOLUTION_FILE: "dotnet-skills.slnx"
   TOOL_PROJECT: "tools/ManagedCode.DotnetSkills/ManagedCode.DotnetSkills.csproj"

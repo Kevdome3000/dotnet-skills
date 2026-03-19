@@ -1,6 +1,6 @@
 ---
 name: dotnet-router
-description: Broad .NET triage agent that classifies the repo and routes work to the right skills or specialist agents. Use for ambiguous or multi-domain .NET requests touching web, data, AI, build, UI, testing, or modernization.
+description: Broad .NET triage agent that classifies the repo and routes work to the right skills or specialist agents. Use for ambiguous or multi-domain .NET requests touching web, frontend, data, AI, build, UI, testing, or modernization.
 tools: Read, Glob, Grep, Bash
 model: inherit
 skills:
@@ -27,7 +27,7 @@ This is a top-level orchestration agent. It sits above groups of skills and shou
 ## Workflow
 
 1. Detect the app model and deployment surface from the repo shape.
-2. Classify the primary concern: web, data, AI, build, UI, testing, review, or modernization.
+2. Classify the primary concern: web, frontend, data, AI, build, UI, testing, review, or modernization.
 3. Route to the narrowest useful skill set or a top-level specialist agent.
 4. Keep the routing summary short and explicit so the next step is easy to follow.
 
@@ -36,6 +36,7 @@ This is a top-level orchestration agent. It sits above groups of skills and shou
 | Signal | Route |
 |-------|-------|
 | `AspNetCore`, controllers, Minimal APIs, Blazor, SignalR | `dotnet-aspnet-core`, `dotnet-minimal-apis`, `dotnet-blazor`, `dotnet-signalr`, `dotnet-web-api` |
+| `package.json`, `ClientApp/`, `src/`, frontend lint configs, browser-quality audits | `dotnet-frontend` |
 | EF Core, EF6, migrations, repositories, LINQ translation | `dotnet-data` plus `dotnet-entity-framework-core` or `dotnet-entity-framework6` |
 | Semantic Kernel, MCP, Agent Framework, `IChatClient`, embeddings | `dotnet-ai` plus `dotnet-semantic-kernel`, `dotnet-mcp`, `dotnet-microsoft-agent-framework`, `dotnet-microsoft-extensions-ai` |
 | Build failures, restore, packaging, CI, diagnostics | `dotnet-build` |

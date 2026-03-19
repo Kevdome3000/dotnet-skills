@@ -1,0 +1,13 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" rx="48" fill="#FFF8F4"/>
+  <circle cx="114" cy="118" r="34" fill="#FF7E5D"/>
+  <rect x="78" y="76" width="1044" height="478" rx="36" fill="white"/>
+  <path d="M196 187H230L308 361H257L238 318H171L152 361H101L196 187ZM220 277L205 239L190 277H220Z" fill="#17172D"/>
+  <text x="344" y="250" fill="#17172D" font-family="Inter, Arial, sans-serif" font-size="86" font-weight="700">dotnet-skills</text>
+  <text x="344" y="333" fill="#FF6941" font-family="Inter, Arial, sans-serif" font-size="52" font-weight="700">Browse .NET skills by category</text>
+  <text x="104" y="444" fill="#51607D" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="500">Categories, skills, agents, and about pages for Claude Code, GitHub Copilot, Gemini, and Codex.</text>
+  <rect x="104" y="484" width="222" height="58" rx="29" fill="#FFF0EA"/>
+  <text x="138" y="521" fill="#FF6941" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Open Source</text>
+  <rect x="352" y="484" width="284" height="58" rx="29" fill="#17172D"/>
+  <text x="388" y="521" fill="white" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">ManagedCode</text>
+</svg>

@@ -47,6 +47,26 @@
       "path": "agents/dotnet-data/"
     },
     {
+      "name": "dotnet-frontend",
+      "title": ".NET Frontend",
+      "description": "Frontend-focused orchestration agent for .NET repositories that ship browser-facing UI plus Node-based frontend assets. Use when the dominant problem is frontend linting, style quality, HTML checks, runtime site audits, or file-structure drift rather than backend-only .NET code.",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-blazor",
+        "dotnet-eslint",
+        "dotnet-stylelint",
+        "dotnet-htmlhint",
+        "dotnet-webhint",
+        "dotnet-biome",
+        "dotnet-sonarjs",
+        "dotnet-metalint",
+        "dotnet-chous"
+      ],
+      "tools": "Read, Edit, Glob, Grep, Bash",
+      "model": "inherit",
+      "path": "agents/dotnet-frontend/"
+    },
+    {
       "name": "dotnet-modernization",
       "title": ".NET Modernization",
       "description": "Modernization orchestration agent for upgrades, legacy migrations, compatibility planning, and staged adoption of modern .NET patterns. Use when the main problem is moving old .NET code or architecture toward a modern target without reckless rewrites.",
@@ -83,7 +103,7 @@
     {
       "name": "dotnet-router",
       "title": ".NET Router",
-      "description": "Broad .NET triage agent that classifies the repo and routes work to the right skills or specialist agents. Use for ambiguous or multi-domain .NET requests touching web, data, AI, build, UI, testing, or modernization.",
+      "description": "Broad .NET triage agent that classifies the repo and routes work to the right skills or specialist agents. Use for ambiguous or multi-domain .NET requests touching web, frontend, data, AI, build, UI, testing, or modernization.",
       "skills": [
         "dotnet",
         "dotnet-architecture",

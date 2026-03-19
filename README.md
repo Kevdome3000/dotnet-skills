@@ -94,7 +94,7 @@ When `--agent` is omitted for skill installation, the tool checks for `.codex/`,
 This repository now tracks a parallel agent layer above the skill catalog.
 
 - `skills/` remain the canonical reusable `dotnet-*` building blocks.
-- top-level `agents/<agent>/AGENT.md` folders hold broad orchestration agents for routing, review, modernization, or other grouped flows that span multiple skills.
+- top-level `agents/<agent>/AGENT.md` folders hold broad orchestration agents for routing, frontend analysis, review, modernization, or other grouped flows that span multiple skills.
 - `skills/<skill>/agents/<agent>/AGENT.md` can hold tightly coupled specialist agents that should ship next to one skill and use that skill as their main implementation source.
 - every agent gets its own folder so it can carry references, assets, scripts, and future installer metadata.
 - an agent can therefore represent either a grouped pack of related skills or a narrow companion to one specific skill.
@@ -118,6 +118,7 @@ flowchart LR
 | [`dotnet-router`](agents/dotnet-router/AGENT.md) | top-level | classify web, data, AI, build, UI, testing, and modernization work |
 | [`dotnet-build`](agents/dotnet-build/AGENT.md) | top-level | restore, build, pack, CI, diagnostics |
 | [`dotnet-data`](agents/dotnet-data/AGENT.md) | top-level | EF Core, EF6, migrations, query issues |
+| [`dotnet-frontend`](agents/dotnet-frontend/AGENT.md) | top-level | Blazor, frontend asset quality, browser-facing audits, and file-structure linting inside `.NET` repos |
 | [`dotnet-ai`](agents/dotnet-ai/AGENT.md) | top-level | Semantic Kernel, Microsoft Agent Framework, Microsoft.Extensions.AI, MCP, ML.NET |
 | [`dotnet-modernization`](agents/dotnet-modernization/AGENT.md) | top-level | upgrade, migration, and legacy modernization |
 | [`dotnet-review`](agents/dotnet-review/AGENT.md) | top-level | code review, analyzers, testing, architecture |
@@ -158,7 +159,7 @@ skills/<skill-name>/
 
 <!-- BEGIN GENERATED CATALOG -->
 
-This catalog currently contains **65** skills.
+This catalog currently contains **73** skills.
 
 ### Core
 
@@ -262,15 +263,23 @@ This catalog currently contains **65** skills.
 | Skill | Version | Description |
 |-------|---------|-------------|
 | [`dotnet-analyzer-config`](skills/dotnet-analyzer-config/) | `1.0.0` | Use a repo-root `.editorconfig` to configure free .NET analyzer and style rules. Use when a .NET repo needs rule severity, code-style options, section layout, or analyzer ownership made explicit. Nested `.editorconfig` files are allowed when they serve a clear subtree-specific purpose. |
+| [`dotnet-biome`](skills/dotnet-biome/) | `1.0.0` | Use Biome in .NET repositories that ship Node-based frontend assets and want a fast combined formatter-linter-import organizer for JavaScript, TypeScript, CSS, JSON, GraphQL, or HTML. Use when a repo prefers a modern all-in-one CLI over a larger ESLint plus Prettier style stack. |
+| [`dotnet-chous`](skills/dotnet-chous/) | `1.0.0` | Use Chous in .NET repositories that ship sizeable frontend codebases and want file-structure linting, naming convention enforcement, and folder-layout policy as a CLI gate. Use when the problem is frontend architecture drift in the file tree rather than semantic code issues inside the files. |
 | [`dotnet-code-analysis`](skills/dotnet-code-analysis/) | `1.0.1` | Use the free built-in .NET SDK analyzers and analysis levels with gradual Roslyn warning promotion. Use when a .NET repo needs first-party code analysis, `EnableNETAnalyzers`, `AnalysisLevel`, or warning-as-error policy wired into build and CI. |
 | [`dotnet-csharpier`](skills/dotnet-csharpier/) | `1.0.0` | Use the open-source free `CSharpier` formatter for C# and XML. Use when a .NET repo intentionally wants one opinionated formatter instead of a highly configurable `dotnet format`-driven style model. |
+| [`dotnet-eslint`](skills/dotnet-eslint/) | `1.0.0` | Use ESLint in .NET repositories that ship JavaScript, TypeScript, React, or other Node-based frontend assets. Use when a repo needs a configurable CLI lint gate for frontend correctness, import hygiene, unsafe patterns, or framework-specific rules. |
 | [`dotnet-format`](skills/dotnet-format/) | `1.0.0` | Use the free first-party `dotnet format` CLI for .NET formatting and analyzer fixes. Use when a .NET repo needs formatting commands, `--verify-no-changes` CI checks, or `.editorconfig`-driven code style enforcement. |
+| [`dotnet-htmlhint`](skills/dotnet-htmlhint/) | `1.0.0` | Use HTMLHint in .NET repositories that ship static HTML output or standalone frontend templates. Use when a repo needs a focused CLI lint gate for DOM structure, invalid attributes, and basic HTML correctness checks on static pages. |
+| [`dotnet-metalint`](skills/dotnet-metalint/) | `1.0.0` | Use Metalint in .NET repositories that ship Node-based frontend assets and want one CLI entrypoint over several underlying linters. Use when a repo wants to orchestrate ESLint, Stylelint, HTMLHint, and related frontend checks from a single checked-in `.metalint/` configuration. |
 | [`dotnet-meziantou-analyzer`](skills/dotnet-meziantou-analyzer/) | `1.0.0` | Use the open-source free `Meziantou.Analyzer` package for design, usage, security, performance, and style rules in .NET. Use when a repo wants broader analyzer coverage with a single NuGet package. |
 | [`dotnet-modern-csharp`](skills/dotnet-modern-csharp/) | `1.0.0` | Write modern, version-aware C# for .NET repositories. Use when choosing language features across C# versions, especially C# 13 and C# 14, while staying compatible with the repo's target framework and `LangVersion`. |
 | [`dotnet-quality-ci`](skills/dotnet-quality-ci/) | `1.0.0` | Set up or refine open-source .NET code-quality gates for CI: formatting, `.editorconfig`, SDK analyzers, third-party analyzers, coverage, mutation testing, architecture tests, and security scanning. Use when a .NET repo needs an explicit quality stack in `AGENTS.md`, docs, or pipeline YAML. |
 | [`dotnet-resharper-clt`](skills/dotnet-resharper-clt/) | `1.0.0` | Use the free official JetBrains ReSharper Command Line Tools for .NET repositories. Use when a repo wants powerful `jb inspectcode` inspections, `jb cleanupcode` cleanup profiles, solution-level `.DotSettings` enforcement, or a stronger CLI quality gate for C# than the default SDK analyzers alone. |
 | [`dotnet-roslynator`](skills/dotnet-roslynator/) | `1.0.0` | Use the open-source free `Roslynator` analyzer packages and optional CLI for .NET. Use when a repo wants broad C# static analysis, auto-fix flows, dead-code detection, optional CLI checks, or extra rules beyond the SDK analyzers. |
+| [`dotnet-sonarjs`](skills/dotnet-sonarjs/) | `1.0.0` | Use SonarJS-derived rules in .NET repositories that ship JavaScript or TypeScript frontends and need deeper bug-risk, code-smell, or cognitive-complexity checks than a minimal ESLint baseline. Use when the repo wants `eslint-plugin-sonarjs` locally or already runs SonarQube or SonarCloud in CI. |
 | [`dotnet-stylecop-analyzers`](skills/dotnet-stylecop-analyzers/) | `1.0.0` | Use the open-source free `StyleCop.Analyzers` package for naming, layout, documentation, and style rules in .NET projects. Use when a repo wants stricter style conventions than the SDK analyzers alone provide. |
+| [`dotnet-stylelint`](skills/dotnet-stylelint/) | `1.0.0` | Use Stylelint in .NET repositories that ship CSS, SCSS, or other stylesheet assets alongside web frontends. Use when a repo needs a dedicated CLI lint gate for selectors, properties, duplicate styles, naming conventions, or design-system rule enforcement. |
+| [`dotnet-webhint`](skills/dotnet-webhint/) | `1.0.0` | Use webhint in .NET repositories that ship browser-facing frontends. Use when a repo needs CLI audits for accessibility, performance, security headers, PWA signals, SEO, or runtime page quality against a served site or built frontend output. |
 
 ### Architecture
 

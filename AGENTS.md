@@ -375,6 +375,12 @@ Rules:
 - The public supported-platforms section should prefer a compact comparison matrix plus lightweight platform identity tiles over tall repeated marketing cards with duplicated copy.
 - Footer copyright years on the public site must be generated from the build year during page generation; do not hardcode stale years in the HTML template.
 - The public landing page should use tighter spacing rhythm than the current default: avoid oversized shell padding, overly tall card interiors, or loose gaps between onboarding steps and sidebar blocks.
+- The public site design must feel refined, polished, and deliberate rather than merely functional. Favor cleaner hierarchy, calmer spacing, more exact typography, and more intentional surfaces instead of coarse generic cards or loose layout blocks.
+- Every public-site layout change must be verified against real generated catalog data on desktop and mobile widths, including long skill titles and dense grids. Do not ship clipped badges, overlapping cards, broken gutters, or card content that visually escapes its own column.
+- The public site must be fully adaptive across mobile, tablet, laptop, and wide desktop breakpoints. Treat responsive behavior as a first-class requirement: navigation, hero layouts, filters, cards, tables, sidebars, and modal content must remain readable and usable without relying on one preferred viewport size.
+- Keep a visible user-facing link to the main ManagedCode website on the public site; do not leave it only in metadata or structured data.
+- Avoid cramped, tiny, or overweight public-site UI. On desktop especially, do not compress the catalog into overly narrow columns, overly small cards, or heavy bold typography that makes the layout feel dense and cheap. Favor more breathing room, calmer font weights, and card widths that let long .NET titles read naturally.
+- Do not force orchestration-agent cards to share the same dense composition as skill cards. Agent cards need a calmer, page-specific layout: fewer linked-skill pills, clearer hierarchy, and wider columns so they do not read like tall cramped catalog scraps.
 
 ## Source-of-Truth Policy
 

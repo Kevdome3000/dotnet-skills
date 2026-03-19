@@ -80,6 +80,7 @@ compatibility: "Requires a .NET solution or project; may update `AGENTS.md`, CI 
    - `dotnet-code-analysis`
    - `dotnet-analyzer-config`
    - analyzer-pack skills such as `dotnet-stylecop-analyzers`, `dotnet-roslynator`, and `dotnet-meziantou-analyzer`
+   - frontend asset quality skills in mixed `.NET` plus Node repos such as `dotnet-eslint`, `dotnet-stylelint`, `dotnet-htmlhint`, `dotnet-webhint`, `dotnet-biome`, `dotnet-sonarjs`, `dotnet-metalint`, and `dotnet-chous`
    - coverage/reporting skills such as `dotnet-coverlet` and `dotnet-reportgenerator`
    - architecture/security skills such as `dotnet-netarchtest`, `dotnet-archunitnet`, and `dotnet-codeql`
 8. Avoid overlapping tools with conflicting ownership. If you add an opinionated formatter, define whether it replaces or complements `dotnet format`.
