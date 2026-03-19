@@ -48,6 +48,12 @@ Use this reference when the user needs an example-first entry point instead of c
 
 - [Unit testing documentation and example](https://learn.microsoft.com/dotnet/orleans/implementation/testing)
 
+## Repo-Grounded Integration Harness Patterns
+
+- `AIBase`: shared `AspireTestFixture` for API/UI suites plus `AIBaseTestApplication : WebApplicationFactory<...>` for direct DI and grain access
+- `WA.Storied.Agents`: shared `AspireTestFixture` for AppHost lifecycle and Playwright, plus `AIBaseTestApplication : WebApplicationFactory<HostEntryPointMarker>` for Host services and Orleans runtime access
+- Load `testing-patterns.md` when you need working snippets for shared AppHost fixtures, `WebApplicationFactory`, SignalR, or browser automation instead of standalone `InProcessTestCluster` examples
+
 ## Additional Community-Oriented Example Lists Mentioned By Official Samples
 
 - [Road to Orleans](https://github.com/PiotrJustyna/road-to-orleans/)

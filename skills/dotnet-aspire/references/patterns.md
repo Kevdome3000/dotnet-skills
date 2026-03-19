@@ -286,6 +286,8 @@ Testing is especially important for:
 - catching broken resource names or renamed endpoints
 - proving a version upgrade did not silently break orchestration
 
+Load `testing.md` when the repo mixes AppHost lifecycle, `DistributedApplicationTestingBuilder`, `WebApplicationFactory`, SignalR, or Playwright instead of using Aspire as a pure black-box API harness.
+
 ## Upgrade checkpoints
 
 When modernizing older Aspire solutions, verify these points explicitly:

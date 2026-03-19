@@ -1,8 +1,8 @@
 ---
 name: dotnet-tunit
-version: "1.0.0"
+version: "1.1.0"
 category: "Testing"
-description: "Write, run, or repair .NET tests that use TUnit. Use when a repo uses `TUnit`, `[Test]`, `[Arguments]`, source-generated test projects, or Microsoft.Testing.Platform-based execution."
+description: "Write, run, or repair .NET tests that use TUnit. Use when a repo uses `TUnit`, `TUnit.Playwright`, `[Test]`, `[Arguments]`, `ClassDataSource`, `SharedType.PerTestSession`, or Microsoft.Testing.Platform-based execution."
 compatibility: "Requires a .NET solution or project with TUnit packages; respects the repo's `AGENTS.md` commands first."
 ---
 
@@ -13,6 +13,7 @@ compatibility: "Requires a .NET solution or project with TUnit packages; respect
 - the repo uses TUnit
 - you need to add, run, debug, or repair TUnit tests
 - the repo uses Microsoft.Testing.Platform-based test execution
+- the repo uses `ClassDataSource<...>(Shared = SharedType.PerTestSession)`, `ParallelLimiter`, `TUnit.Playwright`, or `--treenode-filter`
 
 ## Value
 
@@ -46,9 +47,15 @@ compatibility: "Requires a .NET solution or project with TUnit packages; respect
    - tests are source-generated at build time
    - tests run in parallel by default
    - built-in analyzers should remain enabled
-4. Fix isolation bugs instead of globally serializing the suite unless the repo already documented a justified exception.
-5. Run the narrowest useful scope first. If the repo hasn't documented filter switches for TUnit yet, prefer project-level focused runs over guessed runner arguments.
-6. Use `[Test]`, `[Arguments]`, hooks, and dependencies only when they make the scenario clearer, not because the framework allows it.
+4. Choose the fixture level deliberately:
+   - plain TUnit tests for isolated logic
+   - shared AppHost/Aspire fixtures for HTTP, SignalR, SSE, or UI flows
+   - `WebApplicationFactory` layered over shared Aspire infra when tests need Host DI services, `IGrainFactory`, or other runtime internals
+5. Reuse expensive fixtures with `ClassDataSource<Fixture>(Shared = SharedType.PerTestSession)` instead of booting distributed infrastructure per test.
+6. Fix isolation bugs instead of globally serializing the suite unless the repo already documented a justified exception.
+7. Run the narrowest useful scope first with `dotnet test ... -- --treenode-filter "..."`. Keep TUnit arguments after `--`.
+8. Capture useful failure evidence: host log dumps, focused console output, coverage files, and Playwright screenshots/HTML for UI tests.
+9. Use `[Test]`, `[Arguments]`, hooks, and dependencies only when they make the scenario clearer, not because the framework allows it.
 
 ## Bootstrap When Missing
 
@@ -58,7 +65,7 @@ If `TUnit` is requested but not configured yet:
    - `rg -n "TUnit|Microsoft\\.Testing\\.Platform" -g '*.csproj' -g 'Directory.Build.*' .`
 2. Add the minimal package set to the test project:
    - `dotnet add TEST_PROJECT.csproj package TUnit`
-   - `dotnet add TEST_PROJECT.csproj package Microsoft.NET.Test.Sdk`
+   - add `Microsoft.NET.Test.Sdk` only when the repo's chosen TUnit project shape requires it; do not blindly duplicate runner packages
 3. Keep the runner model explicit in `AGENTS.md` and CI:
    - record that the repo uses Microsoft.Testing.Platform-compatible execution for this test project
    - record the exact `dotnet test TEST_PROJECT.csproj` command the repo will use
@@ -71,13 +78,30 @@ If `TUnit` is requested but not configured yet:
 - TUnit tests that respect source generation and parallel execution
 - commands that work in local and CI runs
 - framework-specific verification guidance for the repo
+- a fixture strategy that matches the actual test scope: logic-only, AppHost/API, Host DI/grains, or Playwright UI
 
 ## Validate
 
 - the command matches the repo's TUnit runner style
+- focused runs use `--treenode-filter` rather than VSTest-style `--filter`
+- shared distributed fixtures use `SharedType.PerTestSession` or an equivalent reuse pattern
 - shared state is isolated or explicitly controlled
 - built-in TUnit analyzers remain active
 - coverage tooling matches Microsoft.Testing.Platform if coverage is enabled
+- UI failures capture artifacts and server-side failures expose enough logs to avoid blind reruns
+
+## Test Harness
+
+```mermaid
+flowchart LR
+  A["TUnit task"] --> B{"What does the test need?"}
+  B -->|"Single component only"| C["Plain TUnit test"]
+  B -->|"HTTP / SignalR / resource graph"| D["Shared Aspire/AppHost fixture"]
+  B -->|"Host DI / grains / runtime services"| E["Shared Aspire/AppHost fixture + WebApplicationFactory"]
+  B -->|"Browser automation"| F["Shared Aspire/AppHost fixture + Playwright"]
+  C & D & E & F --> G["Run focused with --treenode-filter"]
+  G --> H["Capture logs, artifacts, and coverage"]
+```
 
 ## Ralph Loop
 
@@ -111,23 +135,30 @@ For setup-only requests with no execution, return `status: configured` and exact
 - `references/patterns.md`
 - `references/migration.md`
 - `references/tunit.md`
+- `references/integration-testing.md`
 
 ## Running Tests
 
-TUnit uses Microsoft.Testing.Platform. Use `--treenode-filter` for filtering (not `--filter`).
+TUnit uses Microsoft.Testing.Platform. Use `--treenode-filter` for filtering (not `--filter`), and keep runner switches after `--`.
 
 ```bash
 # Run all tests
-dotnet run --project Tests.csproj
+dotnet test MySolution.sln
+
+# Run one test project
+dotnet test tests/MyProject.Tests/MyProject.Tests.csproj
 
 # Filter by class
-dotnet run --project Tests.csproj -- --treenode-filter "/*/*/CalculatorTests/*"
+dotnet test tests/MyProject.Tests/MyProject.Tests.csproj -- --treenode-filter "/*/*/CalculatorTests/*"
 
 # Filter by category
-dotnet run --project Tests.csproj -- --treenode-filter "/*/*/*/*[Category=Unit]"
+dotnet test tests/MyProject.Tests/MyProject.Tests.csproj -- --treenode-filter "/*/*/*/*[Category=Integration]"
 
-# Exclude category
-dotnet run --project Tests.csproj -- --treenode-filter "/*/*/*/*[Category!=Slow]"
+# Coverage on Microsoft.Testing.Platform
+dotnet test MySolution.sln -- --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+
+# Raw runner help when the repo needs direct TUnit app switches
+dotnet run --project tests/MyProject.Tests/MyProject.Tests.csproj -- --help
 ```
 
 Filter syntax: `/<Assembly>/<Namespace>/<Class>/<Test>` with `*` wildcards. See `references/patterns.md` for full examples.

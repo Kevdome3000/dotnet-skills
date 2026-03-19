@@ -88,28 +88,24 @@ public class DataDrivenTests
 ### Class Data Source
 
 ```csharp
-public class TestDataSource : IEnumerable<object[]>
+public sealed class SharedFixture : IAsyncInitializer, IAsyncDisposable
 {
-    public IEnumerator<object[]> GetEnumerator()
-    {
-        yield return ["test1", 1];
-        yield return ["test2", 2];
-    }
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    public Task InitializeAsync() => Task.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 public class ClassDataTests
 {
     [Test]
-    [ClassDataSource<TestDataSource>]
-    public async Task Process_WithClassData(string name, int value)
+    [ClassDataSource<SharedFixture>(Shared = SharedType.PerTestSession)]
+    public async Task Process_WithSharedFixture(SharedFixture fixture)
     {
-        await Assert.That(name).IsNotEmpty();
-        await Assert.That(value).IsGreaterThan(0);
+        await Assert.That(fixture).IsNotNull();
     }
 }
 ```
+
+Use `Shared = SharedType.PerTestSession` for expensive integration fixtures such as AppHost boot, `WebApplicationFactory`, or browser setup. For full distributed-app patterns, load `integration-testing.md`.
 
 ## Parallel Testing
 

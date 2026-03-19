@@ -1,6 +1,6 @@
 ---
 name: dotnet-aspire
-version: "1.2.0"
+version: "1.3.0"
 category: "Cloud"
 description: "Build, upgrade, and operate .NET Aspire application hosts with current CLI, AppHost, ServiceDefaults, integrations, dashboard, testing, and Azure deployment patterns for distributed apps."
 compatibility: "Best for current Aspire 13-era tooling on .NET 10; use version-aware upgrade guidance for older 8.x or 9.x Aspire solutions."
@@ -11,6 +11,7 @@ compatibility: "Best for current Aspire 13-era tooling on .NET 10; use version-a
 ## Trigger On
 
 - `Aspire.AppHost.Sdk`, `Aspire.Hosting.*`, `DistributedApplication.CreateBuilder`, `WithReference`, `WaitFor`, `AddProject`, `AddRedis`, `AddPostgres`, `aspire run`, `aspire init`, `aspire add`, or `aspire update`
+- `Aspire.Hosting.Testing`, `DistributedApplicationTestingBuilder`, or a test harness that mixes an Aspire AppHost with `WebApplicationFactory`
 - orchestrating multiple services and resources with an AppHost for local development or cloud deployment
 - setting up `ServiceDefaults`, service discovery, OpenTelemetry, health checks, or the Aspire Dashboard
 - choosing between official first-party Aspire integrations and `CommunityToolkit/Aspire`
@@ -25,7 +26,8 @@ compatibility: "Best for current Aspire 13-era tooling on .NET 10; use version-a
 4. Keep `ServiceDefaults` narrow. It exists for telemetry, health checks, resilience, and service discovery, not shared domain models or general utility code.
 5. Prefer official first-party Aspire integrations when they cover the requirement. Use `CommunityToolkit/Aspire` only when the capability gap is real: unsupported language hosts, extra dev infrastructure, or extension packages the official project does not provide.
 6. Validate the whole distributed system, not one project in isolation. Local success means the AppHost starts cleanly, dependencies resolve through `WithReference`, the dashboard shows the expected resource graph, and end-to-end tests can exercise the topology.
-7. When publishing, switch from local containers or emulators to managed resources deliberately and verify which services truly need external endpoints.
+7. For integration tests, keep one shared AppHost fixture per test session. Use `Aspire.Hosting.Testing` to boot the distributed app, create `HttpClient` or SignalR clients from the AppHost, and layer `WebApplicationFactory` on top only when tests need direct Host DI, grains, or runtime services.
+8. When publishing, switch from local containers or emulators to managed resources deliberately and verify which services truly need external endpoints.
 
 ## Architecture
 
@@ -51,7 +53,7 @@ flowchart LR
 - CLI entry points: use `aspire new` for starter projects, `aspire init` to add Aspire support to an existing solution or create a single-file AppHost, `aspire add` to add integrations or starter pieces, `aspire run` for local orchestration, `aspire deploy` for the current CLI deploy pipeline, and `aspire update` for version-aware upgrades. `aspire publish` still exists for explicit artifact-generation flows and remains preview-sensitive.
 - App model wiring: use `WithReference(...)` for dependency and configuration flow, and `WaitFor(...)` for startup ordering. Use `WithExternalHttpEndpoints()` only when the resource truly needs an externally reachable endpoint for the chosen runtime or publish target.
 - ServiceDefaults boundaries: `AddServiceDefaults()` should stay focused on OpenTelemetry, health endpoints, service discovery, `HttpClient` resilience, and related cross-cutting infrastructure.
-- Testing model: prefer Aspire closed-box testing when you need to run the distributed application as a system. If the goal is in-memory or mocked component tests, stay in the underlying service's normal test stack instead.
+- Testing model: prefer Aspire closed-box testing when you need to run the distributed application as a system. Use `DistributedApplicationTestingBuilder` plus a shared fixture for AppHost lifecycle, `App.CreateHttpClient(...)` for resource-bound clients, and a `WebApplicationFactory<TEntryPoint>` wrapper only when the test must resolve DI services or in-process runtime state from the hosted app. For UI flows, initialize Playwright once in the shared fixture, create a fresh browser context per test, and capture failure artifacts.
 - Dashboard usage: treat the Aspire Dashboard as the development observability surface. It is valuable in AppHost runs and standalone OTLP scenarios, but it is not a production monitoring replacement.
 - Upgrade posture: older 8.x or 9.x solutions need explicit migration work. Current guidance favors the Aspire CLI upgrade path and the newer AppHost SDK structure on `.NET 10`.
 
@@ -99,10 +101,13 @@ flowchart LR
 - consuming apps resolve endpoints and connection strings without hardcoded values
 - `ServiceDefaults` contains only cross-cutting infrastructure concerns
 - dashboard, health checks, logs, and traces reflect the expected resource graph
+- Aspire-backed integration tests reuse a shared AppHost fixture instead of booting the distributed app inside each test
+- any `WebApplicationFactory` layer reuses connection strings and endpoints from the AppHost instead of duplicating local config
 - testing and deployment guidance matches the chosen runtime: local AppHost, standalone dashboard, ACA/App Service, or the CLI deploy/publish pipeline
 
 ## References
 
 - [patterns.md](references/patterns.md) - Current CLI-first setup flows, AppHost patterns, `ServiceDefaults`, testing, and upgrade checkpoints
+- [testing.md](references/testing.md) - Shared AppHost fixtures, `DistributedApplicationTestingBuilder`, `WebApplicationFactory` integration, Playwright bootstrapping, and diagnostics
 - [deployment.md](references/deployment.md) - ACA, App Service, publish-mode, and manifest-oriented deployment guidance
 - [community-toolkit.md](references/community-toolkit.md) - Practical guide to `CommunityToolkit/Aspire` packages, capability gaps, and selection rules

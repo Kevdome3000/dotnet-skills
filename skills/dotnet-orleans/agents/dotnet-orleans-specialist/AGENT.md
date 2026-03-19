@@ -1,6 +1,6 @@
 ---
 name: dotnet-orleans-specialist
-description: "Orleans specialist agent for grain design, silo topology, persistence, streams, transactions, serialization, event sourcing, placement, testing, Aspire integration, and operational decisions."
+description: "Orleans specialist agent for grain design, silo topology, persistence, streams, transactions, serialization, event sourcing, placement, testing, Aspire integration, `WebApplicationFactory` host access, and operational decisions."
 tools: Read, Edit, Glob, Grep, Bash
 model: inherit
 skills:
@@ -22,7 +22,7 @@ This is a skill-scoped agent under `skills/dotnet-orleans/` because it only make
 ## Trigger On
 
 - Orleans grain and silo design is the confirmed framework surface
-- task involves grain boundaries, identity, activation, persistence, streams, broadcast channels, reminders, timers, transactions, event sourcing, serialization, placement, cluster topology, observers, interceptors, or Orleans operations
+- task involves grain boundaries, identity, activation, persistence, streams, broadcast channels, reminders, timers, transactions, event sourcing, serialization, placement, cluster topology, observers, interceptors, Orleans operations, or Orleans test harness design
 - repo contains Orleans types or packages and remaining ambiguity is inside Orleans design choices
 
 ## Workflow
@@ -65,6 +65,7 @@ flowchart TD
    - `references/grains.md` — quick-reference table of grain topics with links
    - `references/hosting.md` — quick-reference table of hosting/config/deploy topics with links
    - `references/implementation.md` — runtime internals, testing, load balancing, messaging guarantees
+   - `references/testing-patterns.md` — `InProcessTestCluster` versus shared AppHost fixtures, `WebApplicationFactory`, SignalR, and browser-driven Orleans tests
    - `references/examples.md` — quickstarts, sample apps, community examples
 5. **Pull adjacent skills only at clear boundaries** — Aspire for AppHost/orchestration, worker services for silo hosting, SignalR/Graph for ManagedCode extensions
 6. **End with validation** aligned to the chosen concern
@@ -94,10 +95,12 @@ flowchart TD
 | Dashboard, metrics, OpenTelemetry, tracing | `dotnet-orleans` | configuration-api.md | — |
 | Deployment (ACA, K8s, App Service, Consul) | `dotnet-orleans` | configuration-api.md | — |
 | Aspire `AddOrleans`, `.AsClient()`, keyed resources | `dotnet-orleans` | configuration-api.md | `dotnet-aspire` |
+| Shared AppHost fixture + `WebApplicationFactory` for DI/grain tests | `dotnet-orleans` | testing-patterns.md | `dotnet-aspire` |
 | Silo host lifetime, background runtime concerns | `dotnet-orleans` | configuration-api.md | `dotnet-worker-services` |
 | Orleans + SignalR push delivery | `dotnet-orleans` | streaming-api.md | `dotnet-managedcode-orleans-signalr` |
 | Orleans + graph traversal | `dotnet-orleans` | — | `dotnet-managedcode-orleans-graph` |
 | Testing, `InProcessTestCluster`, multi-silo tests | `dotnet-orleans` | implementation.md | — |
+| Orleans + SignalR/UI integration tests | `dotnet-orleans` | testing-patterns.md | `dotnet-aspire` |
 | Architecture patterns, saga, scatter-gather | `dotnet-orleans` | patterns.md | — |
 | Code review, smell detection | `dotnet-orleans` | anti-patterns.md | — |
 

@@ -1,6 +1,6 @@
 ---
 name: dotnet-orleans
-version: "2.0.0"
+version: "2.1.0"
 category: "Distributed"
 description: "Build or review distributed .NET applications with Orleans grains, silos, persistence, streaming, reminders, placement, transactions, serialization, event sourcing, testing, and cloud-native hosting."
 compatibility: "Prefer current Orleans releases (10.x / 9.x) with `UseOrleans`, `IPersistentState<TState>`, `RegisterGrainTimer`, `[GenerateSerializer]`, modern providers, and production-grade clustering."
@@ -11,6 +11,7 @@ compatibility: "Prefer current Orleans releases (10.x / 9.x) with `UseOrleans`, 
 ## Trigger On
 
 - building or reviewing `.NET` code that uses `Microsoft.Orleans.*`, `Grain`, `IGrainWith*`, `UseOrleans`, `UseOrleansClient`, `IGrainFactory`, `JournaledGrain`, `ITransactionalState`, or Orleans silo/client builders
+- testing Orleans code with `InProcessTestCluster`, `Aspire.Hosting.Testing`, `WebApplicationFactory`, or shared AppHost fixtures
 - modeling high-cardinality stateful entities such as users, carts, devices, rooms, orders, digital twins, sessions, or collaborative documents
 - choosing between grains, streams, broadcast channels, reminders, stateless workers, persistence providers, placement strategies, transactions, event sourcing, and external client/frontend topologies
 - deploying or operating Orleans with Redis, Azure Storage, Cosmos DB, ADO.NET, .NET Aspire, Kubernetes, Azure Container Apps, or built-in/dashboard observability
@@ -63,6 +64,7 @@ compatibility: "Prefer current Orleans releases (10.x / 9.x) with `UseOrleans`, 
    - `UseOrleans` for silos, `UseOrleansClient` for separate clients
    - Co-hosted client runs in same process (reduced latency, no extra serialization)
    - In Aspire, declare Orleans resource in AppHost, wire clustering/storage/reminders there, use `.AsClient()` for frontend-only consumers
+   - In Aspire-backed tests, resolve Orleans backing-resource connection strings from the distributed app and feed them into the test host instead of duplicating local settings
    - Prefer `TokenCredential` with `DefaultAzureCredential` for Azure-backed providers
 
 9. **Configure providers with production realism.**
@@ -89,10 +91,12 @@ compatibility: "Prefer current Orleans releases (10.x / 9.x) with `UseOrleans`, 
     - Health checks for cluster readiness
 
 12. **Test the cluster behavior you actually depend on.**
-    - `InProcessTestCluster` for new tests
-    - Multi-silo coverage when placement, reminders, persistence, or failover matters
-    - Benchmark hot grains before claiming the design scales
-    - Use memory providers in test, real providers in integration tests
+   - `InProcessTestCluster` for new tests
+   - Shared Aspire/AppHost fixtures for real HTTP, SignalR, SSE, or UI flows that must exercise the co-hosted Orleans topology
+   - `WebApplicationFactory<TEntryPoint>` layered over a shared AppHost when tests need Host DI services, `IGrainFactory`, or direct grain/runtime access while keeping real infrastructure
+   - Multi-silo coverage when placement, reminders, persistence, or failover matters
+   - Benchmark hot grains before claiming the design scales
+   - Use memory providers in test, real providers in integration tests
 
 ## Architecture
 
@@ -128,6 +132,7 @@ flowchart LR
 - serialization contracts with `[GenerateSerializer]`, `[Id]`, versioning via `[Alias]`, and immutability annotations
 - an async-safe grain API surface with bounded state, proper reentrancy, and reduced hot-spot risk
 - an explicit testing and observability plan for local development and production
+- a test-harness choice that matches the assertion level: runtime-only, API/SignalR/UI, or direct Host DI/grain access
 
 ## Validate
 
@@ -143,6 +148,9 @@ flowchart LR
 - transactional grains are marked `[Reentrant]` and use `PerformRead`/`PerformUpdate`
 - hot grains, global coordinators, and affinity-heavy grains are measured and justified
 - tests cover multi-silo behavior, persistence, and failover-sensitive logic when those behaviors matter
+- Aspire-backed tests reuse one shared AppHost fixture and do not boot the distributed topology inside individual tests
+- co-hosted Host tests do not start a redundant Orleans client unless external-client behavior is the thing under test
+- Host or API test factories resolve connection strings from the AppHost resource graph instead of copied local config
 - deployment uses production clustering, real providers, and proper GC configuration
 
 ## Load References
@@ -158,6 +166,7 @@ Open only what you need. Each reference is topic-focused for token economy:
 - references/hosting.md — clients, Aspire, configuration, observability, dashboard, deployment links
 - references/configuration-api.md — silo/client config, GC tuning, deployment targets, observability setup with code
 - references/implementation.md — runtime internals, testing, load balancing, messaging guarantees
+- references/testing-patterns.md — practical Orleans test harness selection with `InProcessTestCluster`, shared AppHost fixtures, `WebApplicationFactory`, SignalR, and Playwright
 - references/patterns.md — grain, persistence, streaming, coordination, and performance patterns with code
 - references/anti-patterns.md — blocking calls, unbounded state, chatty grains, bottlenecks, deadlocks with code
 - references/examples.md — quickstarts, samples browser entries, and official Orleans example hubs

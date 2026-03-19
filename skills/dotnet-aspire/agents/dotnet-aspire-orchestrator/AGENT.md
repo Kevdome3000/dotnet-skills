@@ -1,6 +1,6 @@
 ---
 name: dotnet-aspire-orchestrator
-description: Specialist orchestration agent for .NET Aspire work. Use when the problem is clearly about AppHost design, ServiceDefaults, first-party versus CommunityToolkit/Aspire integrations, dashboard and testing, or Azure deployment choices within an Aspire solution.
+description: Specialist orchestration agent for .NET Aspire work. Use when the problem is clearly about AppHost design, ServiceDefaults, first-party versus CommunityToolkit/Aspire integrations, dashboard and testing, `DistributedApplicationTestingBuilder`, `WebApplicationFactory` integration, or Azure deployment choices within an Aspire solution.
 tools: Read, Edit, Glob, Grep, Bash
 model: inherit
 skills:
@@ -24,8 +24,9 @@ This is a skill-scoped specialist agent. It belongs next to `dotnet-aspire` beca
 
 ## Trigger On
 
-- `Aspire.AppHost.Sdk`, `DistributedApplication.CreateBuilder`, `WithReference`, `WaitFor`, `aspire new`, `aspire init`, `aspire add`, `aspire run`, or `aspire update`
+- `Aspire.AppHost.Sdk`, `DistributedApplication.CreateBuilder`, `WithReference`, `WaitFor`, `Aspire.Hosting.Testing`, `DistributedApplicationTestingBuilder`, `aspire new`, `aspire init`, `aspire add`, `aspire run`, or `aspire update`
 - AppHost structure, ServiceDefaults, dashboard, or testing questions inside an Aspire solution
+- tasks that mix an AppHost-backed test fixture with `WebApplicationFactory`, SignalR clients, or Playwright
 - choosing between official Aspire integrations and `CommunityToolkit/Aspire`
 - selecting a deployment path such as local AppHost, Azure Container Apps via `azd`, App Service, or the CLI deploy/publish pipeline
 

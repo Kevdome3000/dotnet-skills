@@ -63,3 +63,4 @@ Use this reference when the main question is about running Orleans, wiring provi
 - Start here when the problem is cluster wiring, clients, provider registration, or operational readiness.
 - Use [grains.md](grains.md) when the problem is inside a grain rather than in the hosting model.
 - Use [implementation.md](implementation.md) when you need runtime internals, messaging guarantees, or testing behavior.
+- Use [testing-patterns.md](testing-patterns.md) when the hosting question is specifically about mixing Orleans, Aspire, `WebApplicationFactory`, SignalR, or Playwright in integration tests.

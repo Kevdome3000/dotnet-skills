@@ -24,6 +24,8 @@ rg -n "PackageReference Include=\"TUnit\"|\\[Test\\]|\\[Arguments\\]|ParallelLim
 
 Use this reference when the repository already chose TUnit and you need the right commands, expectations, and CI integration points.
 
+For shared AppHost fixtures, `WebApplicationFactory`, Playwright UI harnesses, and log/artifact capture, load `integration-testing.md`.
+
 ## Detect TUnit
 
 Look for the package and its common attributes:
@@ -41,7 +43,9 @@ Start with the repo's `test` command from `AGENTS.md`. If the repo has not docum
 ```bash
 dotnet test MySolution.sln
 dotnet test tests/MyProject.Tests/MyProject.Tests.csproj
-dotnet run --project tests/MyProject.Tests/MyProject.Tests.csproj
+dotnet test tests/MyProject.Tests/MyProject.Tests.csproj -- --treenode-filter "/*/*/MyTestClass/*"
+dotnet test MySolution.sln -- --coverage --coverage-output coverage.cobertura.xml --coverage-output-format cobertura
+dotnet run --project tests/MyProject.Tests/MyProject.Tests.csproj -- --help
 ```
 
 New-project quick start from the official template:
@@ -56,8 +60,9 @@ dotnet run
 - Assume concurrency unless the repo has explicitly limited it.
 - Do not share mutable static state, temp paths, or fixed ports across tests.
 - Build once, then re-run focused projects with `--no-build` where the repo supports it.
-- For coverage on Microsoft.Testing.Platform, prefer `coverlet.MTP`.
+- For coverage on Microsoft.Testing.Platform, prefer the repo's documented MTP coverage switches such as `--coverage --coverage-output ...`.
 - Publish human-readable reports separately with ReportGenerator if the pipeline needs HTML or Markdown summaries.
+- For integration/UI suites, capture first-failure evidence: host log dumps, screenshots, and HTML artifacts.
 
 ## Good Defaults
 
