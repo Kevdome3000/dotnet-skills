@@ -60,7 +60,7 @@ dotnet skills remove --all --target "$skills_path"
 test ! -e "$skills_path/dotnet-aspire"
 
 dotnet skills install aspire --agent anthropic --scope project --project-dir "$workspace_path"
-test -f "$workspace_path/.claude/agents/dotnet-aspire.md"
+test -f "$workspace_path/.claude/skills/dotnet-aspire/SKILL.md"
 
 auto_codex_target="$(dotnet skills where --project-dir "$codex_workspace")"
 case "$auto_codex_target" in
@@ -77,7 +77,7 @@ test ! -e "$codex_workspace/.agents"
 
 auto_claude_target="$(dotnet skills where --project-dir "$claude_workspace")"
 case "$auto_claude_target" in
-  */.claude/agents) ;;
+  */.claude/skills) ;;
   *)
     echo "Unexpected auto Claude target: $auto_claude_target" >&2
     exit 1
@@ -85,17 +85,17 @@ case "$auto_claude_target" in
 esac
 
 dotnet skills install aspire --bundled --project-dir "$claude_workspace"
-test -f "$claude_workspace/.claude/agents/dotnet-aspire.md"
+test -f "$claude_workspace/.claude/skills/dotnet-aspire/SKILL.md"
 
 dotnet skills install aspire --bundled --project-dir "$hybrid_workspace"
 test -f "$hybrid_workspace/.codex/skills/dotnet-aspire/SKILL.md"
-test -f "$hybrid_workspace/.claude/agents/dotnet-aspire.md"
+test -f "$hybrid_workspace/.claude/skills/dotnet-aspire/SKILL.md"
 test ! -e "$hybrid_workspace/.agents"
 
 dotnet skills install aspire --bundled --project-dir "$shared_workspace"
 test -f "$shared_workspace/.codex/skills/dotnet-aspire/SKILL.md"
-test -f "$shared_workspace/.claude/agents/dotnet-aspire.md"
-test -f "$shared_workspace/.agents/skills/dotnet-aspire/SKILL.md"
+test -f "$shared_workspace/.claude/skills/dotnet-aspire/SKILL.md"
+test ! -e "$shared_workspace/.agents/skills/dotnet-aspire"
 
 auto_plain_target="$(dotnet skills where --project-dir "$plain_workspace")"
 case "$auto_plain_target" in
