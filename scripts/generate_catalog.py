@@ -44,12 +44,33 @@ CATEGORY_ORDER = [
     "Metrics",
 ]
 
+CURATED_PACKAGES = [
+    {
+        "name": "orleans",
+        "title": "Orleans package",
+        "description": "Install the main Orleans stack in one command, including Orleans core guidance, adjacent ManagedCode integrations, worker-hosting patterns, Aspire orchestration, and SignalR delivery support.",
+        "kind": "curated",
+        "skills": [
+            "dotnet-orleans",
+            "dotnet-managedcode-orleans-graph",
+            "dotnet-managedcode-orleans-signalr",
+            "dotnet-worker-services",
+            "dotnet-aspire",
+            "dotnet-signalr",
+        ],
+    }
+]
+
 
 def unquote(value: str) -> str:
     value = value.strip()
     if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
         return value[1:-1]
     return value
+
+
+def slugify(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
 
 def parse_frontmatter(path: Path) -> tuple[dict[str, str], str]:
@@ -112,6 +133,50 @@ def collect_skills() -> list[dict[str, str]]:
         )
 
     return skills
+
+
+def build_packages(skills: list[dict[str, str]]) -> list[dict[str, object]]:
+    skills_by_name = {skill["name"]: skill for skill in skills}
+    packages: list[dict[str, object]] = []
+
+    for package in CURATED_PACKAGES:
+        missing = [skill_name for skill_name in package["skills"] if skill_name not in skills_by_name]
+        if missing:
+            raise ValueError(
+                f"Curated package {package['name']} references unknown skills: {', '.join(sorted(missing))}"
+            )
+
+        packages.append(
+            {
+                "name": package["name"],
+                "title": package["title"],
+                "description": package["description"],
+                "kind": package["kind"],
+                "sourceCategory": "",
+                "skills": package["skills"],
+            }
+        )
+
+    for category in CATEGORY_ORDER:
+        category_skills = sorted(
+            (skill for skill in skills if skill["category"] == category),
+            key=lambda item: item["name"],
+        )
+        if not category_skills:
+            continue
+
+        packages.append(
+            {
+                "name": slugify(category),
+                "title": f"{category} package",
+                "description": f"Install all {len(category_skills)} skills from the {category} category in one command.",
+                "kind": "category",
+                "sourceCategory": category,
+                "skills": [skill["name"] for skill in category_skills],
+            }
+        )
+
+    return packages
 
 
 def render_catalog(skills: list[dict[str, str]]) -> str:
@@ -211,20 +276,20 @@ def check_readme(rendered_catalog: str, skill_count: int) -> bool:
     return render_readme(readme, rendered_catalog, skill_count) == readme
 
 
-def write_manifest(skills: list[dict[str, str]]) -> None:
-    write_manifest_to_path(MANIFEST_PATH, skills)
+def write_manifest(skills: list[dict[str, str]], packages: list[dict[str, object]]) -> None:
+    write_manifest_to_path(MANIFEST_PATH, skills, packages)
 
 
-def write_manifest_to_path(path: Path, skills: list[dict[str, str]]) -> None:
+def write_manifest_to_path(path: Path, skills: list[dict[str, str]], packages: list[dict[str, object]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps({"skills": skills}, indent=2, sort_keys=False) + "\n")
+    path.write_text(json.dumps({"skills": skills, "packages": packages}, indent=2, sort_keys=False) + "\n")
 
 
-def check_manifest(skills: list[dict[str, str]]) -> bool:
+def check_manifest(skills: list[dict[str, str]], packages: list[dict[str, object]]) -> bool:
     if not MANIFEST_PATH.exists():
         return False
     current = json.loads(MANIFEST_PATH.read_text())
-    return current == {"skills": skills}
+    return current == {"skills": skills, "packages": packages}
 
 
 def parse_args() -> argparse.Namespace:
@@ -250,20 +315,21 @@ def main() -> int:
         return 2
 
     skills = collect_skills()
+    packages = build_packages(skills)
     rendered_catalog = render_catalog(skills)
 
     if args.manifest_output is not None:
-        write_manifest_to_path(args.manifest_output, skills)
+        write_manifest_to_path(args.manifest_output, skills, packages)
         print(f"Wrote manifest to {args.manifest_output}")
         return 0
 
     if args.validate_only:
-        print(f"Catalog metadata is valid for {len(skills)} skills.")
+        print(f"Catalog metadata is valid for {len(skills)} skills and {len(packages)} packages.")
         return 0
 
     if args.check:
         readme_ok = check_readme(rendered_catalog, len(skills))
-        manifest_ok = check_manifest(skills)
+        manifest_ok = check_manifest(skills, packages)
         if not readme_ok or not manifest_ok:
             if not readme_ok:
                 print("README.md catalog section is out of date.", file=sys.stderr)
@@ -274,8 +340,8 @@ def main() -> int:
         return 0
 
     update_readme(rendered_catalog, len(skills))
-    write_manifest(skills)
-    print(f"Generated catalog for {len(skills)} skills.")
+    write_manifest(skills, packages)
+    print(f"Generated catalog for {len(skills)} skills and {len(packages)} packages.")
     return 0
 
 

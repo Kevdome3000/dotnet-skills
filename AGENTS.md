@@ -326,6 +326,7 @@ Rules:
 - Treat repo-owned orchestration agents as a parallel catalog layer; do not force the first rollout of agents into the current `dotnet-skills` CLI lifecycle before the repo structure and docs are stable.
 - Canonical repo-owned agents live in folder-per-agent layouts with `AGENT.md`; runtime-specific `.agent.md` or native Claude files are adapters, not the source of truth.
 - The installer must account for Codex, Claude, Copilot, Gemini, and Junie target layouts instead of assuming only one global skills directory.
+- The bare `dotnet skills` entrypoint should behave like a polished interactive console application for browsing the catalog, inspecting details, and installing or removing content without remembering subcommands. Explicit command arguments must still bypass the interactive app and execute directly.
 - When vendor-specific install behavior diverges, model it with separate per-platform strategy classes instead of growing one shared resolver or installer full of platform switches.
 - Do not duplicate home-directory or environment-root resolution helpers across resolvers. Keep shared path-context logic in one place and let per-platform strategies consume it.
 - `SKILL.md` is the canonical skill contract; vendor-specific files are adapters.
@@ -568,6 +569,10 @@ This repository should behave like a maintainable documentation-and-automation s
 - Public site copy should frame Claude Code, GitHub Copilot, Gemini, and Codex as supported platforms with recognizable brand-style presentation, not as "AI agents".
 - Public landing page spacing should feel deliberate and compact; excessive whitespace between cards, sections, and step content is a regression.
 - Skill catalog cards on the public site must keep category badges and install commands on stable separate rows; badges must never collide with or visually break the command line.
+- Skill catalog cards must avoid oversized glassmorphism, heavy blur, inflated pill buttons, and equal-height empty space. Prefer sharper surfaces, tighter padding, calmer shadows, and content-driven card height.
+- On dense directory pages such as `/skills/`, catalog cards must use a strict shared composition so the grid reads as deliberate: matching heights per row, stable title/summary/meta/action bands, and line clamping where needed instead of ragged card growth.
+- Directory cards that represent navigable resources such as categories should make the whole card feel interactive. Do not leave large dead zones where only a small nested button or heading opens the destination.
+- The public skills site should visually align with the main ManagedCode website rather than inventing a separate noisy catalog aesthetic. When redesigning the site, inspect live ManagedCode pages first and reuse their calmer premium typography, spacing, accent restraint, and overall tone.
 - Public README hero copy must avoid exact skill counts in the top badge and intro line; keep precise counts only in the generated catalog section where they can stay authoritative.
 - The README header generator must normalize duplicate generated lines after merges; one canonical top Skills badge and one canonical intro line only.
 - For internal `SKILL.md`, `AGENT.md`, and `references/` content, optimize first for model loading and token economy. Human clickability or decorative Markdown formatting is secondary unless it materially improves maintenance.

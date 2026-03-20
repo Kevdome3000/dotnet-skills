@@ -75,7 +75,12 @@ internal static class ConsoleUi
             AnsiConsole.WriteLine();
         }
 
-        AnsiConsole.Write(BuildQuickCommandPanel(layout, scopeInventory, installedSkills.Select(record => record.Skill).ToArray(), availableSkills));
+        AnsiConsole.Write(BuildQuickCommandPanel(
+            layout,
+            scopeInventory,
+            installedSkills.Select(record => record.Skill).ToArray(),
+            availableSkills,
+            catalog.Packages));
     }
 
     public static void RenderInstallSummary(
@@ -342,6 +347,69 @@ internal static class ConsoleUi
         }
     }
 
+    public static void RenderPackageList(SkillCatalogPackage catalog)
+    {
+        WriteTitle("dotnet skills package list");
+
+        var grid = new Grid();
+        grid.AddColumn(new GridColumn().NoWrap());
+        grid.AddColumn();
+        grid.AddRow(new Markup("[grey]Catalog[/]"), new Markup($"{Escape(catalog.SourceLabel)} [grey]({Escape(catalog.CatalogVersion)})[/]"));
+        grid.AddRow(new Markup("[grey]Packages[/]"), new Markup(catalog.Packages.Count.ToString()));
+        grid.AddRow(new Markup("[grey]Skills covered[/]"), new Markup(catalog.Skills.Count.ToString()));
+        AnsiConsole.Write(new Panel(grid).Header("Package catalog").Expand());
+        AnsiConsole.WriteLine();
+
+        if (catalog.Packages.Count == 0)
+        {
+            AnsiConsole.Write(new Panel(new Markup("No packages are available in this catalog version yet."))
+                .Header("Packages")
+                .Expand());
+            return;
+        }
+
+        var table = new Table().Expand();
+        table.Title = new TableTitle("Available skill packages");
+        table.AddColumn("Package");
+        table.AddColumn("Type");
+        table.AddColumn("Skills");
+        table.AddColumn("Install");
+        table.AddColumn("Includes");
+
+        foreach (var package in catalog.Packages.OrderBy(FormatPackageSortKey, StringComparer.Ordinal))
+        {
+            var skillAliases = package.Skills
+                .Select(ToAlias)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+
+            table.AddRow(
+                $"[bold]{Escape(package.Name)}[/]",
+                Escape(FormatPackageKind(package)),
+                skillAliases.Length.ToString(),
+                Escape($"dotnet skills install package {package.Name}"),
+                Escape(string.Join(", ", skillAliases.Take(4)))
+                    + (skillAliases.Length > 4 ? $" [grey](+{skillAliases.Length - 4} more)[/]" : string.Empty));
+        }
+
+        AnsiConsole.Write(table);
+        AnsiConsole.WriteLine();
+
+        var suggested = catalog.Packages
+            .OrderBy(FormatPackageSortKey, StringComparer.Ordinal)
+            .Take(3)
+            .Select(package => $"dotnet skills install package {package.Name}")
+            .ToArray();
+
+        AnsiConsole.Write(new Panel(new Markup(
+                "Install a package when you want one command to expand into a related skill set."
+                + Environment.NewLine
+                + Environment.NewLine
+                + string.Join(Environment.NewLine, suggested.Select(command => $"[green]{Escape(command)}[/]"))))
+            .Header("Quick commands")
+            .Expand());
+    }
+
     public static void RenderUsage()
     {
         WriteTitle("dotnet-skills");
@@ -349,10 +417,15 @@ internal static class ConsoleUi
         var table = new Table().Expand();
         table.AddColumn("Command");
         table.AddColumn("Purpose");
+        table.AddRow("[green]dotnet skills[/]", "Launch the interactive catalog shell for browsing, installing, removing, and updating skills or agents.");
+        table.AddRow("[green]dotnet skills help[/]", "Render the direct command reference without entering the interactive shell.");
         table.AddRow("[green]dotnet skills list[/]", "Show the current inventory, compare project/global scope when relevant, and render available skills in grouped category tables.");
+        table.AddRow("[green]dotnet skills package list[/]", "List curated and category-based packages that expand into multiple related skills.");
         table.AddRow("[green]dotnet skills version[/]", "Show the current tool version and check whether NuGet has a newer release.");
         table.AddRow("[green]dotnet skills recommend[/]", "Scan `*.csproj` files, propose relevant `dotnet-*` skills, and let you decide what to install.");
         table.AddRow("[green]dotnet skills install aspire orleans[/]", "Install one or more skills by slug or short alias.");
+        table.AddRow("[green]dotnet skills install package ai[/]", "Install a package that expands into a related multi-skill set.");
+        table.AddRow("[green]dotnet skills package install orleans[/]", "Alias for package installation when you prefer the package-first command shape.");
         table.AddRow("[green]dotnet skills remove --all[/]", "Remove installed catalog skills from the selected target.");
         table.AddRow("[green]dotnet skills update[/]", "Refresh already installed catalog skills to the selected catalog version.");
         table.AddRow("[green]dotnet skills sync --force[/]", "Refresh the cached remote catalog payload.");
@@ -366,9 +439,10 @@ internal static class ConsoleUi
 
         var notes = string.Join(
             Environment.NewLine,
-            "- `list`, `recommend`, `install`, and `update` use the latest `catalog-v*` GitHub release by default.",
+            "- `list`, `package list`, `recommend`, `install`, and `update` use the latest `catalog-v*` GitHub release by default.",
+            "- Bare `dotnet skills` starts the interactive shell; use `dotnet skills help` when you want the direct command reference only.",
             "- `dotnet skills version` and `dotnet skills --version` both show the current tool version.",
-            "- The bare `dotnet skills` usage view and `help` path also run the automatic tool update check before rendering help.",
+            "- `help` and the interactive startup path both run the automatic tool update check unless it is suppressed.",
             "- Use `dotnet skills version --no-check` when you only want the local installed version without a NuGet lookup.",
             "- `list` stays compact: it shows the current installed inventory and a grouped category summary for the remaining catalog.",
             "- `list --installed-only` and `list --local` are equivalent shortcuts for the installed inventory view; `list --available-only` expands the remaining catalog into per-category skill tables with short summaries.",
@@ -376,6 +450,7 @@ internal static class ConsoleUi
             "- `--catalog-version <version>` pins a specific remote catalog release.",
             "- `--refresh` forces `install` or `update` to redownload the selected remote catalog first.",
             "- Short aliases work everywhere: `aspire` resolves to `dotnet-aspire`.",
+            "- Package installs expand into multiple skills. Example: `dotnet skills install package code-quality`.",
             "- Set `DOTNET_SKILLS_SKIP_UPDATE_CHECK=1` to suppress automatic tool update notices on startup.",
             "- Auto skill target detection probes `.codex`, `.claude`, `.github`, and `.gemini`; it writes to every existing native platform target it finds, and falls back to `.agents/skills` only when no native platform folder exists.",
             "- Agent auto-detect uses only native agent roots. If none exist yet, specify `--agent` or `--target`.");
@@ -606,7 +681,8 @@ internal static class ConsoleUi
         SkillInstallLayout layout,
         IReadOnlyList<ScopeInventoryRow> scopeInventory,
         IReadOnlyList<SkillEntry> installedSkills,
-        IReadOnlyList<SkillEntry> availableSkills)
+        IReadOnlyList<SkillEntry> availableSkills,
+        IReadOnlyList<SkillPackageEntry> packages)
     {
         var lines = new List<string>();
 
@@ -619,6 +695,13 @@ internal static class ConsoleUi
         if (availableSkills.Count > 0)
         {
             lines.Add($"Install more skills:{Environment.NewLine}[green]{Escape($"dotnet skills install {string.Join(' ', availableSkills.Take(3).Select(skill => ToAlias(skill.Name)))}")}[/]");
+        }
+
+        if (packages.Count > 0)
+        {
+            var featuredPackage = packages.OrderBy(FormatPackageSortKey, StringComparer.Ordinal).First();
+            lines.Add($"Install a package:{Environment.NewLine}[green]{Escape($"dotnet skills install package {featuredPackage.Name}")}[/]");
+            lines.Add($"Browse all packages:{Environment.NewLine}[green]{Escape("dotnet skills package list")}[/]");
         }
 
         var alternateScope = scopeInventory.FirstOrDefault(row => row.Scope != layout.Scope);
@@ -713,6 +796,25 @@ internal static class ConsoleUi
     private static string ToAlias(string skillName) => skillName.StartsWith("dotnet-", StringComparison.OrdinalIgnoreCase)
         ? skillName["dotnet-".Length..]
         : skillName;
+
+    private static string FormatPackageKind(SkillPackageEntry package)
+    {
+        if (string.Equals(package.Kind, "category", StringComparison.OrdinalIgnoreCase)
+            && !string.IsNullOrWhiteSpace(package.SourceCategory))
+        {
+            return $"Category: {package.SourceCategory}";
+        }
+
+        return string.Equals(package.Kind, "curated", StringComparison.OrdinalIgnoreCase)
+            ? "Curated"
+            : package.Kind;
+    }
+
+    private static string FormatPackageSortKey(SkillPackageEntry package)
+    {
+        var rank = string.Equals(package.Kind, "curated", StringComparison.OrdinalIgnoreCase) ? "0" : "1";
+        return $"{rank}:{package.Name}";
+    }
 
     public static void RenderAgentList(
         AgentCatalogPackage catalog,

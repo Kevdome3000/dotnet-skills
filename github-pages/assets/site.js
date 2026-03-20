@@ -39,12 +39,52 @@
     });
   }
 
+  function isInteractiveTarget(target, container) {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+
+    const interactive = target.closest("a, button, input, textarea, select, summary, [role='button'], [role='link']");
+    return Boolean(interactive && interactive !== container && container.contains(interactive));
+  }
+
+  function initCardLinks() {
+    document.querySelectorAll("[data-card-href]").forEach((card) => {
+      const href = card.dataset.cardHref;
+      if (!href) {
+        return;
+      }
+
+      card.addEventListener("click", (event) => {
+        if (isInteractiveTarget(event.target, card)) {
+          return;
+        }
+
+        window.location.href = href;
+      });
+
+      card.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+
+        if (isInteractiveTarget(event.target, card)) {
+          return;
+        }
+
+        event.preventDefault();
+        window.location.href = href;
+      });
+    });
+  }
+
   function initListingFilters() {
     const input = document.getElementById("search-input");
     const cards = Array.from(document.querySelectorAll(".js-filter-card"));
     const tabs = Array.from(document.querySelectorAll(".filter-tab"));
     const emptyState = document.getElementById("listing-empty");
-    const listPath = pageData.querySyncPath || "";
+    const configuredListPath = pageData.querySyncPath || "";
+    const listPath = configuredListPath ? new URL(configuredListPath, window.location.origin).pathname : window.location.pathname;
     let activeCategory = tabs.find((tab) => tab.classList.contains("is-active"))?.dataset.filter || "all";
 
     if (!input && tabs.length === 0) {
@@ -101,7 +141,7 @@
       }
 
       const nextQuery = nextParams.toString();
-      const nextUrl = nextQuery ? `${listPath || window.location.pathname}?${nextQuery}` : (listPath || window.location.pathname);
+      const nextUrl = nextQuery ? `${listPath}?${nextQuery}` : listPath;
       window.history.replaceState({}, "", nextUrl);
     }
 
@@ -199,6 +239,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     initCopyButtons();
+    initCardLinks();
     initListingFilters();
     initSkillModal();
   });

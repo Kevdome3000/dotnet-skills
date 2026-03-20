@@ -10,11 +10,18 @@ internal sealed class SkillCatalogPackage
         PropertyNameCaseInsensitive = true,
     };
 
-    private SkillCatalogPackage(DirectoryInfo catalogRoot, DirectoryInfo skillsRoot, IReadOnlyList<SkillEntry> skills, string sourceLabel, string catalogVersion)
+    private SkillCatalogPackage(
+        DirectoryInfo catalogRoot,
+        DirectoryInfo skillsRoot,
+        IReadOnlyList<SkillEntry> skills,
+        IReadOnlyList<SkillPackageEntry> packages,
+        string sourceLabel,
+        string catalogVersion)
     {
         CatalogRoot = catalogRoot;
         SkillsRoot = skillsRoot;
         Skills = skills;
+        Packages = packages;
         SourceLabel = sourceLabel;
         CatalogVersion = catalogVersion;
     }
@@ -24,6 +31,8 @@ internal sealed class SkillCatalogPackage
     public DirectoryInfo SkillsRoot { get; }
 
     public IReadOnlyList<SkillEntry> Skills { get; }
+
+    public IReadOnlyList<SkillPackageEntry> Packages { get; }
 
     public string SourceLabel { get; }
 
@@ -48,7 +57,7 @@ internal sealed class SkillCatalogPackage
         var manifest = JsonSerializer.Deserialize<SkillManifest>(File.ReadAllText(manifestPath.FullName), JsonOptions)
             ?? throw new InvalidOperationException($"Could not parse {manifestPath.FullName}");
 
-        return new SkillCatalogPackage(rootDirectory, skillsRoot, manifest.Skills, sourceLabel, catalogVersion);
+        return new SkillCatalogPackage(rootDirectory, skillsRoot, manifest.Skills, manifest.Packages, sourceLabel, catalogVersion);
     }
 
     private static DirectoryInfo ResolveSkillsRoot(DirectoryInfo rootDirectory)
@@ -81,6 +90,9 @@ internal sealed class SkillManifest
 {
     [JsonPropertyName("skills")]
     public List<SkillEntry> Skills { get; init; } = [];
+
+    [JsonPropertyName("packages")]
+    public List<SkillPackageEntry> Packages { get; init; } = [];
 }
 
 internal sealed class SkillEntry
@@ -105,4 +117,25 @@ internal sealed class SkillEntry
 
     [JsonPropertyName("path")]
     public string Path { get; init; } = string.Empty;
+}
+
+internal sealed class SkillPackageEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; init; } = string.Empty;
+
+    [JsonPropertyName("title")]
+    public string Title { get; init; } = string.Empty;
+
+    [JsonPropertyName("description")]
+    public string Description { get; init; } = string.Empty;
+
+    [JsonPropertyName("kind")]
+    public string Kind { get; init; } = string.Empty;
+
+    [JsonPropertyName("sourceCategory")]
+    public string SourceCategory { get; init; } = string.Empty;
+
+    [JsonPropertyName("skills")]
+    public List<string> Skills { get; init; } = [];
 }
