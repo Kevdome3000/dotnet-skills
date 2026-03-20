@@ -39,6 +39,45 @@
     });
   }
 
+  function isInteractiveTarget(target, container) {
+    if (!(target instanceof Element)) {
+      return false;
+    }
+
+    const interactive = target.closest("a, button, input, textarea, select, summary, [role='button'], [role='link']");
+    return Boolean(interactive && interactive !== container && container.contains(interactive));
+  }
+
+  function initCardLinks() {
+    document.querySelectorAll("[data-card-href]").forEach((card) => {
+      const href = card.dataset.cardHref;
+      if (!href) {
+        return;
+      }
+
+      card.addEventListener("click", (event) => {
+        if (isInteractiveTarget(event.target, card)) {
+          return;
+        }
+
+        window.location.href = href;
+      });
+
+      card.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") {
+          return;
+        }
+
+        if (isInteractiveTarget(event.target, card)) {
+          return;
+        }
+
+        event.preventDefault();
+        window.location.href = href;
+      });
+    });
+  }
+
   function initListingFilters() {
     const input = document.getElementById("search-input");
     const cards = Array.from(document.querySelectorAll(".js-filter-card"));
@@ -200,6 +239,7 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     initCopyButtons();
+    initCardLinks();
     initListingFilters();
     initSkillModal();
   });

@@ -705,7 +705,7 @@ def render_category_card(category_name: str, category_info: dict, root_prefix: s
     )
 
     return f"""
-      <article class="directory-card category-card js-filter-card" data-category="category" data-filtertext="{escape_html(filter_text)}">
+      <article class="directory-card category-card is-clickable js-filter-card" data-category="category" data-filtertext="{escape_html(filter_text)}" data-card-href="{escape_html(detail_href)}" tabindex="0" role="link" aria-label="Open {escape_html(category_name)} category">
         <div class="card-top">
           <div>
             <div class="card-kicker">Category</div>
@@ -718,8 +718,9 @@ def render_category_card(category_name: str, category_info: dict, root_prefix: s
           <span class="chip">{len(category_info['related_agents'])} related agents</span>
           <span class="chip">{escape_html(sample_skills or 'catalog overview')}</span>
         </div>
-        <div class="card-actions">
-          {render_button("Open category", detail_href, "primary")}
+        <div class="card-inline-link" aria-hidden="true">
+          <span>Browse category</span>
+          <span class="card-inline-arrow">→</span>
         </div>
       </article>
     """.strip()

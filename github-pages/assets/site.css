@@ -472,6 +472,15 @@ body.page-agents .agent-grid {
   transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
 }
 
+.directory-card.is-clickable {
+  cursor: pointer;
+}
+
+.directory-card.is-clickable:focus-visible {
+  outline: 3px solid rgba(245, 100, 56, 0.28);
+  outline-offset: 3px;
+}
+
 .directory-card::before,
 .article-copy section::before,
 .sidebar-card::before,
@@ -488,6 +497,7 @@ body.page-agents .agent-grid {
 }
 
 .directory-card:hover,
+.directory-card.is-clickable:focus-visible,
 .article-copy section:hover,
 .sidebar-card:hover,
 .credits-block:hover,
@@ -673,6 +683,35 @@ body.page-agents .agent-grid {
 
 .skill-command-row {
   margin-top: -2px;
+}
+
+.category-card {
+  gap: 14px;
+}
+
+.category-card .card-summary {
+  -webkit-line-clamp: 4;
+  max-width: 30ch;
+}
+
+.category-card .chip-row {
+  margin-top: 2px;
+}
+
+.card-inline-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  color: var(--accent-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.card-inline-arrow {
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .card-actions {
