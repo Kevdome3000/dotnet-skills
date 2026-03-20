@@ -25,6 +25,45 @@ internal sealed class SkillInstaller(SkillCatalogPackage catalog)
         return selected;
     }
 
+    public IReadOnlyList<SkillEntry> SelectSkillsFromPackages(IReadOnlyList<string> requestedPackages)
+    {
+        if (requestedPackages.Count == 0)
+        {
+            throw new InvalidOperationException("Specify one or more package names.");
+        }
+
+        var availableSkills = catalog.Skills.ToDictionary(skill => skill.Name, StringComparer.OrdinalIgnoreCase);
+        var availablePackages = catalog.Packages.ToDictionary(
+            package => NormalizePackageKey(package.Name),
+            StringComparer.OrdinalIgnoreCase);
+
+        var selected = new List<SkillEntry>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var packageName in requestedPackages)
+        {
+            if (!TryResolvePackage(availablePackages, packageName, out var package))
+            {
+                throw new InvalidOperationException($"Unknown package: {packageName}");
+            }
+
+            foreach (var skillName in package.Skills)
+            {
+                if (!availableSkills.TryGetValue(skillName, out var skill))
+                {
+                    throw new InvalidOperationException($"Package {package.Name} references unknown skill {skillName}.");
+                }
+
+                if (seen.Add(skill.Name))
+                {
+                    selected.Add(skill);
+                }
+            }
+        }
+
+        return selected;
+    }
+
     public SkillInstallSummary Install(IReadOnlyList<SkillEntry> skills, SkillInstallLayout layout, bool force)
     {
         layout.PrimaryRoot.Create();
@@ -123,6 +162,19 @@ internal sealed class SkillInstaller(SkillCatalogPackage catalog)
         }
 
         return false;
+    }
+
+    private static bool TryResolvePackage(
+        IReadOnlyDictionary<string, SkillPackageEntry> available,
+        string requestedPackage,
+        out SkillPackageEntry package)
+    {
+        return available.TryGetValue(NormalizePackageKey(requestedPackage), out package!);
+    }
+
+    private static string NormalizePackageKey(string value)
+    {
+        return new string(value.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
     }
 
     private static string ReadInstalledVersion(SkillEntry skill, SkillInstallLayout layout)

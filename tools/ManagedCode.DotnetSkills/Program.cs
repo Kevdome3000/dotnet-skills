@@ -33,6 +33,7 @@ internal static class Program
         return command switch
         {
             "list" => await RunListAsync(args[1..]),
+            "package" => await RunPackageAsync(args[1..]),
             "recommend" => await RunRecommendAsync(args[1..]),
             "install" => await RunInstallAsync(args[1..]),
             "remove" => await RunRemoveAsync(args[1..]),
@@ -257,11 +258,31 @@ internal static class Program
             }
         }
 
+        var packageMode = requestedSkills.Count > 0
+            && string.Equals(requestedSkills[0], "package", StringComparison.OrdinalIgnoreCase);
+
+        if (packageMode)
+        {
+            requestedSkills.RemoveAt(0);
+
+            if (installAll)
+            {
+                throw new InvalidOperationException("`dotnet skills install package` requires explicit package names and does not support --all.");
+            }
+
+            if (requestedSkills.Count == 0)
+            {
+                throw new InvalidOperationException("Specify one or more package names after `dotnet skills install package`.");
+            }
+        }
+
         await MaybeShowToolUpdateAsync(cachePath);
 
         var catalog = await ResolveCatalogForInstallAsync(bundledOnly, cachePath, catalogVersion, refreshCatalog);
         var installer = new SkillInstaller(catalog);
-        var selectedSkills = installer.SelectSkills(requestedSkills, installAll);
+        var selectedSkills = packageMode
+            ? installer.SelectSkillsFromPackages(requestedSkills)
+            : installer.SelectSkills(requestedSkills, installAll);
         if (ShouldUseAutoDetectedLayouts(targetPath, agent))
         {
             var batchResults = new List<SkillInstallBatchResult>();
@@ -781,6 +802,61 @@ internal static class Program
     }
 
     private static void WriteUsage() => ConsoleUi.RenderUsage();
+
+    private static async Task<int> RunPackageAsync(string[] args)
+    {
+        if (args.Length == 0)
+        {
+            return await RunPackageListAsync([]);
+        }
+
+        var subCommand = args[0];
+        return subCommand switch
+        {
+            "list" => await RunPackageListAsync(args[1..]),
+            "install" => await RunPackageInstallAsync(args[1..]),
+            _ => UnknownCommand($"package {subCommand}"),
+        };
+    }
+
+    private static async Task<int> RunPackageListAsync(string[] args)
+    {
+        string? cachePath = null;
+        string? catalogVersion = null;
+        var bundledOnly = false;
+
+        for (var index = 0; index < args.Length; index++)
+        {
+            switch (args[index])
+            {
+                case "--cache-dir":
+                    cachePath = ReadValue(args, ++index, "--cache-dir");
+                    break;
+                case "--catalog-version":
+                    catalogVersion = ReadValue(args, ++index, "--catalog-version");
+                    break;
+                case "--bundled":
+                    bundledOnly = true;
+                    break;
+                default:
+                    return UnknownCommand($"package list {string.Join(' ', args)}");
+            }
+        }
+
+        await MaybeShowToolUpdateAsync(cachePath);
+
+        var catalog = await ResolveCatalogForDisplayAsync(bundledOnly, cachePath, catalogVersion);
+        ConsoleUi.RenderPackageList(catalog);
+        return 0;
+    }
+
+    private static Task<int> RunPackageInstallAsync(string[] args)
+    {
+        var forwardedArgs = new string[args.Length + 1];
+        forwardedArgs[0] = "package";
+        Array.Copy(args, 0, forwardedArgs, 1, args.Length);
+        return RunInstallAsync(forwardedArgs);
+    }
 
     private static async Task<int> RunAgentAsync(string[] args)
     {

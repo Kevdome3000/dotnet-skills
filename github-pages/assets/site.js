@@ -44,7 +44,8 @@
     const cards = Array.from(document.querySelectorAll(".js-filter-card"));
     const tabs = Array.from(document.querySelectorAll(".filter-tab"));
     const emptyState = document.getElementById("listing-empty");
-    const listPath = pageData.querySyncPath || "";
+    const configuredListPath = pageData.querySyncPath || "";
+    const listPath = configuredListPath ? new URL(configuredListPath, window.location.origin).pathname : window.location.pathname;
     let activeCategory = tabs.find((tab) => tab.classList.contains("is-active"))?.dataset.filter || "all";
 
     if (!input && tabs.length === 0) {
@@ -101,7 +102,7 @@
       }
 
       const nextQuery = nextParams.toString();
-      const nextUrl = nextQuery ? `${listPath || window.location.pathname}?${nextQuery}` : (listPath || window.location.pathname);
+      const nextUrl = nextQuery ? `${listPath}?${nextQuery}` : listPath;
       window.history.replaceState({}, "", nextUrl);
     }
 

@@ -480,6 +480,47 @@ def load_agent_documents(agents: list[dict], site_url: str) -> list[dict]:
     return enriched
 
 
+def load_package_documents(packages: list[dict], skills_by_name: dict[str, dict], site_url: str) -> list[dict]:
+    """Enrich packages with linked skill data and generated URLs."""
+    enriched: list[dict] = []
+
+    for package in packages:
+        package_name = package["name"]
+        raw_skill_names = package.get("skills", [])
+        missing_skills = [skill_name for skill_name in raw_skill_names if skill_name not in skills_by_name]
+        if missing_skills:
+            raise ValueError(
+                f"Package {package_name} references unknown skills: {', '.join(sorted(missing_skills))}"
+            )
+
+        linked_skills = [skills_by_name[skill_name] for skill_name in raw_skill_names]
+        detail_path = f"packages/{package_name}/"
+        source_category = package.get("sourceCategory", "")
+        kind = package.get("kind", "curated")
+
+        enriched.append(
+            {
+                **package,
+                "slug": package_name,
+                "short_name": package_name,
+                "kind": kind,
+                "kind_label": "Category package" if kind == "category" else "Curated package",
+                "source_category_slug": slugify(source_category) if source_category else "",
+                "detail_path": detail_path,
+                "detail_url": build_absolute_url(site_url, detail_path),
+                "skill_names": raw_skill_names,
+                "skills": linked_skills,
+                "install_command": f"dotnet skills install package {package_name}",
+                "lastmod": get_git_last_modified(
+                    [skill["source_file"] for skill in linked_skills]
+                    + ["scripts/generate_catalog.py", "scripts/generate_pages.py"]
+                ),
+            }
+        )
+
+    return enriched
+
+
 def parse_credits_from_readme() -> list[dict]:
     """Parse the README credits section into structured tables."""
     readme_text = read_text(README_PATH)
@@ -682,6 +723,60 @@ def render_category_card(category_name: str, category_info: dict, root_prefix: s
     """.strip()
 
 
+def render_package_card(package: dict, root_prefix: str) -> str:
+    """Render a package directory card."""
+    detail_href = f"{root_prefix}{package['detail_path']}"
+    summary = preview_text(package["description"], limit=150)
+    install_command = package["install_command"]
+    filter_text = " ".join(
+        dedupe_strings(
+            [
+                package["title"],
+                package["name"],
+                package["description"],
+                package["kind_label"],
+                package.get("sourceCategory", ""),
+                " ".join(skill["name"] for skill in package["skills"]),
+            ]
+        )
+    )
+
+    chips = [
+        f'<span class="chip">{escape_html(package["kind_label"])}</span>',
+        f'<span class="chip command-chip">{escape_html(install_command)}</span>',
+    ]
+    if package.get("sourceCategory") and package.get("source_category_slug"):
+        chips.insert(
+            1,
+            f'<a class="chip" href="{escape_html(root_prefix + "categories/" + package["source_category_slug"] + "/")}">'
+            f'{escape_html(package["sourceCategory"])} category</a>',
+        )
+
+    return f"""
+      <article class="directory-card package-card js-filter-card" data-category="{escape_html(package['kind'])}" data-filtertext="{escape_html(filter_text)}">
+        <div class="card-top">
+          <div>
+            <div class="card-kicker">{escape_html(package["kind_label"])}</div>
+            <h3><a href="{escape_html(detail_href)}">{escape_html(package['title'])}</a></h3>
+          </div>
+          <span class="card-version">{len(package['skills'])} skills</span>
+        </div>
+        <p class="card-summary">{escape_html(summary)}</p>
+        <div class="chip-row">
+          {"".join(chips)}
+        </div>
+        <div class="command-row">
+          <code>{escape_html(install_command)}</code>
+          <button type="button" class="button button-ghost" data-copy="{escape_html(install_command)}">Copy</button>
+        </div>
+        <div class="card-actions">
+          {render_button("Open package", detail_href, "primary")}
+          {render_button("Browse included skills", root_prefix + "skills/", "ghost")}
+        </div>
+      </article>
+    """.strip()
+
+
 def render_filter_tabs(category_infos: dict[str, dict], current_category: str = "all") -> str:
     """Render category filter tabs."""
     buttons = [
@@ -698,6 +793,19 @@ def render_filter_tabs(category_infos: dict[str, dict], current_category: str = 
         )
 
     return "".join(buttons)
+
+
+def render_package_filter_tabs(current_kind: str = "all") -> str:
+    """Render package-kind filter tabs."""
+    options = [
+        ("all", "All packages"),
+        ("curated", "Curated"),
+        ("category", "Category packs"),
+    ]
+    return "".join(
+        f'<button class="filter-tab {"is-active" if current_kind == value else ""}" type="button" data-filter="{value}">{label}</button>'
+        for value, label in options
+    )
 
 
 def render_empty_state(message: str) -> str:
@@ -796,12 +904,63 @@ def render_category_listing_section(category_infos: dict[str, dict], root_prefix
     """.strip()
 
 
+def render_package_listing_section(
+    packages: list[dict],
+    root_prefix: str,
+    title: str,
+    description: str,
+    include_tabs: bool,
+    empty_message: str,
+    show_index_link: bool = True,
+) -> str:
+    """Render a package directory section."""
+    if not packages:
+        return ""
+
+    cards_html = "\n".join(render_package_card(package, root_prefix) for package in packages)
+    tabs_html = render_package_filter_tabs() if include_tabs else ""
+    links = [("Packages", f"{root_prefix}packages/")] if show_index_link else []
+    if any(package.get("sourceCategory") for package in packages):
+        links.append(("Categories", f"{root_prefix}categories/"))
+
+    toolbar_html = ""
+    empty_state_html = ""
+    if include_tabs:
+        toolbar_html = f"""
+        <div class="listing-toolbar">
+          <input class="search-input" id="search-input" type="search" placeholder="Search packages by name, category, or included skill" autocomplete="off">
+          <div class="filter-tabs">
+            {tabs_html}
+          </div>
+        </div>
+        """.strip()
+        empty_state_html = render_empty_state(empty_message)
+
+    return f"""
+      <section class="section-stack">
+        <div class="section-header">
+          <div>
+            <h2>{escape_html(title)}</h2>
+            <p>{escape_html(description)}</p>
+          </div>
+          {render_panel_links(links)}
+        </div>
+        {toolbar_html}
+        {empty_state_html}
+        <div class="directory-grid">
+          {cards_html}
+        </div>
+      </section>
+    """.strip()
+
+
 def render_quickstart_panel() -> str:
     """Render the home-page quickstart steps."""
     steps = [
         ("Install the CLI", "dotnet tool install --global dotnet-skills", "Get the catalog onto your machine."),
-        ("Browse the catalog", "dotnet skills list", "See the full skill directory and available categories."),
-        ("Install selected skills", "dotnet skills install aspire blazor", "Add the exact .NET topics you want your assistant to know."),
+        ("Browse packages", "dotnet skills package list", "See the curated and category-based bundles that install multiple skills at once."),
+        ("Install a package", "dotnet skills install package ai", "Add a ready-made skill bundle when you want broad coverage quickly."),
+        ("Install exact skills", "dotnet skills install aspire blazor", "Add individual topics when you want a smaller custom setup."),
     ]
     cards = []
     for index, (title, command, description) in enumerate(steps, start=1):
@@ -874,6 +1033,7 @@ def render_support_panel(root_prefix: str) -> str:
 
 def render_home_page(
     skills: list[dict],
+    packages: list[dict],
     agents: list[dict],
     category_infos: dict[str, dict],
     release_tag: str,
@@ -888,14 +1048,16 @@ def render_home_page(
           <span class="tag">{escape_html(release_tag)}</span>
         </div>
         <h1 class="page-title">.NET Skills for <span class="accent">Modern Coding Platforms</span></h1>
-        <p class="page-lead">Install one shared .NET skill catalog for Claude Code, GitHub Copilot, Gemini, and Codex. Start from the full catalog, then drill into category, skill, and agent pages when you need specifics.</p>
+        <p class="page-lead">Install one shared .NET skill catalog for Claude Code, GitHub Copilot, Gemini, and Codex. Start with package installs when you want broad coverage fast, then drill into category, skill, and agent pages when you need specifics.</p>
         <div class="hero-actions">
+          {render_button("Browse packages", f"{root_prefix}packages/", "primary")}
           {render_button("Browse categories", f"{root_prefix}categories/", "primary")}
           {render_button("See all skills", f"{root_prefix}skills/", "ghost")}
           {render_button("Read about the catalog", f"{root_prefix}about/", "ghost")}
         </div>
         <div class="metric-grid">
           {render_metric_card(str(len(skills)), "Skills")}
+          {render_metric_card(str(len(packages)), "Packages")}
           {render_metric_card(str(len(agents)), "Agents")}
           {render_metric_card(str(len(category_infos)), "Categories")}
           {render_metric_card("4", "Platforms")}
@@ -905,8 +1067,17 @@ def render_home_page(
 
     sections = [
         hero,
-        render_category_listing_section(category_infos, root_prefix),
         render_quickstart_panel(),
+        render_package_listing_section(
+            packages[:6],
+            root_prefix,
+            "Install ready-made packages",
+            "Use package installs when you want one command to lay down a broader, already-grouped skill set.",
+            include_tabs=False,
+            empty_message="",
+            show_index_link=True,
+        ),
+        render_category_listing_section(category_infos, root_prefix),
         render_agent_listing_section(agents[:6], root_prefix, {skill["name"]: skill for skill in skills}),
         render_support_panel(root_prefix),
         render_skill_listing_section(
@@ -1217,6 +1388,101 @@ def render_skills_index_page(skills: list[dict], category_infos: dict[str, dict]
     return body, page_data
 
 
+def render_packages_index_page(packages: list[dict], root_prefix: str) -> tuple[str, dict]:
+    """Render the package directory page."""
+    body = f"""
+      {render_breadcrumb([("Home", root_prefix or "./"), ("Packages", None)])}
+      <section class="page-hero">
+        <div class="eyebrow-row">
+          <span class="eyebrow">Package directory</span>
+          <span class="tag tag-accent">{len(packages)} packages</span>
+        </div>
+        <h1 class="page-title">Install grouped <span class="accent">skill packages</span></h1>
+        <p class="page-lead">Packages expand one command into multiple related skills. Use curated packs for common stacks such as Orleans, or category packs when you want every skill under one topic.</p>
+      </section>
+      {render_package_listing_section(
+          packages,
+          root_prefix,
+          "All packages",
+          "Search package bundles, inspect the exact install command, and jump to detail pages for the included skills.",
+          include_tabs=True,
+          empty_message="No packages match this search yet.",
+          show_index_link=False,
+      )}
+    """.strip()
+
+    page_data = {
+        "querySyncPath": "packages/",
+    }
+    return body, page_data
+
+
+def render_package_detail_page(package: dict, root_prefix: str) -> str:
+    """Render a package detail page."""
+    install_command = package["install_command"]
+    category_link = ""
+    if package.get("sourceCategory") and package.get("source_category_slug"):
+        category_link = (
+            f'<a class="pill-link" href="{escape_html(root_prefix + "categories/" + package["source_category_slug"] + "/")}">'
+            f'{escape_html(package["sourceCategory"])} category</a>'
+        )
+
+    related_skill_cards = render_skill_listing_section(
+        package["skills"],
+        build_category_infos(package["skills"], []),
+        root_prefix,
+        "Included skills",
+        "These are the exact skills installed by this package command.",
+        include_tabs=False,
+        empty_message="No skills are currently attached to this package.",
+    )
+
+    return f"""
+      {render_breadcrumb([("Home", root_prefix or "./"), ("Packages", f"{root_prefix}packages/"), (package["title"], None)])}
+      <section class="page-hero">
+        <div class="eyebrow-row">
+          <span class="eyebrow">{escape_html(package["kind_label"])}</span>
+          <span class="tag tag-accent">{len(package["skills"])} skills</span>
+        </div>
+        <h1 class="page-title">{escape_html(package["title"])}</h1>
+        <p class="page-lead">{escape_html(package["description"])}</p>
+        <div class="hero-actions">
+          {render_button("Browse all packages", f"{root_prefix}packages/", "ghost")}
+          {render_button("See all skills", f"{root_prefix}skills/", "ghost")}
+        </div>
+      </section>
+
+      <div class="detail-layout">
+        <div class="article-copy">
+          <section>
+            <h2>Install command</h2>
+            <p>Run this command when you want the package to install every linked skill in one pass.</p>
+            <div class="command-row">
+              <code>{escape_html(install_command)}</code>
+              <button type="button" class="button button-ghost" data-copy="{escape_html(install_command)}">Copy</button>
+            </div>
+          </section>
+          <section>
+            <h2>What this package covers</h2>
+            <p>{escape_html(package["description"])}</p>
+          </section>
+        </div>
+        <aside class="sidebar-stack">
+          <div class="sidebar-card">
+            <div class="detail-card-label">Package info</div>
+            <div class="sidebar-links">
+              <span class="pill-link">{escape_html(package["kind_label"])}</span>
+              <span class="pill-link">{len(package["skills"])} skills</span>
+              {category_link}
+            </div>
+          </div>
+        </aside>
+      </div>
+
+      {related_skill_cards}
+    """.strip()
+
+
 def render_agents_index_page(agents: list[dict], skills: list[dict], root_prefix: str) -> str:
     """Render the orchestration agent hub page."""
     return f"""
@@ -1275,6 +1541,7 @@ def render_credits_blocks(credits: list[dict]) -> str:
 
 def render_about_page(
     skills: list[dict],
+    packages: list[dict],
     agents: list[dict],
     category_infos: dict[str, dict],
     credits: list[dict],
@@ -1293,6 +1560,7 @@ def render_about_page(
         <p class="page-lead">A structured .NET catalog, not a marketplace. The site is organized around categories, skill pages, agent pages, and project credits.</p>
         <div class="metric-grid">
           {render_metric_card(str(len(skills)), "Skills")}
+          {render_metric_card(str(len(packages)), "Packages")}
           {render_metric_card(str(len(agents)), "Agents")}
           {render_metric_card(str(len(category_infos)), "Categories")}
           {render_metric_card("MIT", "License")}
@@ -1313,13 +1581,14 @@ def render_about_page(
           </section>
           <section>
             <h2>Why there are multiple page types now</h2>
-            <p>Home still carries the full catalog and quick-view modal. Category pages group related work, skill pages expose real content from <code>SKILL.md</code>, agent pages explain routing behavior, and this about page captures the project context and credits.</p>
+            <p>Home still carries the full catalog and quick-view modal. Package pages provide one-command bundle installs, category pages group related work, skill pages expose real content from <code>SKILL.md</code>, agent pages explain routing behavior, and this about page captures the project context and credits.</p>
           </section>
         </div>
         <aside class="sidebar-stack">
           <div class="sidebar-card">
             <div class="detail-card-label">Explore</div>
             <div class="sidebar-links">
+              <a class="pill-link" href="{escape_html(root_prefix + 'packages/')}">Packages</a>
               <a class="pill-link" href="{escape_html(root_prefix + 'categories/')}">Categories</a>
               <a class="pill-link" href="{escape_html(root_prefix + 'skills/')}">Skills</a>
               <a class="pill-link" href="{escape_html(root_prefix + 'agents/')}">Agents</a>
@@ -1390,7 +1659,7 @@ def build_root_json_ld(site_url: str, canonical_url: str, release_version: str) 
             "@id": f"{canonical_url}#page",
             "url": canonical_url,
             "name": "dotnet-skills home",
-            "description": "The home page for the dotnet-skills catalog, with the full .NET skill directory and links to category, skill, agent, and about pages.",
+            "description": "The home page for the dotnet-skills catalog, with package installs, the full .NET skill directory, and links to category, skill, agent, and about pages.",
             "isPartOf": {"@id": f"{site_url}#website"},
         },
         {
@@ -1422,7 +1691,7 @@ def build_root_json_ld(site_url: str, canonical_url: str, release_version: str) 
                     "name": "What changed on the public site?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "The public site now includes dedicated pages for categories, skills, agents, and an about section so the catalog is easier to crawl and share.",
+                        "text": "The public site now includes dedicated pages for packages, categories, skills, agents, and an about section so the catalog is easier to crawl and share.",
                     },
                 },
             ],
@@ -1595,12 +1864,14 @@ def main() -> int:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     skills = load_skill_documents(catalog.get("skills", []), site_url)
-    agents = load_agent_documents(agent_catalog.get("agents", []), site_url)
     skills_by_name = {skill["name"]: skill for skill in skills}
+    packages = load_package_documents(catalog.get("packages", []), skills_by_name, site_url)
+    agents = load_agent_documents(agent_catalog.get("agents", []), site_url)
     category_infos = build_category_infos(skills, agents)
     credits = parse_credits_from_readme()
 
     print(f"Loaded {len(skills)} skills from catalog")
+    print(f"Loaded {len(packages)} packages from catalog")
     print(f"Loaded {len(agents)} agents from catalog")
 
     template = read_text(TEMPLATE_PATH)
@@ -1658,12 +1929,12 @@ def main() -> int:
             }
         )
 
-    root_body, root_page_data = render_home_page(skills, agents, category_infos, release_tag, "")
+    root_body, root_page_data = render_home_page(skills, packages, agents, category_infos, release_tag, "")
     add_page(
         path="",
         title=".NET Skills for Modern Coding Platforms | dotnet-skills",
-        description="A shared .NET skill catalog for Claude Code, GitHub Copilot, Gemini, and Codex with category, skill, agent, and about pages.",
-        keywords=["dotnet", ".NET skills", "Claude Code", "GitHub Copilot", "Gemini", "Codex", "AI coding assistants", "skill catalog"],
+        description="A shared .NET skill catalog for Claude Code, GitHub Copilot, Gemini, and Codex with package, category, skill, agent, and about pages.",
+        keywords=["dotnet", ".NET skills", ".NET skill packages", "Claude Code", "GitHub Copilot", "Gemini", "Codex", "AI coding assistants", "skill catalog"],
         body_class="page-home",
         main_content=root_body,
         json_ld=build_root_json_ld(site_url, site_url, release_version),
@@ -1671,6 +1942,28 @@ def main() -> int:
         page_data=root_page_data,
         og_type="website",
         priority="1.0",
+    )
+
+    packages_body, packages_page_data = render_packages_index_page(packages, "../")
+    add_page(
+        path="packages/",
+        title=".NET Skill Packages | dotnet-skills",
+        description="Browse one-command .NET skill packages, including curated stacks and category-wide installs such as AI, Code Quality, and Orleans.",
+        keywords=["dotnet skill packages", "install package ai", "install package orleans", "code quality package", "dotnet-skills packages"],
+        body_class="page-packages",
+        main_content=packages_body,
+        json_ld=build_collection_json_ld(
+            site_url,
+            build_absolute_url(site_url, "packages/"),
+            ".NET Skill Packages",
+            "One-command skill packages for the dotnet-skills catalog",
+            [(package["title"], package["detail_url"]) for package in packages],
+            [("Home", site_url), ("Packages", build_absolute_url(site_url, "packages/"))],
+        ),
+        lastmod=get_git_last_modified(["scripts/generate_pages.py", "catalog/skills.json"]),
+        page_data=packages_page_data,
+        og_type="website",
+        priority="0.94",
     )
 
     skills_body, skills_page_data = render_skills_index_page(skills, category_infos, "../")
@@ -1742,7 +2035,7 @@ def main() -> int:
         priority="0.88",
     )
 
-    about_body = render_about_page(skills, agents, category_infos, credits, release_tag, "../")
+    about_body = render_about_page(skills, packages, agents, category_infos, credits, release_tag, "../")
     add_page(
         path="about/",
         title="About dotnet-skills | Credits and Catalog Structure",
@@ -1760,6 +2053,34 @@ def main() -> int:
         og_type="article",
         priority="0.82",
     )
+
+    for package in packages:
+        root_prefix = "../../"
+        package_body = render_package_detail_page(package, root_prefix)
+        add_page(
+            path=package["detail_path"],
+            title=f"{package['title']} | dotnet-skills",
+            description=trim_text(package["description"], 156),
+            keywords=["dotnet package", package["title"], package["name"], *[skill["short_name"] for skill in package["skills"][:4]]],
+            body_class="page-packages",
+            main_content=package_body,
+            json_ld=build_article_json_ld(
+                site_url,
+                package["detail_url"],
+                package["title"],
+                package["description"],
+                package["lastmod"],
+                [
+                    ("Home", site_url),
+                    ("Packages", build_absolute_url(site_url, "packages/")),
+                    (package["title"], package["detail_url"]),
+                ],
+            ),
+            lastmod=package["lastmod"],
+            page_data={"skills": build_skill_payload(package["skills"], root_prefix)},
+            og_type="article",
+            priority="0.8",
+        )
 
     for category_name, category_info in sorted(category_infos.items()):
         root_prefix = "../../"

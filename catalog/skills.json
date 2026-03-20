@@ -657,5 +657,212 @@
       "compatibility": "Requires a .NET solution or project with xUnit packages; respects the repo's `AGENTS.md` commands first.",
       "path": "skills/dotnet-xunit/"
     }
+  ],
+  "packages": [
+    {
+      "name": "orleans",
+      "title": "Orleans package",
+      "description": "Install the main Orleans stack in one command, including Orleans core guidance, adjacent ManagedCode integrations, worker-hosting patterns, Aspire orchestration, and SignalR delivery support.",
+      "kind": "curated",
+      "sourceCategory": "",
+      "skills": [
+        "dotnet-orleans",
+        "dotnet-managedcode-orleans-graph",
+        "dotnet-managedcode-orleans-signalr",
+        "dotnet-worker-services",
+        "dotnet-aspire",
+        "dotnet-signalr"
+      ]
+    },
+    {
+      "name": "core",
+      "title": "Core package",
+      "description": "Install all 7 skills from the Core category in one command.",
+      "kind": "category",
+      "sourceCategory": "Core",
+      "skills": [
+        "dotnet",
+        "dotnet-architecture",
+        "dotnet-code-review",
+        "dotnet-managedcode-communication",
+        "dotnet-managedcode-mimetypes",
+        "dotnet-microsoft-extensions",
+        "dotnet-project-setup"
+      ]
+    },
+    {
+      "name": "web",
+      "title": "Web package",
+      "description": "Install all 6 skills from the Web category in one command.",
+      "kind": "category",
+      "sourceCategory": "Web",
+      "skills": [
+        "dotnet-aspnet-core",
+        "dotnet-blazor",
+        "dotnet-grpc",
+        "dotnet-minimal-apis",
+        "dotnet-signalr",
+        "dotnet-web-api"
+      ]
+    },
+    {
+      "name": "cloud",
+      "title": "Cloud package",
+      "description": "Install all 2 skills from the Cloud category in one command.",
+      "kind": "category",
+      "sourceCategory": "Cloud",
+      "skills": [
+        "dotnet-aspire",
+        "dotnet-azure-functions"
+      ]
+    },
+    {
+      "name": "distributed",
+      "title": "Distributed package",
+      "description": "Install all 4 skills from the Distributed category in one command.",
+      "kind": "category",
+      "sourceCategory": "Distributed",
+      "skills": [
+        "dotnet-managedcode-orleans-graph",
+        "dotnet-managedcode-orleans-signalr",
+        "dotnet-orleans",
+        "dotnet-worker-services"
+      ]
+    },
+    {
+      "name": "desktop",
+      "title": "Desktop package",
+      "description": "Install all 4 skills from the Desktop category in one command.",
+      "kind": "category",
+      "sourceCategory": "Desktop",
+      "skills": [
+        "dotnet-libvlc",
+        "dotnet-winforms",
+        "dotnet-winui",
+        "dotnet-wpf"
+      ]
+    },
+    {
+      "name": "cross-platform-ui",
+      "title": "Cross-Platform UI package",
+      "description": "Install all 3 skills from the Cross-Platform UI category in one command.",
+      "kind": "category",
+      "sourceCategory": "Cross-Platform UI",
+      "skills": [
+        "dotnet-maui",
+        "dotnet-mvvm",
+        "dotnet-uno-platform"
+      ]
+    },
+    {
+      "name": "data",
+      "title": "Data package",
+      "description": "Install all 5 skills from the Data category in one command.",
+      "kind": "category",
+      "sourceCategory": "Data",
+      "skills": [
+        "dotnet-entity-framework-core",
+        "dotnet-entity-framework6",
+        "dotnet-managedcode-markitdown",
+        "dotnet-managedcode-storage",
+        "dotnet-sep"
+      ]
+    },
+    {
+      "name": "ai",
+      "title": "AI package",
+      "description": "Install all 6 skills from the AI category in one command.",
+      "kind": "category",
+      "sourceCategory": "AI",
+      "skills": [
+        "dotnet-mcp",
+        "dotnet-microsoft-agent-framework",
+        "dotnet-microsoft-extensions-ai",
+        "dotnet-mixed-reality",
+        "dotnet-mlnet",
+        "dotnet-semantic-kernel"
+      ]
+    },
+    {
+      "name": "legacy",
+      "title": "Legacy package",
+      "description": "Install all 3 skills from the Legacy category in one command.",
+      "kind": "category",
+      "sourceCategory": "Legacy",
+      "skills": [
+        "dotnet-legacy-aspnet",
+        "dotnet-wcf",
+        "dotnet-workflow-foundation"
+      ]
+    },
+    {
+      "name": "testing",
+      "title": "Testing package",
+      "description": "Install all 7 skills from the Testing category in one command.",
+      "kind": "category",
+      "sourceCategory": "Testing",
+      "skills": [
+        "dotnet-coverlet",
+        "dotnet-mstest",
+        "dotnet-nunit",
+        "dotnet-reportgenerator",
+        "dotnet-stryker",
+        "dotnet-tunit",
+        "dotnet-xunit"
+      ]
+    },
+    {
+      "name": "code-quality",
+      "title": "Code Quality package",
+      "description": "Install all 18 skills from the Code Quality category in one command.",
+      "kind": "category",
+      "sourceCategory": "Code Quality",
+      "skills": [
+        "dotnet-analyzer-config",
+        "dotnet-biome",
+        "dotnet-chous",
+        "dotnet-code-analysis",
+        "dotnet-csharpier",
+        "dotnet-eslint",
+        "dotnet-format",
+        "dotnet-htmlhint",
+        "dotnet-metalint",
+        "dotnet-meziantou-analyzer",
+        "dotnet-modern-csharp",
+        "dotnet-quality-ci",
+        "dotnet-resharper-clt",
+        "dotnet-roslynator",
+        "dotnet-sonarjs",
+        "dotnet-stylecop-analyzers",
+        "dotnet-stylelint",
+        "dotnet-webhint"
+      ]
+    },
+    {
+      "name": "architecture",
+      "title": "Architecture package",
+      "description": "Install all 2 skills from the Architecture category in one command.",
+      "kind": "category",
+      "sourceCategory": "Architecture",
+      "skills": [
+        "dotnet-archunitnet",
+        "dotnet-netarchtest"
+      ]
+    },
+    {
+      "name": "metrics",
+      "title": "Metrics package",
+      "description": "Install all 6 skills from the Metrics category in one command.",
+      "kind": "category",
+      "sourceCategory": "Metrics",
+      "skills": [
+        "dotnet-asynkron-profiler",
+        "dotnet-cloc",
+        "dotnet-codeql",
+        "dotnet-complexity",
+        "dotnet-profiling",
+        "dotnet-quickdup"
+      ]
+    }
   ]
 }

@@ -16,6 +16,7 @@ public sealed class ProgramCommandSemanticsTests
     [InlineData("version")]
     [InlineData("--version")]
     [InlineData("list")]
+    [InlineData("package")]
     [InlineData("recommend")]
     [InlineData("install")]
     [InlineData("update")]

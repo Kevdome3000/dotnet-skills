@@ -27,6 +27,16 @@ public sealed class SkillCatalogPackageTests
                   "compatibility": "codex,claude,copilot,gemini",
                   "path": "skills/dotnet-aspire"
                 }
+              ],
+              "packages": [
+                {
+                  "name": "cloud",
+                  "title": "Cloud package",
+                  "description": "Install cloud skills in one command.",
+                  "kind": "category",
+                  "sourceCategory": "Cloud",
+                  "skills": ["dotnet-aspire"]
+                }
               ]
             }
             """);
@@ -38,6 +48,7 @@ public sealed class SkillCatalogPackageTests
 
         Assert.True(Directory.Exists(package.SkillsRoot.FullName));
         Assert.Equal("dotnet-aspire", package.Skills.Single().Name);
+        Assert.Equal("cloud", package.Packages.Single().Name);
         Assert.Equal("dotnet-aspire", package.ResolveSkillSource("dotnet-aspire").Name);
     }
 }

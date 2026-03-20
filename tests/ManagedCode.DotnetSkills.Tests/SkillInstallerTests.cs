@@ -58,4 +58,19 @@ public sealed class SkillInstallerTests
         Assert.True(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-aspire", "SKILL.md")));
         Assert.False(File.Exists(Path.Combine(tempDirectory.Path, "dotnet-aspire.md")));
     }
+
+    [Fact]
+    public void SelectSkillsFromPackages_ResolvesCuratedAndCategoryPackages()
+    {
+        var catalog = TestCatalog.Load();
+        var installer = new SkillInstaller(catalog);
+
+        var selected = installer.SelectSkillsFromPackages(["orleans", "codequality"]);
+
+        Assert.Contains(selected, skill => skill.Name == "dotnet-orleans");
+        Assert.Contains(selected, skill => skill.Name == "dotnet-managedcode-orleans-graph");
+        Assert.Contains(selected, skill => skill.Name == "dotnet-code-analysis");
+        Assert.Contains(selected, skill => skill.Name == "dotnet-format");
+        Assert.Equal(selected.Select(skill => skill.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count(), selected.Count);
+    }
 }

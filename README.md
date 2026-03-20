@@ -27,8 +27,11 @@ dotnet tool install --global dotnet-skills
 dotnet skills version                       # show current tool version and latest NuGet version
 dotnet skills --version                     # alias for the same version view
 dotnet skills list                          # show installed and available skills
+dotnet skills package list                  # show curated and category-based packages
 dotnet skills list --local                  # only installed skills in the current target
 dotnet skills recommend                     # suggest skills from local .csproj files
+dotnet skills install package ai            # install a multi-skill package
+dotnet skills package install orleans       # alias for package-first install flow
 dotnet skills install aspire orleans        # install skills
 dotnet skills remove --all                  # remove installed catalog skills from the target
 dotnet skills update                        # refresh installed catalog skills
@@ -41,8 +44,11 @@ dotnet skills install blazor --agent claude # install for a specific agent
 |---------|-------------|
 | `dotnet skills version` | Show the current installed tool version and check whether NuGet has a newer release |
 | `dotnet skills list` | Show the current inventory, compare project/global scope when relevant, and keep the remaining catalog as a compact category summary |
+| `dotnet skills package list` | Show the curated and category-based packages that expand into multiple related skills |
 | `dotnet skills recommend` | Scan local `*.csproj` files, propose relevant `dotnet-*` skills, and let you decide what to install |
 | `dotnet skills install <skill...>` | Install one or more skills |
+| `dotnet skills install package <package...>` | Install one or more packages such as `ai`, `code-quality`, or `orleans`, with each package expanding into multiple related skills |
+| `dotnet skills package install <package...>` | Alias for the same package installation flow |
 | `dotnet skills remove [skill...]` | Remove one or more installed catalog skills, or use `--all` to clear the target |
 | `dotnet skills update [skill...]` | Update installed catalog skills to the selected catalog version |
 | `dotnet skills sync` | Download latest catalog |
@@ -53,6 +59,8 @@ dotnet skills install blazor --agent claude # install for a specific agent
 | `dotnet skills agent remove <agent...>` | Remove installed agents |
 
 Use `--agent` to target a specific agent, `--scope` to choose global or project install. Use `dotnet skills list --installed-only` or the shorter `dotnet skills list --local` when you only want the installed inventory, or `--available-only` when you want the detailed category-by-category breakdown of the remaining catalog. The default `list` view stays compact: it shows the current target inventory, compares project/global scope when that comparison is meaningful, and keeps the remaining catalog as a short category summary instead of dumping one giant description table. The CLI renders rich terminal tables by default so you can quickly see installed versions, update candidates, install commands, and when a newer `dotnet-skills` package is available on NuGet. `dotnet skills --version` is a shortcut for the version view.
+
+`dotnet skills package list` shows the ready-made packages. Package installs are bulk shortcuts for related skill sets, so `dotnet skills install package ai`, `dotnet skills install package code-quality`, or `dotnet skills install package orleans` will install every skill mapped to that package in one pass.
 
 `dotnet skills recommend` is a scan-only command: it inspects local project files, proposes a skill list, and prints the install command you can run if you agree with the recommendations. It does not install anything automatically.
 
