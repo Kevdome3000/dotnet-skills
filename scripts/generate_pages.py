@@ -14,9 +14,6 @@ import subprocess
 import sys
 from urllib.parse import urljoin, urlparse
 
-import yaml
-
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 CATALOG_PATH = REPO_ROOT / "catalog" / "skills.json"
 AGENTS_CATALOG_PATH = REPO_ROOT / "catalog" / "agents.json"
@@ -174,6 +171,72 @@ def get_git_last_modified(paths: list[str]) -> str:
     return date.today().isoformat()
 
 
+def parse_frontmatter_value(raw_value: str) -> object:
+    """Parse a simple YAML scalar used by repository frontmatter."""
+    value = raw_value.strip()
+    if not value:
+        return ""
+
+    if len(value) >= 2 and value[0] == value[-1] and value[0] in {'"', "'"}:
+        return value[1:-1]
+
+    lowered = value.lower()
+    if lowered == "true":
+        return True
+    if lowered == "false":
+        return False
+
+    if re.fullmatch(r"-?\d+", value):
+        return int(value)
+
+    if value.startswith("[") and value.endswith("]"):
+        inner = value[1:-1].strip()
+        if not inner:
+            return []
+        return [parse_frontmatter_value(part) for part in inner.split(",")]
+
+    return value
+
+
+def parse_frontmatter(frontmatter_text: str) -> dict:
+    """Parse the small frontmatter subset used in SKILL.md and AGENT.md files."""
+    metadata: dict[str, object] = {}
+    current_list_key: str | None = None
+
+    for raw_line in frontmatter_text.splitlines():
+        line = raw_line.rstrip()
+        stripped = line.strip()
+
+        if not stripped or stripped.startswith("#"):
+            continue
+
+        list_match = re.match(r"^\s*-\s+(.*)$", line)
+        if list_match and current_list_key:
+            list_value = metadata.setdefault(current_list_key, [])
+            if isinstance(list_value, list):
+                list_value.append(parse_frontmatter_value(list_match.group(1)))
+            continue
+
+        current_list_key = None
+        key, separator, remainder = line.partition(":")
+        if not separator:
+            continue
+
+        key = key.strip()
+        if not key:
+            continue
+
+        value = remainder.strip()
+        if value:
+            metadata[key] = parse_frontmatter_value(value)
+            continue
+
+        metadata[key] = []
+        current_list_key = key
+
+    return metadata
+
+
 def split_frontmatter(markdown_text: str) -> tuple[dict, str]:
     """Split YAML frontmatter from markdown content."""
     if not markdown_text.startswith("---\n"):
@@ -183,7 +246,7 @@ def split_frontmatter(markdown_text: str) -> tuple[dict, str]:
     if not match:
         return {}, markdown_text
 
-    metadata = yaml.safe_load(match.group(1)) or {}
+    metadata = parse_frontmatter(match.group(1))
     body = match.group(2)
     return metadata, body
 
