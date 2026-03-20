@@ -19,6 +19,11 @@ internal static class Program
 
     private static async Task<int> RunAsync(string[] args)
     {
+        if (IsInteractiveStartup(args))
+        {
+            return await RunInteractiveAsync(cachePath: null);
+        }
+
         if (IsUsageStartup(args))
         {
             return await RunUsageAsync(cachePath: null);
@@ -43,6 +48,12 @@ internal static class Program
             "agent" => await RunAgentAsync(args[1..]),
             _ => UnknownCommand(command),
         };
+    }
+
+    private static async Task<int> RunInteractiveAsync(string? cachePath)
+    {
+        var app = new InteractiveConsoleApp(cachePath: cachePath);
+        return await app.RunAsync();
     }
 
     private static async Task<int> RunVersionAsync(string[] args)
@@ -543,7 +554,7 @@ internal static class Program
         return 0;
     }
 
-    private static async Task<SkillCatalogPackage> ResolveCatalogForDisplayAsync(bool bundledOnly, string? cachePath, string? catalogVersion)
+    internal static async Task<SkillCatalogPackage> ResolveCatalogForDisplayAsync(bool bundledOnly, string? cachePath, string? catalogVersion)
     {
         if (bundledOnly)
         {
@@ -568,7 +579,7 @@ internal static class Program
         }
     }
 
-    private static async Task<SkillCatalogPackage> ResolveCatalogForInstallAsync(bool bundledOnly, string? cachePath, string? catalogVersion, bool refreshCatalog)
+    internal static async Task<SkillCatalogPackage> ResolveCatalogForInstallAsync(bool bundledOnly, string? cachePath, string? catalogVersion, bool refreshCatalog)
     {
         if (bundledOnly)
         {
@@ -615,7 +626,7 @@ internal static class Program
         return directory;
     }
 
-    private static IReadOnlyList<InstalledSkillRecord> ResolveInstalledSkillsToUpdate(
+    internal static IReadOnlyList<InstalledSkillRecord> ResolveInstalledSkillsToUpdate(
         IReadOnlyList<string> requestedSkills,
         SkillInstaller installer,
         IReadOnlyDictionary<string, InstalledSkillRecord> installedBefore)
@@ -642,7 +653,7 @@ internal static class Program
             .ToArray();
     }
 
-    private static IReadOnlyList<SkillActionRow> BuildInstallRows(
+    internal static IReadOnlyList<SkillActionRow> BuildInstallRows(
         IReadOnlyList<SkillEntry> selectedSkills,
         IReadOnlyDictionary<string, InstalledSkillRecord> installedBefore,
         bool force,
@@ -672,7 +683,7 @@ internal static class Program
             .ToArray();
     }
 
-    private static IReadOnlyList<SkillActionRow> BuildRemoveRows(
+    internal static IReadOnlyList<SkillActionRow> BuildRemoveRows(
         IReadOnlyList<SkillEntry> selectedSkills,
         IReadOnlyDictionary<string, InstalledSkillRecord> installedBefore,
         SkillRemoveSummary summary)
@@ -713,13 +724,15 @@ internal static class Program
         || string.Equals(command, "-h", StringComparison.OrdinalIgnoreCase);
 
     internal static bool IsUsageStartup(string[] args) =>
-        args.Length == 0 || (args.Length > 0 && IsHelpCommand(args[0]));
+        args.Length > 0 && IsHelpCommand(args[0]);
+
+    internal static bool IsInteractiveStartup(string[] args) => args.Length == 0;
 
     private static bool IsVersionCommand(string command) =>
         string.Equals(command, "version", StringComparison.OrdinalIgnoreCase)
         || string.Equals(command, "--version", StringComparison.OrdinalIgnoreCase);
 
-    private static IReadOnlyList<ScopeInventoryRow> BuildScopeInventory(
+    internal static IReadOnlyList<ScopeInventoryRow> BuildScopeInventory(
         SkillInstallLayout currentLayout,
         string? projectDirectory,
         SkillInstaller installer,
@@ -760,7 +773,7 @@ internal static class Program
         return rows;
     }
 
-    private static string ResolveProjectRoot(string? projectDirectory) => string.IsNullOrWhiteSpace(projectDirectory)
+    internal static string ResolveProjectRoot(string? projectDirectory) => string.IsNullOrWhiteSpace(projectDirectory)
         ? Path.GetFullPath(Directory.GetCurrentDirectory())
         : Path.GetFullPath(projectDirectory);
 
@@ -773,7 +786,7 @@ internal static class Program
 
     private static ToolUpdateService CreateToolUpdateService() => new(new NuGetPackageVersionClient());
 
-    private static async Task MaybeShowToolUpdateAsync(string? cachePath)
+    internal static async Task MaybeShowToolUpdateAsync(string? cachePath)
     {
         if (ToolUpdateService.ShouldSkipAutomaticCheck())
         {

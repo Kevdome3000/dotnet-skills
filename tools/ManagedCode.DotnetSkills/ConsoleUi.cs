@@ -417,6 +417,8 @@ internal static class ConsoleUi
         var table = new Table().Expand();
         table.AddColumn("Command");
         table.AddColumn("Purpose");
+        table.AddRow("[green]dotnet skills[/]", "Launch the interactive catalog shell for browsing, installing, removing, and updating skills or agents.");
+        table.AddRow("[green]dotnet skills help[/]", "Render the direct command reference without entering the interactive shell.");
         table.AddRow("[green]dotnet skills list[/]", "Show the current inventory, compare project/global scope when relevant, and render available skills in grouped category tables.");
         table.AddRow("[green]dotnet skills package list[/]", "List curated and category-based packages that expand into multiple related skills.");
         table.AddRow("[green]dotnet skills version[/]", "Show the current tool version and check whether NuGet has a newer release.");
@@ -438,8 +440,9 @@ internal static class ConsoleUi
         var notes = string.Join(
             Environment.NewLine,
             "- `list`, `package list`, `recommend`, `install`, and `update` use the latest `catalog-v*` GitHub release by default.",
+            "- Bare `dotnet skills` starts the interactive shell; use `dotnet skills help` when you want the direct command reference only.",
             "- `dotnet skills version` and `dotnet skills --version` both show the current tool version.",
-            "- The bare `dotnet skills` usage view and `help` path also run the automatic tool update check before rendering help.",
+            "- `help` and the interactive startup path both run the automatic tool update check unless it is suppressed.",
             "- Use `dotnet skills version --no-check` when you only want the local installed version without a NuGet lookup.",
             "- `list` stays compact: it shows the current installed inventory and a grouped category summary for the remaining catalog.",
             "- `list --installed-only` and `list --local` are equivalent shortcuts for the installed inventory view; `list --available-only` expands the remaining catalog into per-category skill tables with short summaries.",

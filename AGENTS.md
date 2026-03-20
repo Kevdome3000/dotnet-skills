@@ -326,6 +326,7 @@ Rules:
 - Treat repo-owned orchestration agents as a parallel catalog layer; do not force the first rollout of agents into the current `dotnet-skills` CLI lifecycle before the repo structure and docs are stable.
 - Canonical repo-owned agents live in folder-per-agent layouts with `AGENT.md`; runtime-specific `.agent.md` or native Claude files are adapters, not the source of truth.
 - The installer must account for Codex, Claude, Copilot, and Gemini target layouts instead of assuming only one global skills directory.
+- The bare `dotnet skills` entrypoint should behave like a polished interactive console application for browsing the catalog, inspecting details, and installing or removing content without remembering subcommands. Explicit command arguments must still bypass the interactive app and execute directly.
 - When vendor-specific install behavior diverges, model it with separate per-platform strategy classes instead of growing one shared resolver or installer full of platform switches.
 - Do not duplicate home-directory or environment-root resolution helpers across resolvers. Keep shared path-context logic in one place and let per-platform strategies consume it.
 - `SKILL.md` is the canonical skill contract; vendor-specific files are adapters.
